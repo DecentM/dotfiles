@@ -6,7 +6,10 @@ HISTSIZE=10000
 SAVEHIST=10000
 setopt appendhistory
 
-[[ -e "$HOME/.zplug" ]] || curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
+if [[ ! -e "$HOME/.zplug" ]]; then
+  curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
+  exit
+fi
 
 source ~/.zplug/init.zsh
 
@@ -14,7 +17,7 @@ path+=("$HOME/bin")
 export PATH
 
 export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
-export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/p10k.zsh"
+export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
 
 zplug romkatv/powerlevel10k, as:theme, depth:1
 zplug "hlissner/zsh-autopair", defer:2
@@ -58,7 +61,7 @@ zplug load
 
 BASEDIR=$(dirname $(realpath "$0"))
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -e $BASEDIR/p10k.zsh ]] || source $BASEDIR/p10k.zsh
-[[ ! -e $BASEDIR/aliases.zsh ]] || source $BASEDIR/aliases.zsh
-[[ ! -e $BASEDIR/bindkeys.zsh ]] || source $BASEDIR/bindkeys.zsh
+[[ ! -e $BASEDIR/lib/p10k.zsh ]] || source "$BASEDIR/lib/p10k.zsh"
+[[ ! -e $BASEDIR/lib/autoupdate.zsh ]] || source "$BASEDIR/lib/autoupdate.zsh"
+[[ ! -e $BASEDIR/lib/aliases.zsh ]] || source "$BASEDIR/lib/aliases.zsh"
+[[ ! -e $BASEDIR/lib/bindkeys.zsh ]] || source "$BASEDIR/lib/bindkeys.zsh"
