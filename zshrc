@@ -4,7 +4,9 @@
 HISTFILE="$HOME/.zsh_history"
 HISTSIZE=10000
 SAVEHIST=10000
+
 setopt appendhistory
+setopt LOCAL_OPTIONS NO_NOTIFY NO_MONITOR
 
 if [[ ! -e "$HOME/.zplug" ]]; then
   curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
@@ -62,6 +64,6 @@ zplug load
 BASEDIR=$(dirname $(realpath "$0"))
 
 [[ ! -e $BASEDIR/lib/p10k.zsh ]] || source "$BASEDIR/lib/p10k.zsh"
-[[ ! -e $BASEDIR/lib/autoupdate.zsh ]] || source "$BASEDIR/lib/autoupdate.zsh"
 [[ ! -e $BASEDIR/lib/aliases.zsh ]] || source "$BASEDIR/lib/aliases.zsh"
 [[ ! -e $BASEDIR/lib/bindkeys.zsh ]] || source "$BASEDIR/lib/bindkeys.zsh"
+[[ ! -e $BASEDIR/lib/autoupdate.zsh ]] || source "$BASEDIR/lib/autoupdate.zsh" &
