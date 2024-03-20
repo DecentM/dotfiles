@@ -1,14 +1,20 @@
 #!/bin/false
 # shellcheck shell=sh
 
-HISTFILE=~/.zsh_history
+HISTFILE="$HOME/.zsh_history"
 HISTSIZE=10000
 SAVEHIST=10000
 setopt appendhistory
 
+[[ -e "$HOME/.zplug" ]] || curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
+
 source ~/.zplug/init.zsh
 
-export PATH="$PATH:/home/decentm/bin"
+path+=("$HOME/bin")
+export PATH
+
+export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+export POWERLEVEL9K_CONFIG_FILE="$BASEDIR/p10k.zsh"
 
 zplug romkatv/powerlevel10k, as:theme, depth:1
 zplug "hlissner/zsh-autopair", defer:2
@@ -53,6 +59,6 @@ zplug load
 BASEDIR=$(dirname $(realpath "$0"))
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f $BASEDIR/.p10k.zsh ]] || source $BASEDIR/p10k.zsh
-[[ ! -f $BASEDIR/.aliases.zsh ]] || source $BASEDIR/aliases.zsh
-[[ ! -f $BASEDIR/.bindkeys.zsh ]] || source $BASEDIR/bindkeys.zsh
+[[ ! -e $BASEDIR/p10k.zsh ]] || source $BASEDIR/p10k.zsh
+[[ ! -e $BASEDIR/aliases.zsh ]] || source $BASEDIR/aliases.zsh
+[[ ! -e $BASEDIR/bindkeys.zsh ]] || source $BASEDIR/bindkeys.zsh
