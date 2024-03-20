@@ -14,7 +14,7 @@ path+=("$HOME/bin")
 export PATH
 
 export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
-export POWERLEVEL9K_CONFIG_FILE="$BASEDIR/p10k.zsh"
+export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/p10k.zsh"
 
 zplug romkatv/powerlevel10k, as:theme, depth:1
 zplug "hlissner/zsh-autopair", defer:2
