@@ -38,6 +38,8 @@ zstyle :omz:plugins:ssh-agent lifetime 8h
 
 zplug joshskidmore/zsh-fzf-history-search
 zplug zsh-users/zsh-syntax-highlighting
+zplug cmuench/zsh-miniconda
+zplug se-jaeger/zsh-activate-py-environment
 
 # Colours
 zplug zuxfoucault/colored-man-pages_mod
