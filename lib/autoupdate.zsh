@@ -24,14 +24,14 @@ if [ $NEED_PULL -eq 1 ]; then
     read "REPLY?[DecentM/dotfiles] Your branch is behind its origin. Do you want to pull the latest changes? [y/N] "
 
     if [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; then
-        git stash save -u 2>/dev/null >/dev/null
+        git stash save -u -q 2>/dev/null >/dev/null
         git reset --hard origin/$(git rev-parse --abbrev-ref HEAD) >/dev/null
-        git stash pop >/dev/null
+        STASH_RESULT=$(git stash pop 2>&1)
 
-        if [ $? -ne 0 ]; then
+        if [ $? -ne 0 ] && [ $STASH_RESULT != "No stash entries found." ]; then
             git checkout --ours . 2>/dev/null >/dev/null
             git add . 2>/dev/null >/dev/null
-            git stash save -u "Conflicts saved by autoupdate.zsh" 2>/dev/null >/dev/null
+            git stash save -u "Conflicts saved by autoupdate.zsh" -q 2>/dev/null >/dev/null
 
             echo "[DecentM/dotfiles] Conflict detected during update, and the conflict has been saved. Please cd to $BASEDIR and resolve the conflict from the stash." >&2
         fi
