@@ -10,7 +10,7 @@ REMOTE=$(git rev-parse @{u})
 BASE=$(git merge-base @ @{u})
 
 if [ $LOCAL = $REMOTE ]; then
-    git fetch origin >/dev/null &
+    git fetch origin 2>/dev/null >/dev/null &
 elif [ $LOCAL = $BASE ]; then
     NEED_PULL=1
 elif [ $REMOTE = $BASE ]; then
