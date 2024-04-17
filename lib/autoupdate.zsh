@@ -1,14 +1,21 @@
 #!/bin/false
 # shellcheck shell=sh
 
-LIBDIR=$(dirname $(realpath "$0"))
+builtin set +e
 
-cd "$LIBDIR/.."
+LIBDIR=$(dirname $(realpath "$0"))
+builtin cd "$LIBDIR/.."
 
 git stash save -u 2>/dev/null >/dev/null
 
-git pull >/dev/null
+if [ $? -eq 0 ]; then
+    git pull >/dev/null
 
-git stash pop 2>/dev/null >/dev/null
+    if [ $? -eq 0 ]; then
+        git stash pop 2>/dev/null >/dev/null
+    fi
+fi
 
-cd - >/dev/null
+builtin cd - >/dev/null
+
+builtin set -e
