@@ -1,21 +1,38 @@
 #!/bin/false
 # shellcheck shell=sh
 
-builtin set +e
-
 LIBDIR=$(dirname $(realpath "$0"))
 builtin cd "$LIBDIR/.."
 
-git stash save -u 2>/dev/null >/dev/null
+NEED_PULL=0
 
-if [ $? -eq 0 ]; then
-    git pull >/dev/null
+LOCAL=$(git rev-parse @)
+REMOTE=$(git rev-parse @{u})
+BASE=$(git merge-base @ @{u})
 
-    if [ $? -eq 0 ]; then
-        git stash pop 2>/dev/null >/dev/null
+if [ $LOCAL = $REMOTE ]; then
+    git fetch origin >/dev/null &
+elif [ $LOCAL = $BASE ]; then
+    NEED_PULL=1
+elif [ $REMOTE = $BASE ]; then
+    echo "[DecentM/dotfiles] Your branch is ahead of its origin. Please cd to $BASEDIR and run 'git push'." >&2
+else
+    echo "[DecentM/dotfiles] Your branch has diverged from its origin. Please cd to $BASEDIR and resolve the conflict." >&2
+fi
+
+if [ $NEED_PULL -eq 1 ]; then
+    printf "[DecentM/dotfiles] Your branch is behind its origin. Do you want to pull the latest changes? [y/N] "
+    read -r REPLY
+
+    if [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; then
+        git stash save -u >/dev/null
+        git reset --hard origin/$(git rev-parse --abbrev-ref HEAD) >/dev/null
+        git stash pop >/dev/null
+
+        resource
+
+        echo "[DecentM/dotfiles] Update complete"
     fi
 fi
 
 builtin cd - >/dev/null
-
-builtin set -e
