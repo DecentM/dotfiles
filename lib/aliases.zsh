@@ -5,7 +5,7 @@ alias _='sudo'
 alias resource='source ~/.zshrc'
 alias reload='p10k reload'
 alias colours='for i in {0..255}; do print -Pn "%K{$i}  %k%F{$i}${(l:3::0:)i}%f " ${${(M)$((i%6)):#3}:+$'\n'}; done'
-alias konsave-commit="konsave -r profile && konsave -s profile -f && konsave -e profile -f -n profile -d \"$BASEDIR/\" && konsave -r profile"
+alias konsave-commit="konsave -s profile -f && konsave -e profile -f -n profile -d \"$BASEDIR/\" && konsave -r profile"
 alias konsave-apply="konsave -i \"$BASEDIR/profile.knsv\" -f && konsave -a profile && konsave -r profile"
 alias update-asdf="asdf update && asdf plugin update --all"
 
