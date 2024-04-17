@@ -29,6 +29,7 @@ if [ $NEED_PULL -eq 1 ]; then
         git stash pop >/dev/null
 
         if [ $? -ne 0 ]; then
+            git checkout --ours . >/dev/null
             git add . >/dev/null
             git stash save -u "Conflicts saved by autoupdate.zsh" >/dev/null
 
