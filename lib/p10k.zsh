@@ -138,6 +138,10 @@
   typeset -g POWERLEVEL9K_DIR_BACKGROUND=039
   typeset -g POWERLEVEL9K_DIR_FOREGROUND=000
 
+  typeset -g POWERLEVEL9K_PACKAGE_PREFIX='%f'
+  typeset -g POWERLEVEL9K_PACKAGE_BACKGROUND=255
+  typeset -g POWERLEVEL9K_PACKAGE_FOREGROUND=000
+
   typeset -g POWERLEVEL9K_VCS_BACKGROUND=234
 
   typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_BACKGROUND=227
@@ -518,7 +522,7 @@
   # Custom icon.
   # typeset -g POWERLEVEL9K_VCS_VISUAL_IDENTIFIER_EXPANSION='⭐'
   # Custom prefix.
-  typeset -g POWERLEVEL9K_VCS_PREFIX='%fon '
+  typeset -g POWERLEVEL9K_VCS_PREFIX='%f'
 
   # Show status of repositories of these types. You can add svn and/or hg if you are
   # using them. If you do, your prompt may become slow even when your current directory
@@ -1123,7 +1127,7 @@
 
   ###[ package: name@version from package.json (https://docs.npmjs.com/files/package.json) ]####
   # Package color.
-  typeset -g POWERLEVEL9K_PACKAGE_FOREGROUND=117
+  # typeset -g POWERLEVEL9K_PACKAGE_FOREGROUND=117
   # Package format. The following parameters are available within the expansion.
   #
   # - P9K_PACKAGE_NAME     The value of `name` field in package.json.
@@ -1131,7 +1135,7 @@
   #
   # typeset -g POWERLEVEL9K_PACKAGE_CONTENT_EXPANSION='${P9K_PACKAGE_NAME//\%/%%}@${P9K_PACKAGE_VERSION//\%/%%}'
   # Custom icon.
-  # typeset -g POWERLEVEL9K_PACKAGE_VISUAL_IDENTIFIER_EXPANSION='⭐'
+  typeset -g POWERLEVEL9K_PACKAGE_VISUAL_IDENTIFIER_EXPANSION='📦'
 
   #############[ rbenv: ruby version from rbenv (https://github.com/rbenv/rbenv) ]##############
   # Rbenv color.
@@ -1668,7 +1672,7 @@
   # Custom icon.
   # typeset -g POWERLEVEL9K_TIME_VISUAL_IDENTIFIER_EXPANSION='⭐'
   # Custom prefix.
-  typeset -g POWERLEVEL9K_TIME_PREFIX='%fat '
+  typeset -g POWERLEVEL9K_TIME_PREFIX=''
 
   # Example of a user-defined prompt segment. Function prompt_example will be called on every
   # prompt if `example` prompt segment is added to POWERLEVEL9K_LEFT_PROMPT_ELEMENTS or
