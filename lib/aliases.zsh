@@ -2,8 +2,11 @@
 # shellcheck shell=sh
 
 alias _='sudo'
+alias resource='source ~/.zshrc'
+alias reload='p10k reload'
+alias colours='for i in {0..255}; do print -Pn "%K{$i}  %k%F{$i}${(l:3::0:)i}%f " ${${(M)$((i%6)):#3}:+$'\n'}; done'
 
-alias l='k -h || ls -l'
+alias l='k -h'
 alias c='clear'
 alias x='exit'
 

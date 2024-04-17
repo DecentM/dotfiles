@@ -46,18 +46,18 @@
   # last prompt line gets hidden if it would overlap with left prompt.
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
-    status                  # exit code of the last command
+    # status                  # exit code of the last command
     command_execution_time  # duration of the last command
     background_jobs         # presence of background jobs
-    direnv                  # direnv status (https://direnv.net/)
-    # asdf                    # asdf version manager (https://github.com/asdf-vm/asdf)
+    # direnv                  # direnv status (https://direnv.net/)
+    asdf                    # asdf version manager (https://github.com/asdf-vm/asdf)
     virtualenv              # python virtual environment (https://docs.python.org/3/library/venv.html)
     anaconda                # conda environment (https://conda.io/)
     pyenv                   # python environment (https://github.com/pyenv/pyenv)
-    goenv                   # go environment (https://github.com/syndbg/goenv)
-    nodenv                  # node.js version from nodenv (https://github.com/nodenv/nodenv)
-    nvm                     # node.js version from nvm (https://github.com/nvm-sh/nvm)
-    nodeenv                 # node.js environment (https://github.com/ekalinin/nodeenv)
+    # goenv                   # go environment (https://github.com/syndbg/goenv)
+    # nodenv                  # node.js version from nodenv (https://github.com/nodenv/nodenv)
+    # nvm                     # node.js version from nvm (https://github.com/nvm-sh/nvm)
+    # nodeenv                 # node.js environment (https://github.com/ekalinin/nodeenv)
     # node_version          # node.js version
     # go_version            # go version (https://golang.org)
     # rust_version          # rustc version (https://www.rust-lang.org)
@@ -77,14 +77,14 @@
     # scalaenv                # scala version from scalaenv (https://github.com/scalaenv/scalaenv)
     # haskell_stack           # haskell version from stack (https://haskellstack.org/)
     kubecontext             # current kubernetes context (https://kubernetes.io/)
-    terraform               # terraform workspace (https://www.terraform.io)
-    terraform_version     # terraform version (https://www.terraform.io)
+    # terraform               # terraform workspace (https://www.terraform.io)
+    # terraform_version     # terraform version (https://www.terraform.io)
     # aws                     # aws profile (https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
     # aws_eb_env              # aws elastic beanstalk environment (https://aws.amazon.com/elasticbeanstalk/)
     # azure                   # azure account name (https://docs.microsoft.com/en-us/cli/azure)
-    gcloud                  # google cloud cli account and project (https://cloud.google.com/)
-    google_app_cred         # google application credentials (https://cloud.google.com/docs/authentication/production)
-    toolbox                 # toolbox name (https://github.com/containers/toolbox)
+    # gcloud                  # google cloud cli account and project (https://cloud.google.com/)
+    # google_app_cred         # google application credentials (https://cloud.google.com/docs/authentication/production)
+    # toolbox                 # toolbox name (https://github.com/containers/toolbox)
     context                 # user@hostname
     # nordvpn                 # nordvpn connection status, linux only (https://nordvpn.com/)
     # ranger                  # ranger shell (https://github.com/ranger/ranger)
@@ -92,7 +92,7 @@
     # nnn                     # nnn shell (https://github.com/jarun/nnn)
     # lf                      # lf shell (https://github.com/gokcehan/lf)
     # xplr                    # xplr shell (https://github.com/sayanarijit/xplr)
-    vim_shell               # vim shell indicator (:sh)
+    # vim_shell               # vim shell indicator (:sh)
     # midnight_commander      # midnight commander shell (https://midnight-commander.org/)
     # nix_shell               # nix shell (https://nixos.org/nixos/nix-pills/developing-with-nix-shell.html)
     # chezmoi_shell           # chezmoi shell (https://www.chezmoi.io/)
@@ -126,9 +126,30 @@
   # Basic style options that define the overall look of your prompt. You probably don't want to
   # change them.
   typeset -g POWERLEVEL9K_BACKGROUND=                            # transparent background
-  typeset -g POWERLEVEL9K_{LEFT,RIGHT}_{LEFT,RIGHT}_WHITESPACE=  # no surrounding whitespace
-  typeset -g POWERLEVEL9K_{LEFT,RIGHT}_SUBSEGMENT_SEPARATOR=' '  # separate segments with a space
-  typeset -g POWERLEVEL9K_{LEFT,RIGHT}_SEGMENT_SEPARATOR=        # no end-of-line symbol
+  typeset -g POWERLEVEL9K_{LEFT,RIGHT}_{LEFT,RIGHT}_WHITESPACE=''  # no surrounding whitespace
+  typeset -g POWERLEVEL9K_LEFT_SUBSEGMENT_SEPARATOR='\ue0b4 '  # separate segments with a space
+  typeset -g POWERLEVEL9K_RIGHT_SUBSEGMENT_SEPARATOR=' \ue0b6'  # separate segments with a space
+  typeset -g POWERLEVEL9K_LEFT_SEGMENT_SEPARATOR='\ue0b4 '        # no end-of-line symbol
+  typeset -g POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=' \ue0b6'        # no end-of-line symbol
+
+  typeset -g POWERLEVEL9K_OS_ICON_BACKGROUND=055
+  typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=255
+
+  typeset -g POWERLEVEL9K_DIR_BACKGROUND=039
+  typeset -g POWERLEVEL9K_DIR_FOREGROUND=000
+
+  typeset -g POWERLEVEL9K_VCS_BACKGROUND=234
+
+  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_BACKGROUND=227
+  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND=000
+
+  typeset -g POWERLEVEL9K_TIME_BACKGROUND=227
+  typeset -g POWERLEVEL9K_TIME_FOREGROUND=000
+
+  typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=039
+  typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=000
+
+  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_BACKGROUND=234
 
   # When set to true, icons appear before content on both sides of the prompt. When set
   # to false, icons go after content. If empty or not set, icons go before content in the left
@@ -147,11 +168,11 @@
   typeset -g POWERLEVEL9K_PROMPT_ADD_NEWLINE=true
 
   # Connect left prompt lines with these symbols.
-  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX=
+  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX='%F{055}\ue0b6'
   typeset -g POWERLEVEL9K_MULTILINE_NEWLINE_PROMPT_PREFIX=
   typeset -g POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX=
   # Connect right prompt lines with these symbols.
-  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_SUFFIX=
+  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_SUFFIX='%F{227}\ue0b4'
   typeset -g POWERLEVEL9K_MULTILINE_NEWLINE_PROMPT_SUFFIX=
   typeset -g POWERLEVEL9K_MULTILINE_LAST_PROMPT_SUFFIX=
 
@@ -466,6 +487,7 @@
 
     typeset -g my_git_format=$res
   }
+
   functions -M my_git_formatter 2>/dev/null
 
   # Don't count the number of unstaged, untracked and conflicted files in Git repositories with
@@ -922,7 +944,7 @@
   # Custom icon.
   # typeset -g POWERLEVEL9K_CONTEXT_VISUAL_IDENTIFIER_EXPANSION='⭐'
   # Custom prefix.
-  typeset -g POWERLEVEL9K_CONTEXT_PREFIX='%fwith '
+  typeset -g POWERLEVEL9K_CONTEXT_PREFIX='%f\uF233 '
 
   ###[ virtualenv: python virtual environment (https://docs.python.org/3/library/venv.html) ]###
   # Python virtual environment color.
