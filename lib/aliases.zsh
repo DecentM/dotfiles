@@ -6,7 +6,7 @@ alias resource='source ~/.zshrc'
 alias reload='p10k reload'
 alias colours='for i in {0..255}; do print -Pn "%K{$i}  %k%F{$i}${(l:3::0:)i}%f " ${${(M)$((i%6)):#3}:+$'\n'}; done'
 alias commit-plasma="konsave -r profile && konsave -s profile -f && konsave -e profile -f -n profile -d \"$BASEDIR/\" && konsave -r profile"
-alias update-asdf="asdf update >/dev/null && asdf plugin update --all >/dev/null"
+alias update-asdf="asdf update && asdf plugin update --all"
 
 alias l='k -h'
 alias c='clear'

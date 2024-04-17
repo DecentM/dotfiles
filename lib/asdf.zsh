@@ -12,5 +12,5 @@ add_plugins() {
 
 add_plugins || true
 
-# Make autoswitch use .nvmrc
+# Make autoswitch use .nvmrc too
 echo "legacy_version_file = yes" >"$HOME/.asdfrc"
