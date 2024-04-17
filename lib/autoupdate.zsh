@@ -28,6 +28,13 @@ if [ $NEED_PULL -eq 1 ]; then
         git reset --hard origin/$(git rev-parse --abbrev-ref HEAD) >/dev/null
         git stash pop >/dev/null
 
+        if [ $? -ne 0 ]; then
+            git add . >/dev/null
+            git stash save -u "Conflicts saved by autoupdate.zsh" >/dev/null
+
+            echo "[DecentM/dotfiles] Conflict detected during update, and the conflict has been saved. Please cd to $BASEDIR and resolve the conflict from the stash." >&2
+        fi
+
         echo "[DecentM/dotfiles] Update complete"
 
         resource
