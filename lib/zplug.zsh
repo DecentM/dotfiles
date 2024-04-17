@@ -22,8 +22,6 @@ zplug romkatv/powerlevel10k, as:theme, depth:1
 zplug "hlissner/zsh-autopair", defer:2
 zplug zsh-users/zsh-autosuggestions
 #zplug "djui/alias-tips"
-#zplug "lukechilds/zsh-nvm"
-#zplug tomsquest/nvm-auto-use.zsh
 zplug "zimfw/asdf"
 zplug wintermi/zsh-gcloud
 zplug "supercrabtree/k"
@@ -41,7 +39,6 @@ zplug se-jaeger/zsh-activate-py-environment
 
 # Colours
 zplug zuxfoucault/colored-man-pages_mod
-#zplug fdellwing/zsh-bat
 zplug Freed-Wu/zsh-colorize-functions
 zplug "zpm-zsh/colorize"
 zplug Freed-Wu/zsh-help

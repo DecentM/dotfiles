@@ -12,5 +12,17 @@ add_plugins() {
 
 add_plugins || true
 
-# Make autoswitch use .nvmrc too
-echo "legacy_version_file = yes" >"$HOME/.asdfrc"
+# Read the existing contents of .asdfrc
+existing_asdfrc=$(cat "$HOME/.asdfrc")
+
+# Append the new configuration to the existing contents
+new_asdfrc="
+legacy_version_file = yes
+always_keep_download = no
+"
+
+# Deduplicate by the part before " = "
+updated_asdfrc=$(echo "$new_asdfrc$existing_asdfrc" | awk -F " = " '!seen[$1]++')
+
+# Write the updated .asdfrc back to the file
+echo "$updated_asdfrc" >"$HOME/.asdfrc"
