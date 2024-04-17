@@ -21,7 +21,7 @@ fi
 
 if [ $NEED_PULL -eq 1 ]; then
     clear
-    builtin read "REPLY?[DecentM/dotfiles] Your branch is behind its origin. Do you want to pull the latest changes? [y/N] "
+    read "REPLY?[DecentM/dotfiles] Your branch is behind its origin. Do you want to pull the latest changes? [y/N] "
 
     if [ "$REPLY" = "y" ] || [ "$REPLY" = "Y" ]; then
         git stash save -u >/dev/null
