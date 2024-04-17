@@ -1,15 +1,22 @@
 #!/bin/false
 # shellcheck shell=sh
 
-if [[ ! -e "$HOME/.zplug" ]]; then
-  curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
-  builtin exit
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-builtin source "$HOME/.zplug/init.zsh"
+if [[ ! -e "$HOME/.zplug" ]]; then
+  curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
+  exit
+fi
 
-builtin export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
-builtin export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
+source "$HOME/.zplug/init.zsh"
+
+export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
 
 zplug romkatv/powerlevel10k, as:theme, depth:1
 zplug "hlissner/zsh-autopair", defer:2
@@ -42,13 +49,6 @@ zplug Freed-Wu/zsh-help
 # Install plugins if there are plugins that have not been installed
 if ! zplug check; then
   zplug install
-fi
-
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  builtin source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
 # Then, source plugins and add commands to $PATH
