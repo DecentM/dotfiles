@@ -6,5 +6,3 @@ ssh-add ~/.ssh/id_* >/dev/null
 export SSH_AGENT_SOCK=$SSH_AUTH_SOCK
 
 BASEDIR=$(dirname $(realpath "$0"))
-
-[[ ! -e $BASEDIR/lib/konsave.zsh ]] || builtin source "$BASEDIR/lib/konsave.zsh" || true
