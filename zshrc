@@ -13,9 +13,9 @@ export PATH
 
 BASEDIR=$(dirname $(realpath "$0"))
 
-[[ ! -e $BASEDIR/lib/zplug.zsh ]] || builtin source "$BASEDIR/lib/zplug.zsh"
-[[ ! -e $BASEDIR/lib/asdf.zsh ]] || builtin source "$BASEDIR/lib/asdf.zsh"
-[[ ! -e $BASEDIR/lib/p10k.zsh ]] || builtin source "$BASEDIR/lib/p10k.zsh"
-[[ ! -e $BASEDIR/lib/aliases.zsh ]] || builtin source "$BASEDIR/lib/aliases.zsh"
-[[ ! -e $BASEDIR/lib/bindkeys.zsh ]] || builtin source "$BASEDIR/lib/bindkeys.zsh"
-[[ ! -e $BASEDIR/lib/autoupdate.zsh ]] || builtin source "$BASEDIR/lib/autoupdate.zsh"
+[[ ! -e $BASEDIR/lib/zplug.zsh ]] || source "$BASEDIR/lib/zplug.zsh"
+[[ ! -e $BASEDIR/lib/asdf.zsh ]] || source "$BASEDIR/lib/asdf.zsh"
+[[ ! -e $BASEDIR/lib/p10k.zsh ]] || source "$BASEDIR/lib/p10k.zsh"
+[[ ! -e $BASEDIR/lib/aliases.zsh ]] || source "$BASEDIR/lib/aliases.zsh"
+[[ ! -e $BASEDIR/lib/bindkeys.zsh ]] || source "$BASEDIR/lib/bindkeys.zsh"
+[[ ! -e $BASEDIR/lib/autoupdate.zsh ]] || source "$BASEDIR/lib/autoupdate.zsh"

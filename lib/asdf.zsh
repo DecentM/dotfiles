@@ -12,12 +12,5 @@ add_plugins() {
 
 add_plugins || true
 
-update_asdf() {
-    asdf update >/dev/null
-    asdf plugin update --all >/dev/null
-}
-
-update_asdf &
-
 # Make autoswitch use .nvmrc
 echo "legacy_version_file = yes" >"$HOME/.asdfrc"

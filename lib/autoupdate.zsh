@@ -1,8 +1,7 @@
 #!/bin/false
 # shellcheck shell=sh
 
-LIBDIR=$(dirname $(realpath "$0"))
-builtin cd "$LIBDIR/.."
+cd "$BASEDIR"
 
 NEED_PULL=0
 
@@ -29,10 +28,10 @@ if [ $NEED_PULL -eq 1 ]; then
         git reset --hard origin/$(git rev-parse --abbrev-ref HEAD) >/dev/null
         git stash pop >/dev/null
 
-        resource
-
         echo "[DecentM/dotfiles] Update complete"
+
+        resource
     fi
 fi
 
-builtin cd - >/dev/null
+cd - >/dev/null
