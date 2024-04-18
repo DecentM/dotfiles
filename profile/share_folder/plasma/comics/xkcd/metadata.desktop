@@ -1,0 +1,22 @@
+[Desktop Entry]
+Name=XKCD
+Name[sr]=ИксКЦД
+Name[x-test]=xxXKCDxx
+Comment=XKCD
+Comment[nl]=XKCD-strip
+Comment[sr]=Стрип „ИксКЦД“
+Comment[sr@latin]=Strip „XKCD“
+Comment[x-test]=xxXKCDxx
+Type=Service
+X-KDE-ServiceTypes=Plasma/Comic
+Icon=icon.png
+
+X-KDE-Library=plasma_comic_krossprovider
+X-KDE-PluginInfo-Author=Tobias Koenig
+X-KDE-PluginInfo-Email=tokoe@kde.org
+X-KDE-PluginInfo-Name=xkcd
+X-KDE-PluginInfo-Version=2.0
+X-KDE-PluginInfo-License=GPLv2
+X-KDE-PluginInfo-EnabledByDefault=true
+X-KDE-PlasmaComicProvider-SuffixType=Number
+

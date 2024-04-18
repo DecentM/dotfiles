@@ -1,7 +1,7 @@
 #!/bin/false
 # shellcheck shell=sh
 
-cd "$BASEDIR"
+cd "$DOTFILES_BASEDIR"
 
 NEED_PULL=0
 
@@ -14,9 +14,9 @@ if [ $LOCAL = $REMOTE ]; then
 elif [ $LOCAL = $BASE ]; then
     NEED_PULL=1
 elif [ $REMOTE = $BASE ]; then
-    echo "[DecentM/dotfiles] Your branch is ahead of its origin. Please cd to $BASEDIR and run 'git push'." >&2
+    echo "[DecentM/dotfiles] Your branch is ahead of its origin. Please cd to $DOTFILES_BASEDIR and run 'git push'." >&2
 else
-    echo "[DecentM/dotfiles] Your branch has diverged from its origin. Please cd to $BASEDIR and resolve the conflict." >&2
+    echo "[DecentM/dotfiles] Your branch has diverged from its origin. Please cd to $DOTFILES_BASEDIR and resolve the conflict." >&2
 fi
 
 if [ $NEED_PULL -eq 1 ]; then
@@ -33,7 +33,7 @@ if [ $NEED_PULL -eq 1 ]; then
             git add . 2>/dev/null >/dev/null
             git stash save -u "Conflicts saved by autoupdate.zsh" -q 2>/dev/null >/dev/null
 
-            echo "[DecentM/dotfiles] Conflict detected during update, and the conflict has been saved. Please cd to $BASEDIR and resolve the conflict from the stash." >&2
+            echo "[DecentM/dotfiles] Conflict detected during update, and the conflict has been saved. Please cd to $DOTFILES_BASEDIR and resolve the conflict from the stash." >&2
         fi
 
         echo "[DecentM/dotfiles] Update complete, will take effect after shell restart"

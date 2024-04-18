@@ -11,11 +11,11 @@ setopt LOCAL_OPTIONS NO_NOTIFY NO_MONITOR
 path+=("$HOME/bin")
 export PATH
 
-BASEDIR=$(dirname $(realpath "$0"))
+DOTFILES_BASEDIR=$(dirname $(realpath "$0"))
 
-[[ ! -e $BASEDIR/lib/aliases.zsh ]] || source "$BASEDIR/lib/aliases.zsh"
-[[ ! -e $BASEDIR/lib/autoupdate.zsh ]] || source "$BASEDIR/lib/autoupdate.zsh"
-[[ ! -e $BASEDIR/lib/zplug.zsh ]] || source "$BASEDIR/lib/zplug.zsh"
-[[ ! -e $BASEDIR/lib/bindkeys.zsh ]] || source "$BASEDIR/lib/bindkeys.zsh"
-[[ ! -e $BASEDIR/lib/asdf.zsh ]] || source "$BASEDIR/lib/asdf.zsh"
-[[ ! -e $BASEDIR/lib/p10k.zsh ]] || source "$BASEDIR/lib/p10k.zsh"
+[[ ! -e $DOTFILES_BASEDIR/lib/aliases.zsh ]] || source "$DOTFILES_BASEDIR/lib/aliases.zsh"
+[[ ! -e $DOTFILES_BASEDIR/lib/autoupdate.zsh ]] || source "$DOTFILES_BASEDIR/lib/autoupdate.zsh"
+[[ ! -e $DOTFILES_BASEDIR/lib/zplug.zsh ]] || source "$DOTFILES_BASEDIR/lib/zplug.zsh"
+[[ ! -e $DOTFILES_BASEDIR/lib/bindkeys.zsh ]] || source "$DOTFILES_BASEDIR/lib/bindkeys.zsh"
+[[ ! -e $DOTFILES_BASEDIR/lib/asdf.zsh ]] || source "$DOTFILES_BASEDIR/lib/asdf.zsh"
+[[ ! -e $DOTFILES_BASEDIR/lib/p10k.zsh ]] || source "$DOTFILES_BASEDIR/lib/p10k.zsh"

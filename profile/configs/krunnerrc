@@ -1,0 +1,15 @@
+[PlasmaRunnerManager]
+migrated=true
+
+[Plugins]
+DictionaryEnabled=false
+PIM Contacts Search RunnerEnabled=false
+baloosearchEnabled=false
+bookmarksEnabled=false
+browserhistoryEnabled=false
+desktopsessionsEnabled=false
+krunner_spellcheckEnabled=false
+org.kde.windowedwidgetsEnabled=false
+org.kde.zanshinEnabled=false
+shellEnabled=false
+webshortcutsEnabled=false

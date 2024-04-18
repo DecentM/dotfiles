@@ -5,4 +5,4 @@ eval "$(ssh-agent -s)" >/dev/null
 ssh-add ~/.ssh/id_* >/dev/null
 export SSH_AGENT_SOCK=$SSH_AUTH_SOCK
 
-BASEDIR=$(dirname $(realpath "$0"))
+DOTFILES_BASEDIR=$(dirname $(realpath "$0"))

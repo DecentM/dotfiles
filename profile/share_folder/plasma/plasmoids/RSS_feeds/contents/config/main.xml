@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+	  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	  xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+	  http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
+	<kcfgfile name=""/>
+
+	<group name="General">
+		<entry name="url" type="String">
+			<default>https://dot.kde.org/rss.xml</default>
+		</entry>
+		<entry name="refresh" type="Int">
+			<default>60</default>
+		</entry>
+		<entry name="headerColor" type="String">
+			<default>#0f3f7f</default>
+		</entry>
+		<entry name="thumbnailSize" type="Int">
+			<default>32</default>
+		</entry>
+		<entry name="thumbnailRound" type="Bool">
+			<default>true</default>
+		</entry>
+		<entry name="thumbnails" type="Bool">
+			<default>true</default>
+		</entry>
+	</group>
+		
+</kcfg>
