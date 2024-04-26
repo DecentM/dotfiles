@@ -230,6 +230,7 @@ DialogWidth=823
 [Containments][34][Applets][50][Configuration][General]
 containmentType=Plasma
 filterActivityInfo=false
+filterByScreen=true
 showIcon=false
 style=Title
 
@@ -272,6 +273,10 @@ plugin=org.kxn.cornerMenu
 [Containments][34][Applets][63][Configuration]
 PreloadWeight=100
 
+[Containments][34][Applets][63][Configuration][ConfigDialog]
+DialogHeight=510
+DialogWidth=680
+
 [Containments][34][Applets][64]
 immutability=1
 plugin=org.kde.activeWindowControl
@@ -299,9 +304,12 @@ showWindowIcon=false
 showWindowTitle=false
 slidingIconAndText=true
 
+[Containments][34][Applets][64][Configuration][Behaviour]
+showForCurrentScreenOnly=true
+
 [Containments][34][Applets][64][Configuration][ConfigDialog]
-DialogHeight=1408
-DialogWidth=2560
+DialogHeight=904
+DialogWidth=1706
 
 [Containments][34][Applets][9]
 immutability=1
@@ -343,6 +351,8 @@ Image=/home/decentm/.local/share/wallpapers/WhiteSur/
 SlidePaths=/home/decentm/.local/share/wallpapers/,/usr/share/wallpapers/
 
 [Containments][61]
+ItemGeometries-2560x1440=
+ItemGeometriesHorizontal=
 activityId=5342c4d8-fcdb-41ce-8e20-54966252b8f1
 formfactor=0
 immutability=1
@@ -358,9 +368,82 @@ DialogWidth=680
 [Containments][61][General]
 ToolBoxButtonState=topcenter
 ToolBoxButtonX=760
+ToolBoxButtonY=27
 
 [Containments][61][Wallpaper][org.kde.image][General]
 SlidePaths=/home/decentm/.local/share/wallpapers/,/usr/share/wallpapers/
+
+[Containments][65]
+activityId=
+formfactor=2
+immutability=1
+lastScreen=1
+location=3
+plugin=org.kde.panel
+wallpaperplugin=org.kde.image
+
+[Containments][65][Applets][67]
+immutability=1
+plugin=org.kde.activeWindowControl
+
+[Containments][65][Applets][67][Configuration][Appearance]
+buttonOrder=close|minimize|maximize|alldesktops
+buttonSize=0.8
+buttonsDynamicWidth=true
+buttonsStandalone=true
+buttonsVerticalCenter=true
+controlButtonsSpacing=9
+customAuroraeThemePath=/home/decentm/.dotfiles/profile/share_folder/aurorae/themes/WhiteSur
+doNotHideControlButtons=true
+horizontalScreenWidthPercent=0.032
+showButtonOnlyWhenMaximized=true
+showMaximize=true
+showMinimize=true
+showWindowIcon=false
+showWindowTitle=false
+slidingIconAndText=true
+
+[Containments][65][Applets][67][Configuration][Behaviour]
+showForCurrentScreenOnly=true
+
+[Containments][65][Applets][67][Configuration][ConfigDialog]
+DialogHeight=921
+DialogWidth=1711
+
+[Containments][65][Applets][68]
+immutability=1
+plugin=org.kxn.cornerMenu
+
+[Containments][65][Applets][69]
+immutability=1
+plugin=org.kde.windowtitle
+
+[Containments][65][Applets][69][Configuration][ConfigDialog]
+DialogHeight=510
+DialogWidth=680
+
+[Containments][65][Applets][69][Configuration][General]
+containmentType=Plasma
+filterActivityInfo=false
+filterByScreen=true
+iconFillThickness=false
+showIcon=false
+style=Title
+
+[Containments][65][Applets][70]
+immutability=1
+plugin=org.kde.plasma.appmenu
+
+[Containments][65][Applets][70][Configuration][ConfigDialog]
+DialogHeight=510
+DialogWidth=680
+
+[Containments][65][ConfigDialog]
+DialogHeight=74
+DialogWidth=2560
+
+[Containments][65][General]
+AppletOrder=68;67;69;70
 
 [Containments34Appletsts][21][Configuration][Appearance]
 dateDisplayFormat=BesideTime
