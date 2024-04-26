@@ -122,7 +122,7 @@ stage {
 }
 
 #menu-search-entry, .notification StEntry, .menu #notification StEntry, .popup-menu #notification StEntry, #notification StEntry {
-  padding: 7px;
+  padding: 6px;
   caret-size: 1px;
   selection-background-color: #5271ad;
   selected-color: white;
@@ -1005,15 +1005,21 @@ StScrollBar StButton#vhandle:active, StScrollBar StButton#hhandle:active {
 }
 
 .calendar-event-button {
-  margin: 6px 0 6px 0;
+  margin: 6px 0;
   border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .calendar-event-button:hover {
-  background-gradient-direction: vertical;
-  background-gradient-start: rgba(255, 255, 255, 0.05);
-  background-gradient-end: rgba(255, 255, 255, 0.05);
+  background-gradient-direction: none;
   box-shadow: none;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.calendar-event-button:active {
+  background-gradient-direction: none;
+  box-shadow: none;
+  background-color: rgba(255, 255, 255, 0.16);
 }
 
 .calendar-event-color-strip {
@@ -1634,8 +1640,8 @@ StScrollBar StButton#vhandle:active, StScrollBar StButton#hhandle:active {
 }
 
 #menu-search-entry {
-  width: 250px;
-  height: 15px;
+  min-width: 250px;
+  min-height: 16px;
   font-weight: normal;
   caret-color: #d9dce3;
 }

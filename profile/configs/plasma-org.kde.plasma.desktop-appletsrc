@@ -21,7 +21,7 @@ immutability=1
 plugin=org.kde.plasma.notifications
 
 [Containments][10][Applets][11][Configuration]
-PreloadWeight=42
+PreloadWeight=97
 
 [Containments][10][Applets][12]
 immutability=1
@@ -61,7 +61,7 @@ immutability=1
 plugin=org.kde.plasma.clipboard
 
 [Containments][10][Applets][15][Configuration]
-PreloadWeight=46
+PreloadWeight=61
 
 [Containments][10][Applets][16]
 immutability=1
@@ -93,7 +93,7 @@ immutability=1
 plugin=org.kde.plasma.manage-inputmethod
 
 [Containments][10][Applets][19][Configuration]
-PreloadWeight=40
+PreloadWeight=45
 
 [Containments][10][Applets][20]
 immutability=1
@@ -164,7 +164,7 @@ DialogWidth=880
 
 [Containments][3][Applets][5][Configuration][General]
 iconSpacing=3
-launchers=applications:org.kde.konsole.desktop,preferred://filemanager,applications:floorp.desktop,applications:code.desktop,file:///usr/share/applications/discord.desktop,applications:audiorelay.desktop,applications:signal-desktop.desktop,applications:systemsettings.desktop,applications:joplin.desktop,applications:org.kde.kmail2.desktop
+launchers=applications:org.kde.konsole.desktop,preferred://filemanager,applications:floorp.desktop,applications:code.desktop,file:///usr/share/applications/discord.desktop,applications:slack.desktop,applications:audiorelay.desktop,applications:signal-desktop.desktop,applications:systemsettings.desktop,applications:joplin.desktop,applications:org.kde.kmail2.desktop
 
 [Containments][3][ConfigDialog]
 DialogHeight=74
@@ -215,19 +215,6 @@ plugin=org.kde.plasma.appmenu
 DialogHeight=510
 DialogWidth=680
 
-[Containments][34][Applets][39]
-immutability=1
-plugin=org.kde.plasma.kickerdash
-
-[Containments][34][Applets][39][Configuration][ConfigDialog]
-DialogHeight=510
-DialogWidth=680
-
-[Containments][34][Applets][39][Configuration][General]
-customButtonImage=manjaro-settings-manager
-favoritesPortedToKAstats=true
-useCustomButtonImage=true
-
 [Containments][34][Applets][46]
 immutability=1
 plugin=org.kde.plasma.panelspacer
@@ -266,7 +253,7 @@ immutability=1
 plugin=org.kde.plasma.bigSur-inlineBattery
 
 [Containments][34][Applets][55][Configuration]
-PreloadWeight=60
+PreloadWeight=75
 
 [Containments][34][Applets][55][Configuration][ConfigDialog]
 DialogHeight=510
@@ -276,6 +263,13 @@ DialogWidth=680
 fontSize=14
 iconHeight=13
 padding=6
+
+[Containments][34][Applets][63]
+immutability=1
+plugin=org.kxn.cornerMenu
+
+[Containments][34][Applets][63][Configuration]
+PreloadWeight=100
 
 [Containments][34][Applets][9]
 immutability=1
@@ -287,10 +281,10 @@ SystrayContainmentId=10
 
 [Containments][34][ConfigDialog]
 DialogHeight=74
-DialogWidth=1920
+DialogWidth=2560
 
 [Containments][34][General]
-AppletOrder=39;50;35;46;9;54;55;21
+AppletOrder=63;50;35;46;9;54;55;21
 
 [Containments][60]
 ItemGeometries-2560x1440=
@@ -306,6 +300,11 @@ wallpaperplugin=org.kde.image
 [Containments][60][ConfigDialog]
 DialogHeight=510
 DialogWidth=680
+
+[Containments][60][General]
+ToolBoxButtonState=topcenter
+ToolBoxButtonX=760
+ToolBoxButtonY=32
 
 [Containments][60][Wallpaper][org.kde.image][General]
 Image=/home/decentm/.local/share/wallpapers/WhiteSur/
@@ -323,6 +322,10 @@ wallpaperplugin=org.kde.image
 [Containments][61][ConfigDialog]
 DialogHeight=510
 DialogWidth=680
+
+[Containments][61][General]
+ToolBoxButtonState=topcenter
+ToolBoxButtonX=760
 
 [Containments][61][Wallpaper][org.kde.image][General]
 SlidePaths=/home/decentm/.local/share/wallpapers/,/usr/share/wallpapers/

@@ -1,5 +1,5 @@
 [Background]
-Color=17,17,17
+Color=0,0,0
 
 [BackgroundFaint]
 Color=0,0,0
@@ -94,7 +94,7 @@ Blur=true
 ColorRandomization=false
 Description=Modus Vivendi
 FillStyle=Tile
-Opacity=0.74
+Opacity=0.67
 Wallpaper=
 WallpaperFlipType=NoFlip
 WallpaperOpacity=1

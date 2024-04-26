@@ -1,15 +1,19 @@
+[General]
+FreeFloating=true
+
 [PlasmaRunnerManager]
 migrated=true
 
 [Plugins]
-DictionaryEnabled=false
-PIM Contacts Search RunnerEnabled=false
+DictionaryEnabled=true
+PIM Contacts Search RunnerEnabled=true
 baloosearchEnabled=false
-bookmarksEnabled=false
-browserhistoryEnabled=false
-desktopsessionsEnabled=false
-krunner_spellcheckEnabled=false
+bookmarksEnabled=true
+browserhistoryEnabled=true
+desktopsessionsEnabled=true
+konsoleprofilesEnabled=false
+krunner_spellcheckEnabled=true
 org.kde.windowedwidgetsEnabled=false
 org.kde.zanshinEnabled=false
-shellEnabled=false
+shellEnabled=true
 webshortcutsEnabled=false

@@ -1,0 +1,17 @@
+[Desktop Entry]
+Name=Corner Menu
+Comment=Displays a list of leave options for system
+
+Type=Service
+Icon=start-here-kde
+X-KDE-ServiceTypes=Plasma/Applet
+
+X-Plasma-API=declarativeappletscript
+X-Plasma-MainScript=ui/main.qml
+
+X-KDE-PluginInfo-Author=Arsh Bangar
+X-KDE-PluginInfo-Email=arsh.kxn@gmail.com
+X-KDE-PluginInfo-Name=org.kxn.cornerMenu
+X-KDE-PluginInfo-Version=1
+X-KDE-PluginInfo-Website=nowebsite.com
+X-KDE-PluginInfo-Category=Application Launcher
