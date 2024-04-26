@@ -21,7 +21,7 @@ immutability=1
 plugin=org.kde.plasma.notifications
 
 [Containments][10][Applets][11][Configuration]
-PreloadWeight=97
+PreloadWeight=100
 
 [Containments][10][Applets][12]
 immutability=1
@@ -229,6 +229,7 @@ DialogWidth=823
 
 [Containments][34][Applets][50][Configuration][General]
 containmentType=Plasma
+filterActivityInfo=false
 showIcon=false
 style=Title
 
@@ -271,6 +272,37 @@ plugin=org.kxn.cornerMenu
 [Containments][34][Applets][63][Configuration]
 PreloadWeight=100
 
+[Containments][34][Applets][64]
+immutability=1
+plugin=org.kde.activeWindowControl
+
+[Containments][34][Applets][64][Configuration][AppMenu]
+appmenuBoldTitleWhenMenuDisplayed=true
+appmenuFillHeight=true
+appmenuNextToButtons=true
+
+[Containments][34][Applets][64][Configuration][Appearance]
+buttonOrder=close|minimize|maximize|alldesktops
+buttonSize=0.8
+buttonsDynamicWidth=true
+buttonsStandalone=true
+buttonsVerticalCenter=true
+controlButtonsSpacing=9
+customAuroraeThemePath=/home/decentm/.dotfiles/profile/share_folder/aurorae/themes/WhiteSur
+doNotHideControlButtons=true
+horizontalScreenWidthPercent=0.033
+noWindowText=
+showButtonOnlyWhenMaximized=true
+showMaximize=true
+showMinimize=true
+showWindowIcon=false
+showWindowTitle=false
+slidingIconAndText=true
+
+[Containments][34][Applets][64][Configuration][ConfigDialog]
+DialogHeight=1408
+DialogWidth=2560
+
 [Containments][34][Applets][9]
 immutability=1
 plugin=org.kde.plasma.systemtray
@@ -284,7 +316,7 @@ DialogHeight=74
 DialogWidth=2560
 
 [Containments][34][General]
-AppletOrder=63;50;35;46;9;54;55;21
+AppletOrder=63;64;50;35;46;9;54;55;21
 
 [Containments][60]
 ItemGeometries-2560x1440=

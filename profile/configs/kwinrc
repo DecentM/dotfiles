@@ -64,6 +64,9 @@ tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"wi
 [Tiling][9fcdffd2-8b6e-5671-ad92-534c5c3b987a]
 tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
 
+[Windows]
+BorderlessMaximizedWindows=true
+
 [org.kde.kdecoration2]
 BorderSize=None
 BorderSizeAuto=false
