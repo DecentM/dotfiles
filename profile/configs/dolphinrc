@@ -5,7 +5,7 @@ update_info=dolphin_detailsmodesettings.upd:rename-leading-padding,dolphin_detai
 PreviewSize=32
 
 [DetailsMode]
-PreviewSize=16
+PreviewSize=22
 
 [ExtractDialog]
 2 screens: Height=740
@@ -25,7 +25,7 @@ detailViewIconSize=16
 
 [KPropertiesDialog]
 2 screens: Height=450
-2 screens: Width=394
+2 screens: Width=392
 DP-0 DP-2 Height 2560x1440=640
 DP-0 DP-2 Width 2560x1440=501
 DP-2 DP-0 Height 2560x1440=640

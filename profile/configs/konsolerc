@@ -14,8 +14,8 @@ ShowWindowTitleOnTitleBar=true
 [MainWindow]
 2 screens: Height=917
 2 screens: Width=1688
-2 screens: XPosition=590
-2 screens: YPosition=258
+2 screens: XPosition=561
+2 screens: YPosition=252
 2560x1440 screen: Window-Maximized=true
 DP-0 DP-2 Height 2560x1440=586
 DP-0 DP-2 Width 2560x1440=1022

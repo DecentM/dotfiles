@@ -35,6 +35,7 @@ DialogHeight=660
 DialogWidth=880
 
 [Containments][10][Applets][12][Configuration][General]
+currentTab=streams
 migrated=true
 
 [Containments][10][Applets][13]
@@ -124,7 +125,7 @@ immutability=1
 plugin=org.kde.plasma.mediacontroller
 
 [Containments][10][Applets][27][Configuration]
-PreloadWeight=5
+PreloadWeight=0
 
 [Containments][10][Applets][53][Configuration]
 PreloadWeight=42
@@ -245,9 +246,10 @@ PreloadWeight=100
 darkTheme=WhiteSurDark
 isDarkTheme=true
 lightTheme=WhiteSur
+mainIconName=onboard-panel
 
 [Containments][34][Applets][54][Configuration][ConfigDialog]
-DialogHeight=510
+DialogHeight=677
 DialogWidth=680
 
 [Containments][34][Applets][55]
@@ -255,7 +257,7 @@ immutability=1
 plugin=org.kde.plasma.bigSur-inlineBattery
 
 [Containments][34][Applets][55][Configuration]
-PreloadWeight=75
+PreloadWeight=90
 
 [Containments][34][Applets][55][Configuration][ConfigDialog]
 DialogHeight=510
@@ -413,6 +415,9 @@ DialogWidth=1711
 [Containments][65][Applets][68]
 immutability=1
 plugin=org.kxn.cornerMenu
+
+[Containments][65][Applets][68][Configuration]
+PreloadWeight=70
 
 [Containments][65][Applets][69]
 immutability=1

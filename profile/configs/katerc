@@ -136,8 +136,8 @@ Replace History=\\0
 Search History=listeners,Dece,dece,glibc: ,exists in filesystem, exists in filesystem,735a1b9ad237c07bb49edb4b387bc8372051bc4dc0408d0a1e23590188b6619b,OneShot,.local, AU,AU
 
 [MainWindow]
-2 screens: Height=1164
-2 screens: Width=1643
+2 screens: Height=564
+2 screens: Width=809
 DP-0 DP-2 Window-Maximized 2560x1440=true
 DP-2 DP-0 Height 2560x1440=866
 DP-2 DP-0 Width 2560x1440=1249
