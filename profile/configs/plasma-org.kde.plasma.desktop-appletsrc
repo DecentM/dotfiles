@@ -7,10 +7,10 @@ RightButton;NoModifier=org.kde.contextmenu
 
 [Containments][10]
 activityId=
-formfactor=2
+formfactor=3
 immutability=1
 lastScreen=0
-location=3
+location=5
 plugin=org.kde.plasma.private.systemtray
 popupHeight=612
 popupWidth=528
@@ -62,7 +62,7 @@ immutability=1
 plugin=org.kde.plasma.clipboard
 
 [Containments][10][Applets][15][Configuration]
-PreloadWeight=61
+PreloadWeight=66
 
 [Containments][10][Applets][16]
 immutability=1
@@ -76,7 +76,7 @@ immutability=1
 plugin=org.kde.kdeconnect
 
 [Containments][10][Applets][17][Configuration]
-PreloadWeight=45
+PreloadWeight=55
 
 [Containments][10][Applets][18]
 immutability=1
@@ -94,7 +94,7 @@ immutability=1
 plugin=org.kde.plasma.manage-inputmethod
 
 [Containments][10][Applets][19][Configuration]
-PreloadWeight=45
+PreloadWeight=50
 
 [Containments][10][Applets][20]
 immutability=1
@@ -167,6 +167,20 @@ DialogWidth=880
 iconSpacing=3
 launchers=applications:org.kde.konsole.desktop,preferred://filemanager,applications:floorp.desktop,applications:code.desktop,file:///usr/share/applications/discord.desktop,applications:slack.desktop,applications:audiorelay.desktop,applications:signal-desktop.desktop,applications:systemsettings.desktop,applications:joplin.desktop,applications:org.kde.kmail2.desktop
 
+[Containments][3][Applets][71]
+immutability=1
+plugin=org.kde.plasma.colorpicker
+
+[Containments][3][Applets][71][Configuration]
+PreloadWeight=55
+
+[Containments][3][Applets][71][Configuration][General]
+history=#0dbd7a
+
+[Containments][3][Applets][72]
+immutability=1
+plugin=org.kde.plasma.marginsseparator
+
 [Containments][3][ConfigDialog]
 DialogHeight=74
 DialogWidth=2560
@@ -175,14 +189,14 @@ DialogWidth=2560
 PreloadWeight=0
 
 [Containments][3][General]
-AppletOrder=5
+AppletOrder=5;72;71
 
 [Containments][34]
 activityId=
-formfactor=2
+formfactor=3
 immutability=1
 lastScreen=0
-location=3
+location=5
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
@@ -203,37 +217,15 @@ enabledCalendarPlugins=/usr/lib/qt/plugins/plasmacalendarplugins/pimevents.so
 firstDayOfWeek=1
 fontFamily=SF Pro Display
 fontStyleName=Regular
+showDate=false
 
 [Containments][34][Applets][21][Configuration][ConfigDialog]
 DialogHeight=660
 DialogWidth=880
 
-[Containments][34][Applets][35]
-immutability=1
-plugin=org.kde.plasma.appmenu
-
-[Containments][34][Applets][35][Configuration][ConfigDialog]
-DialogHeight=510
-DialogWidth=680
-
 [Containments][34][Applets][46]
 immutability=1
 plugin=org.kde.plasma.panelspacer
-
-[Containments][34][Applets][50]
-immutability=1
-plugin=org.kde.windowtitle
-
-[Containments][34][Applets][50][Configuration][ConfigDialog]
-DialogHeight=510
-DialogWidth=823
-
-[Containments][34][Applets][50][Configuration][General]
-containmentType=Plasma
-filterActivityInfo=false
-filterByScreen=true
-showIcon=false
-style=Title
 
 [Containments][34][Applets][54]
 immutability=1
@@ -257,7 +249,7 @@ immutability=1
 plugin=org.kde.plasma.bigSur-inlineBattery
 
 [Containments][34][Applets][55][Configuration]
-PreloadWeight=90
+PreloadWeight=100
 
 [Containments][34][Applets][55][Configuration][ConfigDialog]
 DialogHeight=510
@@ -268,51 +260,6 @@ fontSize=14
 iconHeight=13
 padding=6
 
-[Containments][34][Applets][63]
-immutability=1
-plugin=org.kxn.cornerMenu
-
-[Containments][34][Applets][63][Configuration]
-PreloadWeight=100
-
-[Containments][34][Applets][63][Configuration][ConfigDialog]
-DialogHeight=510
-DialogWidth=680
-
-[Containments][34][Applets][64]
-immutability=1
-plugin=org.kde.activeWindowControl
-
-[Containments][34][Applets][64][Configuration][AppMenu]
-appmenuBoldTitleWhenMenuDisplayed=true
-appmenuFillHeight=true
-appmenuNextToButtons=true
-
-[Containments][34][Applets][64][Configuration][Appearance]
-buttonOrder=close|minimize|maximize|alldesktops
-buttonSize=0.8
-buttonsDynamicWidth=true
-buttonsStandalone=true
-buttonsVerticalCenter=true
-controlButtonsSpacing=9
-customAuroraeThemePath=/home/decentm/.dotfiles/profile/share_folder/aurorae/themes/WhiteSur
-doNotHideControlButtons=true
-horizontalScreenWidthPercent=0.033
-noWindowText=
-showButtonOnlyWhenMaximized=true
-showMaximize=true
-showMinimize=true
-showWindowIcon=false
-showWindowTitle=false
-slidingIconAndText=true
-
-[Containments][34][Applets][64][Configuration][Behaviour]
-showForCurrentScreenOnly=true
-
-[Containments][34][Applets][64][Configuration][ConfigDialog]
-DialogHeight=904
-DialogWidth=1706
-
 [Containments][34][Applets][9]
 immutability=1
 plugin=org.kde.plasma.systemtray
@@ -322,11 +269,11 @@ PreloadWeight=100
 SystrayContainmentId=10
 
 [Containments][34][ConfigDialog]
-DialogHeight=74
-DialogWidth=2560
+DialogHeight=1440
+DialogWidth=156
 
 [Containments][34][General]
-AppletOrder=63;64;50;35;46;9;54;55;21
+AppletOrder=46;9;54;55;21
 
 [Containments][60]
 ItemGeometries-2560x1440=
@@ -346,7 +293,6 @@ DialogWidth=680
 [Containments][60][General]
 ToolBoxButtonState=topcenter
 ToolBoxButtonX=760
-ToolBoxButtonY=32
 
 [Containments][60][Wallpaper][org.kde.image][General]
 Image=/home/decentm/.local/share/wallpapers/WhiteSur/
@@ -374,81 +320,6 @@ ToolBoxButtonY=27
 
 [Containments][61][Wallpaper][org.kde.image][General]
 SlidePaths=/home/decentm/.local/share/wallpapers/,/usr/share/wallpapers/
-
-[Containments][65]
-activityId=
-formfactor=2
-immutability=1
-lastScreen=1
-location=3
-plugin=org.kde.panel
-wallpaperplugin=org.kde.image
-
-[Containments][65][Applets][67]
-immutability=1
-plugin=org.kde.activeWindowControl
-
-[Containments][65][Applets][67][Configuration][Appearance]
-buttonOrder=close|minimize|maximize|alldesktops
-buttonSize=0.8
-buttonsDynamicWidth=true
-buttonsStandalone=true
-buttonsVerticalCenter=true
-controlButtonsSpacing=9
-customAuroraeThemePath=/home/decentm/.dotfiles/profile/share_folder/aurorae/themes/WhiteSur
-doNotHideControlButtons=true
-horizontalScreenWidthPercent=0.032
-showButtonOnlyWhenMaximized=true
-showMaximize=true
-showMinimize=true
-showWindowIcon=false
-showWindowTitle=false
-slidingIconAndText=true
-
-[Containments][65][Applets][67][Configuration][Behaviour]
-showForCurrentScreenOnly=true
-
-[Containments][65][Applets][67][Configuration][ConfigDialog]
-DialogHeight=921
-DialogWidth=1711
-
-[Containments][65][Applets][68]
-immutability=1
-plugin=org.kxn.cornerMenu
-
-[Containments][65][Applets][68][Configuration]
-PreloadWeight=70
-
-[Containments][65][Applets][69]
-immutability=1
-plugin=org.kde.windowtitle
-
-[Containments][65][Applets][69][Configuration][ConfigDialog]
-DialogHeight=510
-DialogWidth=680
-
-[Containments][65][Applets][69][Configuration][General]
-containmentType=Plasma
-filterActivityInfo=false
-filterByScreen=true
-iconFillThickness=false
-showIcon=false
-style=Title
-
-[Containments][65][Applets][70]
-immutability=1
-plugin=org.kde.plasma.appmenu
-
-[Containments][65][Applets][70][Configuration][ConfigDialog]
-DialogHeight=510
-DialogWidth=680
-
-[Containments][65][ConfigDialog]
-DialogHeight=74
-DialogWidth=2560
-
-[Containments][65][General]
-AppletOrder=68;67;69;70
 
 [Containments34Appletsts][21][Configuration][Appearance]
 dateDisplayFormat=BesideTime
