@@ -12,6 +12,9 @@
 #
 #   for i in {0..255}; do print -Pn "%K{$i}  %k%F{$i}${(l:3::0:)i}%f " ${${(M)$((i%6)):#3}:+$'\n'}; done
 
+export POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
+
 # Temporarily change options.
 'builtin' 'local' '-a' 'p10k_config_opts'
 [[ ! -o 'aliases'         ]] || p10k_config_opts+=('aliases')
@@ -127,33 +130,34 @@
   # change them.
   typeset -g POWERLEVEL9K_BACKGROUND=                            # transparent background
   typeset -g POWERLEVEL9K_{LEFT,RIGHT}_{LEFT,RIGHT}_WHITESPACE=''  # no surrounding whitespace
-  typeset -g POWERLEVEL9K_LEFT_SUBSEGMENT_SEPARATOR='\ue0b4 '  # separate segments with a space
-  typeset -g POWERLEVEL9K_RIGHT_SUBSEGMENT_SEPARATOR=' \ue0b6'  # separate segments with a space
-  typeset -g POWERLEVEL9K_LEFT_SEGMENT_SEPARATOR='\ue0b4 '        # no end-of-line symbol
-  typeset -g POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=' \ue0b6'        # no end-of-line symbol
+  typeset -g POWERLEVEL9K_LEFT_SUBSEGMENT_SEPARATOR='\ue0b5 '  # separate segments with this
+  typeset -g POWERLEVEL9K_RIGHT_SUBSEGMENT_SEPARATOR=' \ue0b7'  # separate segments with this
+  typeset -g POWERLEVEL9K_LEFT_SEGMENT_SEPARATOR='\ue0b5 '        # end-of-line symbol
+  typeset -g POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=' \ue0b70'        # end-of-line symbol
 
   typeset -g POWERLEVEL9K_OS_ICON_BACKGROUND=055
-  typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=255
+  typeset -g POWERLEVEL9K_OS_ICON_LEFT_SUBSEGMENT_SEPARATOR='\ue0b4'
+  # typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=255
 
-  typeset -g POWERLEVEL9K_DIR_BACKGROUND=039
-  typeset -g POWERLEVEL9K_DIR_FOREGROUND=000
+  # typeset -g POWERLEVEL9K_DIR_BACKGROUND=000
+  typeset -g POWERLEVEL9K_DIR_FOREGROUND=039
 
   typeset -g POWERLEVEL9K_PACKAGE_PREFIX='%f'
-  typeset -g POWERLEVEL9K_PACKAGE_BACKGROUND=255
-  typeset -g POWERLEVEL9K_PACKAGE_FOREGROUND=000
+  # typeset -g POWERLEVEL9K_PACKAGE_BACKGROUND=255
+  typeset -g POWERLEVEL9K_PACKAGE_FOREGROUND=255
 
-  typeset -g POWERLEVEL9K_VCS_BACKGROUND=234
+  typeset -g POWERLEVEL9K_VCS_FOREGROUND=234
 
-  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_BACKGROUND=227
-  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND=000
+  # typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_BACKGROUND=227
+  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND=227
 
-  typeset -g POWERLEVEL9K_TIME_BACKGROUND=227
-  typeset -g POWERLEVEL9K_TIME_FOREGROUND=000
+  # typeset -g POWERLEVEL9K_TIME_BACKGROUND=227
+  typeset -g POWERLEVEL9K_TIME_FOREGROUND=227
 
-  typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=039
-  typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=000
+  # typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=039
+  typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=039
 
-  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_BACKGROUND=234
+  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_FOREGROUND=234
 
   # When set to true, icons appear before content on both sides of the prompt. When set
   # to false, icons go after content. If empty or not set, icons go before content in the left
@@ -172,11 +176,11 @@
   typeset -g POWERLEVEL9K_PROMPT_ADD_NEWLINE=true
 
   # Connect left prompt lines with these symbols.
-  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX='%F{055}\ue0b6'
+  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX='%F{055}\ue0b7'
   typeset -g POWERLEVEL9K_MULTILINE_NEWLINE_PROMPT_PREFIX=
   typeset -g POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX=
   # Connect right prompt lines with these symbols.
-  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_SUFFIX='%F{227}\ue0b4'
+  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_SUFFIX='%F{227}\ue0b5'
   typeset -g POWERLEVEL9K_MULTILINE_NEWLINE_PROMPT_SUFFIX=
   typeset -g POWERLEVEL9K_MULTILINE_LAST_PROMPT_SUFFIX=
 
