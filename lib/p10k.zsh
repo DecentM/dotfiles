@@ -50,13 +50,12 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
     # status                  # exit code of the last command
-    command_execution_time  # duration of the last command
     background_jobs         # presence of background jobs
-    # direnv                  # direnv status (https://direnv.net/)
     asdf                    # asdf version manager (https://github.com/asdf-vm/asdf)
-    virtualenv              # python virtual environment (https://docs.python.org/3/library/venv.html)
-    anaconda                # conda environment (https://conda.io/)
-    pyenv                   # python environment (https://github.com/pyenv/pyenv)
+    # direnv                  # direnv status (https://direnv.net/)
+    # virtualenv              # python virtual environment (https://docs.python.org/3/library/venv.html)
+    # anaconda                # conda environment (https://conda.io/)
+    # pyenv                   # python environment (https://github.com/pyenv/pyenv)
     # goenv                   # go environment (https://github.com/syndbg/goenv)
     # nodenv                  # node.js version from nodenv (https://github.com/nodenv/nodenv)
     # nvm                     # node.js version from nvm (https://github.com/nvm-sh/nvm)
@@ -65,7 +64,7 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
     # go_version            # go version (https://golang.org)
     # rust_version          # rustc version (https://www.rust-lang.org)
     # dotnet_version        # .NET version (https://dotnet.microsoft.com)
-    php_version           # php version (https://www.php.net/)
+    # php_version           # php version (https://www.php.net/)
     # laravel_version       # laravel php framework version (https://laravel.com/)
     # java_version          # java version (https://www.java.com/)
     package               # name@version from package.json (https://docs.npmjs.com/files/package.json)
@@ -76,7 +75,7 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
     # jenv                    # java version from jenv (https://github.com/jenv/jenv)
     # plenv                   # perl version from plenv (https://github.com/tokuhirom/plenv)
     # perlbrew                # perl version from perlbrew (https://github.com/gugod/App-perlbrew)
-    phpenv                  # php version from phpenv (https://github.com/phpenv/phpenv)
+    # phpenv                  # php version from phpenv (https://github.com/phpenv/phpenv)
     # scalaenv                # scala version from scalaenv (https://github.com/scalaenv/scalaenv)
     # haskell_stack           # haskell version from stack (https://haskellstack.org/)
     kubecontext             # current kubernetes context (https://kubernetes.io/)
@@ -107,16 +106,17 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
     # todo                    # todo items (https://github.com/todotxt/todo.txt-cli)
     # timewarrior             # timewarrior tracking status (https://timewarrior.net/)
     # taskwarrior             # taskwarrior task count (https://taskwarrior.org/)
-    per_directory_history   # Oh My Zsh per-directory-history local/global indicator
+    # per_directory_history   # Oh My Zsh per-directory-history local/global indicator
     # cpu_arch              # CPU architecture
+    command_execution_time  # duration of the last command
     time                    # current time
     # =========================[ Line #2 ]=========================
     newline
     # ip                    # ip address and bandwidth usage for a specified network interface
     # public_ip             # public IP address
     # proxy                 # system-wide http/https/ftp proxy
-    # battery               # internal battery
-    # wifi                  # wifi speed
+    battery               # internal battery
+    wifi                  # wifi speed
     # example               # example user-defined segment (see prompt_example function below)
   )
 
@@ -130,34 +130,71 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   # change them.
   typeset -g POWERLEVEL9K_BACKGROUND=                            # transparent background
   typeset -g POWERLEVEL9K_{LEFT,RIGHT}_{LEFT,RIGHT}_WHITESPACE=''  # no surrounding whitespace
-  typeset -g POWERLEVEL9K_LEFT_SUBSEGMENT_SEPARATOR='\ue0b5 '  # separate segments with this
-  typeset -g POWERLEVEL9K_RIGHT_SUBSEGMENT_SEPARATOR=' \ue0b7'  # separate segments with this
-  typeset -g POWERLEVEL9K_LEFT_SEGMENT_SEPARATOR='\ue0b5 '        # end-of-line symbol
-  typeset -g POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=' \ue0b70'        # end-of-line symbol
+  typeset -g POWERLEVEL9K_LEFT_SUBSEGMENT_SEPARATOR='\ue0b4 '  # separate segments with this
+  typeset -g POWERLEVEL9K_RIGHT_SUBSEGMENT_SEPARATOR=' \ue0b6'  # separate segments with this
+  typeset -g POWERLEVEL9K_LEFT_SEGMENT_SEPARATOR='\ue0b4 '        # end-of-line symbol
+  typeset -g POWERLEVEL9K_RIGHT_SEGMENT_SEPARATOR=' \ue0b6'        # end-of-line symbol
+
+  # Colour definitions
+  PRIMARY=039 # Blue
+  SECONDARY=051 # Cyan
+  ACCENT=215 # Orange
+
+  RED=196
+  GREY=234
+  BLACK=016
+  WHITE=255
+
+  ###################
+  # TOP LINE - LEFT #
+  ###################
 
   typeset -g POWERLEVEL9K_OS_ICON_BACKGROUND=055
-  typeset -g POWERLEVEL9K_OS_ICON_LEFT_SUBSEGMENT_SEPARATOR='\ue0b4'
-  # typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=255
+  typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=255
 
-  # typeset -g POWERLEVEL9K_DIR_BACKGROUND=000
-  typeset -g POWERLEVEL9K_DIR_FOREGROUND=039
+  typeset -g POWERLEVEL9K_DIR_FOREGROUND=$GREY
+  typeset -g POWERLEVEL9K_DIR_BACKGROUND=$PRIMARY
 
-  typeset -g POWERLEVEL9K_PACKAGE_PREFIX='%f'
-  # typeset -g POWERLEVEL9K_PACKAGE_BACKGROUND=255
-  typeset -g POWERLEVEL9K_PACKAGE_FOREGROUND=255
+  typeset -g POWERLEVEL9K_VCS_PREFIX='%f'
+  typeset -g POWERLEVEL9K_VCS_VISUAL_IDENTIFIER_COLOR=$SECONDARY
+  typeset -g POWERLEVEL9K_VCS_LOADING_VISUAL_IDENTIFIER_COLOR=$ACCENT
 
-  typeset -g POWERLEVEL9K_VCS_FOREGROUND=234
+  typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=$SECONDARY
+  typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=$ACCENT
+  typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=$ACCENT
+  typeset -g POWERLEVEL9K_VCS_CONFLICTED_FOREGROUND=$RED
 
-  # typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_BACKGROUND=227
-  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND=227
+  typeset -g POWERLEVEL9K_VCS_BACKGROUND=$GREY
 
-  # typeset -g POWERLEVEL9K_TIME_BACKGROUND=227
-  typeset -g POWERLEVEL9K_TIME_FOREGROUND=227
+  ####################
+  # TOP LINE - RIGHT #
+  ####################
+
+  typeset -g POWERLEVEL9K_TIME_BACKGROUND=$ACCENT
+  typeset -g POWERLEVEL9K_TIME_FOREGROUND=$BLACK
+
+  # typeset -g POWERLEVEL9K_PACKAGE_PREFIX='%f'
+  typeset -g POWERLEVEL9K_PACKAGE_BACKGROUND=$PRIMARY
+  typeset -g POWERLEVEL9K_PACKAGE_FOREGROUND=$BLACK
+
+  # Default asdf color. Only used to display tools for which there is no color override (see below).
+  # Tip:  Override this parameter for ${TOOL} with POWERLEVEL9K_ASDF_${TOOL}_FOREGROUND.
+  typeset -g POWERLEVEL9K_ASDF_FOREGROUND=$BLACK
+  typeset -g POWERLEVEL9K_ASDF_BACKGROUND=$WHITE
+
+  # Node.js version from asdf.
+  typeset -g POWERLEVEL9K_ASDF_NODEJS_BACKGROUND=070
+  typeset -g POWERLEVEL9K_ASDF_PHP_BACKGROUND=099
+
+  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_BACKGROUND=$SECONDARY
+  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND=$BLACK
+
+  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_BACKGROUND=$GREY
+  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_FOREGROUND=$ACCENT
 
   # typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=039
-  typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=039
+  # typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=039
 
-  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_FOREGROUND=234
 
   # When set to true, icons appear before content on both sides of the prompt. When set
   # to false, icons go after content. If empty or not set, icons go before content in the left
@@ -176,11 +213,11 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   typeset -g POWERLEVEL9K_PROMPT_ADD_NEWLINE=true
 
   # Connect left prompt lines with these symbols.
-  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX='%F{055}\ue0b7'
+  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX="%${(g::)POWERLEVEL9K_OS_ICON_BACKGROUND}F\ue0b6"
   typeset -g POWERLEVEL9K_MULTILINE_NEWLINE_PROMPT_PREFIX=
   typeset -g POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX=
   # Connect right prompt lines with these symbols.
-  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_SUFFIX='%F{227}\ue0b5'
+  typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_SUFFIX="%${(g::)POWERLEVEL9K_TIME_BACKGROUND}F\ue0b4"
   typeset -g POWERLEVEL9K_MULTILINE_NEWLINE_PROMPT_SUFFIX=
   typeset -g POWERLEVEL9K_MULTILINE_LAST_PROMPT_SUFFIX=
 
@@ -243,17 +280,17 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
 
   ##################################[ dir: current directory ]##################################
   # Default current directory color.
-  typeset -g POWERLEVEL9K_DIR_FOREGROUND=31
+  # typeset -g POWERLEVEL9K_DIR_FOREGROUND=31
   # If directory is too long, shorten some of its segments to the shortest possible unique
   # prefix. The shortened directory can be tab-completed to the original.
   typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_to_unique
   # Replace removed segment suffixes with this symbol.
   typeset -g POWERLEVEL9K_SHORTEN_DELIMITER=
   # Color of the shortened directory segments.
-  typeset -g POWERLEVEL9K_DIR_SHORTENED_FOREGROUND=103
+  # typeset -g POWERLEVEL9K_DIR_SHORTENED_FOREGROUND=103
   # Color of the anchor directory segments. Anchor segments are never shortened. The first
   # segment is always an anchor.
-  typeset -g POWERLEVEL9K_DIR_ANCHOR_FOREGROUND=39
+  # typeset -g POWERLEVEL9K_DIR_ANCHOR_FOREGROUND=39
   # Display anchor directory segments in bold.
   typeset -g POWERLEVEL9K_DIR_ANCHOR_BOLD=true
   # Don't shorten directories that contain any of these files. They are anchors.
@@ -404,10 +441,10 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
     if (( $1 )); then
       # Styling for up-to-date Git status.
       local       meta='%f'     # default foreground
-      local      clean='%76F'   # green foreground
-      local   modified='%178F'  # yellow foreground
-      local  untracked='%39F'   # blue foreground
-      local conflicted='%196F'  # red foreground
+      local      clean="%${(g::)POWERLEVEL9K_VCS_CLEAN_FOREGROUND}F"   # green foreground
+      local   modified="%${(g::)POWERLEVEL9K_VCS_MODIFIED_FOREGROUND}F"  # yellow foreground
+      local  untracked="%${(g::)POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND}F"   # blue foreground
+      local conflicted="%${(g::)POWERLEVEL9K_VCS_CONFLICTED_FOREGROUND}F"  # red foreground
     else
       # Styling for incomplete and stale Git status.
       local       meta='%244F'  # grey foreground
@@ -520,24 +557,15 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   # Enable counters for staged, unstaged, etc.
   typeset -g POWERLEVEL9K_VCS_{STAGED,UNSTAGED,UNTRACKED,CONFLICTED,COMMITS_AHEAD,COMMITS_BEHIND}_MAX_NUM=-1
 
-  # Icon color.
-  typeset -g POWERLEVEL9K_VCS_VISUAL_IDENTIFIER_COLOR=76
-  typeset -g POWERLEVEL9K_VCS_LOADING_VISUAL_IDENTIFIER_COLOR=244
   # Custom icon.
   # typeset -g POWERLEVEL9K_VCS_VISUAL_IDENTIFIER_EXPANSION='⭐'
   # Custom prefix.
-  typeset -g POWERLEVEL9K_VCS_PREFIX='%f'
+  # typeset -g POWERLEVEL9K_VCS_PREFIX='%f'
 
   # Show status of repositories of these types. You can add svn and/or hg if you are
   # using them. If you do, your prompt may become slow even when your current directory
   # isn't in an svn or hg repository.
   typeset -g POWERLEVEL9K_VCS_BACKENDS=(git)
-
-  # These settings are used for repositories other than Git or when gitstatusd fails and
-  # Powerlevel10k has to fall back to using vcs_info.
-  typeset -g POWERLEVEL9K_VCS_CLEAN_FOREGROUND=76
-  typeset -g POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND=76
-  typeset -g POWERLEVEL9K_VCS_MODIFIED_FOREGROUND=178
 
   ##########################[ status: exit code of the last command ]###########################
   # Enable OK_PIPE, ERROR_PIPE and ERROR_SIGNAL status states to allow us to enable, disable and
@@ -580,20 +608,16 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_THRESHOLD=3
   # Show this many fractional digits. Zero means round to seconds.
   typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_PRECISION=0
-  # Execution time color.
-  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND=101
   # Duration format: 1d 2h 3m 4s.
   typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_FORMAT='d h m s'
   # Custom icon.
   # typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_VISUAL_IDENTIFIER_EXPANSION='⭐'
   # Custom prefix.
-  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_PREFIX='%ftook '
+  typeset -g POWERLEVEL9K_COMMAND_EXECUTION_TIME_PREFIX='took '
 
   #######################[ background_jobs: presence of background jobs ]#######################
   # Don't show the number of background jobs.
   typeset -g POWERLEVEL9K_BACKGROUND_JOBS_VERBOSE=false
-  # Background jobs color.
-  typeset -g POWERLEVEL9K_BACKGROUND_JOBS_FOREGROUND=70
   # Custom icon.
   # typeset -g POWERLEVEL9K_BACKGROUND_JOBS_VISUAL_IDENTIFIER_EXPANSION='⭐'
 
@@ -604,10 +628,6 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   # typeset -g POWERLEVEL9K_DIRENV_VISUAL_IDENTIFIER_EXPANSION='⭐'
 
   ###############[ asdf: asdf version manager (https://github.com/asdf-vm/asdf) ]###############
-  # Default asdf color. Only used to display tools for which there is no color override (see below).
-  # Tip:  Override this parameter for ${TOOL} with POWERLEVEL9K_ASDF_${TOOL}_FOREGROUND.
-  typeset -g POWERLEVEL9K_ASDF_FOREGROUND=66
-
   # There are four parameters that can be used to hide asdf tools. Each parameter describes
   # conditions under which a tool gets hidden. Parameters can hide tools but not unhide them. If at
   # least one parameter decides to hide a tool, that tool gets hidden. If no parameter decides to
@@ -662,86 +682,6 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   #
   #   typeset -g POWERLEVEL9K_ASDF_NODEJS_SHOW_ON_UPGLOB='*.js|package.json'
   typeset -g POWERLEVEL9K_ASDF_SHOW_ON_UPGLOB=
-
-  # Ruby version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_RUBY_FOREGROUND=168
-  # typeset -g POWERLEVEL9K_ASDF_RUBY_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_RUBY_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Python version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_PYTHON_FOREGROUND=37
-  # typeset -g POWERLEVEL9K_ASDF_PYTHON_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_PYTHON_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Go version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_GOLANG_FOREGROUND=37
-  # typeset -g POWERLEVEL9K_ASDF_GOLANG_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_GOLANG_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Node.js version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_NODEJS_FOREGROUND=70
-  # typeset -g POWERLEVEL9K_ASDF_NODEJS_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_NODEJS_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Rust version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_RUST_FOREGROUND=37
-  # typeset -g POWERLEVEL9K_ASDF_RUST_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_RUST_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # .NET Core version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_DOTNET_CORE_FOREGROUND=134
-  # typeset -g POWERLEVEL9K_ASDF_DOTNET_CORE_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_DOTNET_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Flutter version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_FLUTTER_FOREGROUND=38
-  # typeset -g POWERLEVEL9K_ASDF_FLUTTER_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_FLUTTER_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Lua version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_LUA_FOREGROUND=32
-  # typeset -g POWERLEVEL9K_ASDF_LUA_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_LUA_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Java version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_JAVA_FOREGROUND=32
-  # typeset -g POWERLEVEL9K_ASDF_JAVA_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_JAVA_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Perl version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_PERL_FOREGROUND=67
-  # typeset -g POWERLEVEL9K_ASDF_PERL_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_PERL_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Erlang version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_ERLANG_FOREGROUND=125
-  # typeset -g POWERLEVEL9K_ASDF_ERLANG_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_ERLANG_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Elixir version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_ELIXIR_FOREGROUND=129
-  # typeset -g POWERLEVEL9K_ASDF_ELIXIR_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_ELIXIR_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Postgres version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_POSTGRES_FOREGROUND=31
-  # typeset -g POWERLEVEL9K_ASDF_POSTGRES_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_POSTGRES_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # PHP version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_PHP_FOREGROUND=99
-  # typeset -g POWERLEVEL9K_ASDF_PHP_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_PHP_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Haskell version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_HASKELL_FOREGROUND=172
-  # typeset -g POWERLEVEL9K_ASDF_HASKELL_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_HASKELL_SHOW_ON_UPGLOB='*.foo|*.bar'
-
-  # Julia version from asdf.
-  typeset -g POWERLEVEL9K_ASDF_JULIA_FOREGROUND=70
-  # typeset -g POWERLEVEL9K_ASDF_JULIA_VISUAL_IDENTIFIER_EXPANSION='⭐'
-  # typeset -g POWERLEVEL9K_ASDF_JULIA_SHOW_ON_UPGLOB='*.foo|*.bar'
 
   ##########[ nordvpn: nordvpn connection status, linux only (https://nordvpn.com/) ]###########
   # NordVPN connection indicator color.
@@ -1665,8 +1605,6 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   #   P9K_WIFI_BARS         | signal strength in bars, from 0 to 4 (derived from P9K_WIFI_RSSI and P9K_WIFI_NOISE)
 
   ####################################[ time: current time ]####################################
-  # Current time color.
-  typeset -g POWERLEVEL9K_TIME_FOREGROUND=66
   # Format for the current time: 09:51:02. See `man 3 strftime`.
   typeset -g POWERLEVEL9K_TIME_FORMAT='%D{%H:%M:%S}'
   # If set to true, time will update when you hit enter. This way prompts for the past
