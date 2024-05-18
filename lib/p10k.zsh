@@ -36,6 +36,7 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
     os_icon                 # os identifier
+    context                 # user@hostname
     dir                     # current directory
     vcs                     # git status
     # =========================[ Line #2 ]=========================
@@ -87,7 +88,6 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
     # gcloud                  # google cloud cli account and project (https://cloud.google.com/)
     # google_app_cred         # google application credentials (https://cloud.google.com/docs/authentication/production)
     # toolbox                 # toolbox name (https://github.com/containers/toolbox)
-    context                 # user@hostname
     # nordvpn                 # nordvpn connection status, linux only (https://nordvpn.com/)
     # ranger                  # ranger shell (https://github.com/ranger/ranger)
     # yazi                    # yazi shell (https://github.com/sxyazi/yazi)
@@ -192,9 +192,13 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   typeset -g POWERLEVEL9K_BACKGROUND_JOBS_BACKGROUND=$GREY
   typeset -g POWERLEVEL9K_BACKGROUND_JOBS_FOREGROUND=$ACCENT
 
-  # typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=039
-  # typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=039
+  typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=$GREY
+  typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=$PRIMARY
 
+  # Context color when running with privileges.
+  typeset -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=$ACCENT
+  # Context color in SSH without privileges.
+  # typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=$SECONDARY
 
   # When set to true, icons appear before content on both sides of the prompt. When set
   # to false, icons go after content. If empty or not set, icons go before content in the left
@@ -871,13 +875,6 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   # typeset -g POWERLEVEL9K_CPU_ARCH_VISUAL_IDENTIFIER_EXPANSION='⭐'
 
   ##################################[ context: user@hostname ]##################################
-  # Context color when running with privileges.
-  typeset -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=178
-  # Context color in SSH without privileges.
-  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=180
-  # Default context color (no privileges, no SSH).
-  typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=180
-
   # Context format when running with privileges: bold user@hostname.
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_TEMPLATE='%B%n@%m'
   # Context format when in SSH without privileges: user@hostname.
@@ -892,7 +889,7 @@ export POWERLEVEL9K_CONFIG_FILE="$HOME/.dotfiles/lib/p10k.zsh"
   # Custom icon.
   # typeset -g POWERLEVEL9K_CONTEXT_VISUAL_IDENTIFIER_EXPANSION='⭐'
   # Custom prefix.
-  typeset -g POWERLEVEL9K_CONTEXT_PREFIX='%f\uF233 '
+  typeset -g POWERLEVEL9K_CONTEXT_PREFIX='\uF233 ' # "Server" icon
 
   ###[ virtualenv: python virtual environment (https://docs.python.org/3/library/venv.html) ]###
   # Python virtual environment color.
