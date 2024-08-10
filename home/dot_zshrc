@@ -1,0 +1,20 @@
+#!/bin/false
+# shellcheck shell=sh
+
+setopt LOCAL_OPTIONS NO_NOTIFY NO_MONITOR
+
+PATH="$PATH:$HOME/bin"
+export PATH
+
+DOTFILES_BASEDIR=$(dirname "$(realpath "$0")")
+
+. "$DOTFILES_BASEDIR/.dotfiles/lib/instant-prompt.zsh"
+. "$DOTFILES_BASEDIR/.dotfiles/lib/utils.zsh"
+. "$DOTFILES_BASEDIR/.dotfiles/lib/zplug.zsh"
+. "$DOTFILES_BASEDIR/.dotfiles/lib/completion.zsh"
+. "$DOTFILES_BASEDIR/.dotfiles/lib/aliases.zsh"
+. "$DOTFILES_BASEDIR/.dotfiles/lib/bindkeys.zsh"
+. "$DOTFILES_BASEDIR/.dotfiles/lib/asdf.zsh"
+. "$DOTFILES_BASEDIR/.dotfiles/lib/zoxide.zsh"
+. "$DOTFILES_BASEDIR/.dotfiles/lib/history.zsh"
+. "$DOTFILES_BASEDIR/.dotfiles/lib/p10k.zsh"
