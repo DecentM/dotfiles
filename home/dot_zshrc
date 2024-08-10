@@ -6,15 +6,20 @@ setopt LOCAL_OPTIONS NO_NOTIFY NO_MONITOR
 PATH="$PATH:$HOME/bin"
 export PATH
 
-DOTFILES_BASEDIR="$(chezmoi target-path)"
+DOTFILES_BASEDIR="$(realpath "$(dirname "$0")")/home/dot_dotfiles"
 
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/instant-prompt.zsh"
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/utils.zsh"
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/zplug.zsh"
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/completion.zsh"
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/aliases.zsh"
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/bindkeys.zsh"
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/asdf.zsh"
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/zoxide.zsh"
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/history.zsh"
-. "$DOTFILES_BASEDIR/.dotfiles/zsh/p10k.zsh"
+# We don't have vercmd here yet
+if command -v chezmoi >/dev/null; then
+    DOTFILES_BASEDIR="$(chezmoi target-path)/.dotfiles"
+fi
+
+. "$DOTFILES_BASEDIR/zsh/instant-prompt.zsh"
+. "$DOTFILES_BASEDIR/zsh/utils.zsh"
+. "$DOTFILES_BASEDIR/zsh/zplug.zsh"
+. "$DOTFILES_BASEDIR/zsh/completion.zsh"
+. "$DOTFILES_BASEDIR/zsh/aliases.zsh"
+. "$DOTFILES_BASEDIR/zsh/bindkeys.zsh"
+. "$DOTFILES_BASEDIR/zsh/asdf.zsh"
+. "$DOTFILES_BASEDIR/zsh/zoxide.zsh"
+. "$DOTFILES_BASEDIR/zsh/history.zsh"
+. "$DOTFILES_BASEDIR/zsh/p10k.zsh"
