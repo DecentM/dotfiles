@@ -6,11 +6,11 @@ setopt LOCAL_OPTIONS NO_NOTIFY NO_MONITOR
 PATH="$PATH:$HOME/bin"
 export PATH
 
-DOTFILES_BASEDIR="$(realpath "$(dirname "$0")")/home/dot_dotfiles"
-
 # We don't have vercmd here yet
 if command -v chezmoi >/dev/null; then
     DOTFILES_BASEDIR="$(chezmoi target-path)/.dotfiles"
+else
+    DOTFILES_BASEDIR="$(realpath "$(dirname "$0")")/home/dot_dotfiles"
 fi
 
 . "$DOTFILES_BASEDIR/zsh/instant-prompt.zsh"
