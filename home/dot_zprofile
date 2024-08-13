@@ -1,9 +1,20 @@
 #!/bin/false
 # shellcheck shell=sh
 
-eval "$(ssh-agent -s)" >/dev/null
-ssh-add ~/.ssh/id_* >/dev/null
-export SSH_AGENT_SOCK="$SSH_AUTH_SOCK"
+DOTFILES_BASEDIR="$(realpath "$(dirname "$0")")/home/dot_dotfiles"
 
-DOTFILES_BASEDIR="$(dirname "$(realpath "$0")")"
+# We don't have vercmd here yet
+if command -v chezmoi >/dev/null; then
+    DOTFILES_BASEDIR="$(chezmoi target-path)/.dotfiles"
+fi
+
 export DOTFILES_BASEDIR
+
+. "$DOTFILES_BASEDIR/zsh/utils.zsh"
+
+# If ssh-agent is available, and we have keys, start it
+if vercmd ssh-agent && [ -f ~/.ssh/id_rsa ]; then
+    eval "$(ssh-agent -s)" >/dev/null
+    ssh-add ~/.ssh/id_* >/dev/null
+    export SSH_AGENT_SOCK="$SSH_AUTH_SOCK"
+fi
