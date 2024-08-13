@@ -44,7 +44,7 @@ alias x='exit'
 alias dc='docker-compose'
 alias ctop='docker run --rm -ti --volume /var/run/docker.sock:/var/run/docker.sock:ro quay.io/vektorlab/ctop:latest'
 
-alias k='kubectl'
+alias ku='kubectl'
 alias kaf='k apply -f'
 alias kg='k get'
 alias kgew='k get events --watch'
