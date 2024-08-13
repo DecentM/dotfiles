@@ -10,6 +10,9 @@ fi
 
 export DOTFILES_BASEDIR
 
+LC_ALL=en_US.UTF-8
+export LC_ALL
+
 . "$DOTFILES_BASEDIR/zsh/utils.zsh"
 
 # If ssh-agent is available, and we have keys, start it
