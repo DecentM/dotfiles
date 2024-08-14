@@ -30,6 +30,10 @@ list-iommu-groups() {
     done;
 }
 
+kdelf() {
+    kubectl get "$1" -n "$2" "$3" -o=json | jq '.metadata.finalizers = null' | kubectl apply -f -
+}
+
 alias _='sudo'
 alias resource='source ~/.zshrc'
 alias reload='p10k reload'
