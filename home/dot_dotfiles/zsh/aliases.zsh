@@ -37,8 +37,6 @@ kdelf() {
 alias _='sudo'
 alias resource='source ~/.zshrc'
 alias reload='p10k reload'
-alias konsave-commit="mkdir -p $HOME/.config/konsave && cp -f $DOTFILES_BASEDIR/konsave.conf.yaml $HOME/.config/konsave/conf.yaml && rm -rf $DOTFILES_BASEDIR/profile && konsave -s profile && cp -a $HOME/.config/konsave/profiles/profile $DOTFILES_BASEDIR/profile && konsave -r profile"
-alias konsave-apply="mkdir -p $HOME/.config/konsave/profiles && cp -a $DOTFILES_BASEDIR/profile $HOME/.config/konsave/profiles/profile && konsave -a profile && konsave -r profile"
 alias update-asdf="asdf update && asdf plugin update --all"
 
 alias l='k -h'
