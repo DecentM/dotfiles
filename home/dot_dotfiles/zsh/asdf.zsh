@@ -8,6 +8,7 @@ add_plugins() {
     asdf plugin add php https://github.com/asdf-community/asdf-php.git >/dev/null
     asdf plugin add pnpm https://github.com/jonathanmorley/asdf-pnpm.git >/dev/null
     asdf plugin add yt-dlp https://github.com/duhow/asdf-yt-dlp >/dev/null
+    asdf plugin add dotnet https://github.com/hensou/asdf-dotnet.git >/dev/null
 }
 
 if vercmd asdf; then
