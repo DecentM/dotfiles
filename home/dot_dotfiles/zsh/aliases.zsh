@@ -43,7 +43,7 @@ alias l='k -h'
 alias c='clear'
 alias x='exit'
 
-alias dc='docker-compose'
+alias dc='docker compose'
 alias ctop='docker run --rm -ti --volume /var/run/docker.sock:/var/run/docker.sock:ro quay.io/vektorlab/ctop:latest'
 
 alias ku='kubectl'
