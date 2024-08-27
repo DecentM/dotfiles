@@ -38,7 +38,7 @@ glob_matches() {
         return 2
     fi
 
-    if find "$dir" -name "$1" -print -quit 2>/dev/null | grep -q -e .; then
+    if find "$dir" -name "$1" -print -quit 2>/dev/null | read -r; then
         return 0
     else
         return 1
