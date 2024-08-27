@@ -28,3 +28,19 @@ vercmd() {
 
     return $exitstatus
 }
+
+glob_matches() {
+    local dir="."
+    [ $# -gt 1 ] && dir="$2"
+
+    if [ ! -d "$dir" ]; then
+        echo "Directory '$dir' does not exist or is not accessible." >&2
+        return 2
+    fi
+
+    if find "$dir" -name "$1" -print -quit 2>/dev/null | grep -q -e .; then
+        return 0
+    else
+        return 1
+    fi
+}
