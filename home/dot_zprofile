@@ -13,7 +13,7 @@ export DOTFILES_BASEDIR
 . "$DOTFILES_BASEDIR/zsh/utils.zsh"
 
 # If ssh-agent is available, and we have keys, start it
-if vercmd ssh-agent; then
+if vercmd ssh-agent && $(id -u) -ne "0"; then
     eval "$(ssh-agent -s)" >/dev/null
 
     if glob_matches "id_*" "$HOME/.ssh"; then
