@@ -11,14 +11,4 @@ fi
 export DOTFILES_BASEDIR
 
 . "$DOTFILES_BASEDIR/zsh/utils.zsh"
-
-# If ssh-agent is available, and we have keys, start it
-if vercmd ssh-agent && $(id -u) -ne "0"; then
-    eval "$(ssh-agent -s)" >/dev/null
-
-    if glob_matches "id_*" "$HOME/.ssh"; then
-        ssh-add ~/.ssh/id_* >/dev/null
-    fi
-
-    export SSH_AGENT_SOCK="$SSH_AUTH_SOCK"
-fi
+. "$DOTFILES_BASEDIR/zsh/ssh-agent.zsh"
