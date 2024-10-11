@@ -31,7 +31,7 @@ else
 
   # Language support
   zplug cmuench/zsh-miniconda
-  zplug se-jaeger/zsh-activate-py-environment
+  zplug MichaelAquilina/zsh-autoswitch-virtualenv
 
   # Colours
   zplug zuxfoucault/colored-man-pages_mod
