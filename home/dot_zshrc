@@ -24,4 +24,5 @@ fi
 . "$DOTFILES_BASEDIR/zsh/asdf.zsh"
 . "$DOTFILES_BASEDIR/zsh/zoxide.zsh"
 . "$DOTFILES_BASEDIR/zsh/history.zsh"
+. "$DOTFILES_BASEDIR/zsh/brew.zsh"
 . "$DOTFILES_BASEDIR/zsh/p10k.zsh"
