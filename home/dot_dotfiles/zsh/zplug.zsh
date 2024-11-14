@@ -9,9 +9,7 @@ else
 
   zplug romkatv/powerlevel10k, as:theme, depth:1
   zplug hlissner/zsh-autopair, defer:2
-  # zplug djui/alias-tips
   zplug zimfw/asdf
-  # zplug wintermi/zsh-gcloud
 
   # Fuzzy stuff
   zplug supercrabtree/k
@@ -30,8 +28,10 @@ else
   zplug zsh-users/zsh-syntax-highlighting
 
   # Language support
-  zplug cmuench/zsh-miniconda
-  zplug MichaelAquilina/zsh-autoswitch-virtualenv
+  if vercmd python; then
+    zplug cmuench/zsh-miniconda
+    zplug MichaelAquilina/zsh-autoswitch-virtualenv
+  fi
 
   # Colours
   zplug zuxfoucault/colored-man-pages_mod
