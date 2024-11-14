@@ -17,6 +17,7 @@ fi
 
 export DOTFILES_BASEDIR
 
+. "$DOTFILES_BASEDIR/zsh/instant-prompt.zsh"
 . "$DOTFILES_BASEDIR/zsh/utils.zsh"
 
 . "$DOTFILES_BASEDIR/zsh/ssh-agent.zsh"
@@ -28,3 +29,4 @@ export DOTFILES_BASEDIR
 . "$DOTFILES_BASEDIR/zsh/zoxide.zsh"
 . "$DOTFILES_BASEDIR/zsh/history.zsh"
 . "$DOTFILES_BASEDIR/zsh/brew.zsh"
+. "$DOTFILES_BASEDIR/zsh/p10k.zsh"
