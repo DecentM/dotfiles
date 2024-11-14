@@ -4,11 +4,14 @@
 # We don't have vercmd here yet
 if command -v chezmoi >/dev/null; then
     DOTFILES_BASEDIR="$(chezmoi target-path)/.dotfiles"
-else
-    DOTFILES_BASEDIR="$(realpath "$(dirname "$0")")/home/dot_dotfiles"
+fi
+
+if [ -z "$DOTFILES_BASEDIR" ]; then
+    DOTFILES_BASEDIR="$HOME/.dotfiles"
 fi
 
 export DOTFILES_BASEDIR
 
 . "$DOTFILES_BASEDIR/zsh/utils.zsh"
 . "$DOTFILES_BASEDIR/zsh/ssh-agent.zsh"
+. "$DOTFILES_BASEDIR/zsh/lang.zsh"
