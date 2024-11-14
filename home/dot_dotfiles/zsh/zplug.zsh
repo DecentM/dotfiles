@@ -7,9 +7,9 @@ if [[ ! -e "$HOME/.zplug" ]]; then
 else
   source "$HOME/.zplug/init.zsh"
 
-  zplug romkatv/powerlevel10k, as:theme, depth:1
-  zplug hlissner/zsh-autopair, defer:2
-  zplug zimfw/asdf
+  # Theme
+  export SPACESHIP_CONFIG="$DOTFILES_BASEDIR/zsh/spaceship.zsh"
+  zplug "spaceship-prompt/spaceship-prompt", use:spaceship.zsh, from:github, as:theme
 
   # Fuzzy stuff
   zplug supercrabtree/k
@@ -38,6 +38,10 @@ else
   zplug Freed-Wu/zsh-colorize-functions
   zplug zpm-zsh/colorize
   zplug Freed-Wu/zsh-help
+
+  # Tools
+  zplug hlissner/zsh-autopair, defer:2
+  zplug zimfw/asdf
 
   # Install plugins if there are plugins that have not been installed
   if ! zplug check; then
