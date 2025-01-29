@@ -38,6 +38,7 @@ alias _='sudo'
 alias resource='source ~/.zshrc'
 alias reload='p10k reload'
 alias update-asdf="asdf update && asdf plugin update --all"
+alias fly='fly -t default'
 
 alias l='k -h'
 alias c='clear'
