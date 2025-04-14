@@ -3,7 +3,7 @@
 
 setopt LOCAL_OPTIONS NO_NOTIFY NO_MONITOR
 
-PATH="$PATH:$HOME/bin"
+PATH="$PATH:$HOME/bin:$HOME/.local/bin"
 export PATH
 
 # We don't have vercmd here yet
