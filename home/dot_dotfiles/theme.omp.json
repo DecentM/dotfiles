@@ -8,8 +8,10 @@
     },
     "transient_prompt": {
         "background": "transparent",
-        "foreground": "#ffffff",
-        "template": "{{ .Shell }}> "
+        "template": "➜ ",
+        "foreground": "#63F08C",
+        "type": "text",
+        "style": "plain"
     },
     "blocks": [
         {
