@@ -7,7 +7,6 @@ if [[ ! -e "$HOME/.zplug" ]]; then
 else
   source "$HOME/.zplug/init.zsh"
 
-  zplug romkatv/powerlevel10k, as:theme, depth:1
   zplug hlissner/zsh-autopair, defer:2
   zplug zimfw/asdf
 
