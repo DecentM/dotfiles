@@ -33,12 +33,6 @@ else
     zplug MichaelAquilina/zsh-autoswitch-virtualenv
   fi
 
-  # Colours
-  zplug zuxfoucault/colored-man-pages_mod
-  zplug Freed-Wu/zsh-colorize-functions
-  zplug zpm-zsh/colorize
-  zplug Freed-Wu/zsh-help
-
   # Install plugins if there are plugins that have not been installed
   if ! zplug check; then
     zplug install
