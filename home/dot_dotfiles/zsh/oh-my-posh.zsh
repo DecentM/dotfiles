@@ -4,5 +4,6 @@
 if vercmd oh-my-posh; then
     eval "$(oh-my-posh --init --shell zsh --config ~/.dotfiles/theme.omp.json)"
 else
-    echo 'Please install oh-my-posh with "brew install jandedobbeleer/oh-my-posh/oh-my-posh"'
+    curl -s https://ohmyposh.dev/install.sh | bash -s
+    echo "oh-my-posh installed, reopen this shell to continue"
 fi
