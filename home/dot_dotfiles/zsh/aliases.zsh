@@ -103,6 +103,8 @@ alias grba='git rebase --abort'
 alias grbc='git rebase --continue'
 alias grbd='git rebase develop'
 alias grbm='git rebase main'
+alias gmf='git merge --ff'
+alias gmff='git merge --ff-only'
 
 # Diff & Reset
 alias gd='git diff'
