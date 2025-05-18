@@ -19,6 +19,25 @@
             "alignment": "left",
             "segments": [
                 {
+                    "foreground": "#c6ad3e",
+                    "background": "#29315A",
+                    "leading_diamond": "\ue0b6",
+                    "template": "{{ if not (empty .Env.SSH_TTY) }}{{.Icon}} {{ end }}",
+                    "style": "diamond",
+                    "type": "os"
+                },
+                {
+                    "properties": {
+                        "style": "mixed"
+                    },
+                    "foreground": "#c6ad3e",
+                    "background": "#29315A",
+                    "trailing_diamond": "\ue0b4 ",
+                    "template": "{{ if not (empty .Env.SSH_TTY) }}{{ .UserName }}@{{ .HostName }}{{ end }}",
+                    "type": "session",
+                    "style": "diamond"
+                },
+                {
                     "properties": {
                         "style": "mixed"
                     },
