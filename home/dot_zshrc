@@ -15,6 +15,8 @@ if [ -z "$DOTFILES_BASEDIR" ]; then
     DOTFILES_BASEDIR="$HOME/.dotfiles"
 fi
 
+export EDITOR=vim
+
 export DOTFILES_BASEDIR
 
 . "$DOTFILES_BASEDIR/zsh/utils.zsh"
