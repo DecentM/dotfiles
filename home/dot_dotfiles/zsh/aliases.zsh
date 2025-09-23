@@ -157,25 +157,11 @@ alias gignore='git config --global core.excludesfile'
 alias gconfig='git config --global -e'
 alias gcred='git config --global credential.helper store'
 
-# GitHub Integration
-alias gh='git open'
-alias ghb='git open -b'
-alias gclpr='git checkout -b $1 && git push origin $1 && gh pr create --fill'
-
-# Shortcut for Commit Messages
-alias gfix='git commit -m "fix:"'
-alias gfeat='git commit -m "feat:"'
-alias gdocs='git commit -m "docs:"'
-alias gstyle='git commit -m "style:"'
-alias grefactor='git commit -m "refactor:"'
-alias gtest='git commit -m "test:"'
-alias gchore='git commit -m "chore:"'
-
 # Shortcuts for Tagging Versions
 alias grel='git tag -a v$(date +%Y%m%d) -m "Release on $(date +%Y-%m-%d)"'
 alias gver='git tag -a v$1 -m "Version $1"'
 
 # Pull & Fetch with Rebase
-alias gpf='git pull --rebase'
+alias gl!='git pull --rebase'
 alias gplm='git pull origin main --rebase'
 alias gpld='git pull origin develop --rebase'
