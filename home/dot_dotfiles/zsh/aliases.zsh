@@ -152,11 +152,6 @@ alias gcpc='git cherry-pick --continue'
 # Reflog
 alias grfl='git reflog'
 
-# Git Ignore & Config
-alias gignore='git config --global core.excludesfile'
-alias gconfig='git config --global -e'
-alias gcred='git config --global credential.helper store'
-
 # Shortcuts for Tagging Versions
 alias grel='git tag -a v$(date +%Y%m%d) -m "Release on $(date +%Y-%m-%d)"'
 alias gver='git tag -a v$1 -m "Version $1"'
