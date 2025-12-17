@@ -21,9 +21,9 @@ if vercmd asdf; then
 
     # Append the new configuration to the existing contents
     new_asdfrc="
-    legacy_version_file = yes
-    always_keep_download = no
-    "
+legacy_version_file = yes
+always_keep_download = no
+"
 
     # Deduplicate by the part before " = "
     updated_asdfrc=$(echo "$new_asdfrc$existing_asdfrc" | awk -F " = " '!seen[$1]++')
