@@ -8,10 +8,13 @@
     },
     "transient_prompt": {
         "background": "transparent",
-        "template": "➜ ",
+        "template": "{{ if .Root }}#{{ else }}➜{{ end }} ",
         "foreground": "#63F08C",
-        "type": "text",
-        "style": "plain"
+        "type": "session",
+        "style": "plain",
+        "foreground_templates": [
+            "{{ if .Root }}#ff5555{{ end }}"
+        ]
     },
     "blocks": [
         {
@@ -22,9 +25,12 @@
                     "foreground": "#c6ad3e",
                     "background": "#29315A",
                     "leading_diamond": "\ue0b6",
-                    "template": "{{ if not (empty .Env.SSH_TTY) }}{{.Icon}} {{ end }}",
+                    "template": "{{ if .Root }}\uf0ad {{ end }}{{.Icon}} ",
                     "style": "diamond",
-                    "type": "os"
+                    "type": "os",
+                    "foreground_templates": [
+                        "{{ if .Root }}#ff5555{{ end }}"
+                    ]
                 },
                 {
                     "properties": {
@@ -32,9 +38,19 @@
                     },
                     "foreground": "#c6ad3e",
                     "background": "#29315A",
-                    "trailing_diamond": "\ue0b4 ",
-                    "template": "{{ if not (empty .Env.SSH_TTY) }}{{ .UserName }}@{{ .HostName }}{{ end }}",
+                    "template": "{{ if .Root }}root{{ else if not (empty .Env.SSH_TTY) }}{{ .UserName }}{{ end }}{{ if not (empty .Env.SSH_TTY) }}@{{ .HostName }}{{ end }}",
                     "type": "session",
+                    "style": "diamond",
+                    "foreground_templates": [
+                        "{{ if .Root }}#ff5555{{ end }}"
+                    ]
+                },
+                {
+                    "foreground": "#6272a4",
+                    "background": "#29315A",
+                    "trailing_diamond": "\ue0b4 ",
+                    "template": "{{ if not (empty .Env.SSH_TTY) }}󰒍{{ end }}",
+                    "type": "text",
                     "style": "diamond"
                 },
                 {
@@ -133,10 +149,13 @@
             "alignment": "left",
             "segments": [
                 {
-                    "template": "➜ ",
+                    "template": "{{ if .Root }}#{{ else }}➜{{ end }} ",
                     "foreground": "#63F08C",
-                    "type": "text",
-                    "style": "plain"
+                    "type": "session",
+                    "style": "plain",
+                    "foreground_templates": [
+                        "{{ if .Root }}#ff5555{{ end }}"
+                    ]
                 }
             ],
             "newline": true
