@@ -66,6 +66,18 @@
                     "style": "diamond"
                 },
                 {
+                    "type": "kubectl",
+                    "style": "diamond",
+                    "leading_diamond": " \ue0b6",
+                    "trailing_diamond": "\ue0b4",
+                    "foreground": "#326CE5",
+                    "background": "#29315A",
+                    "template": " 󱃾 {{ .Context }}{{ if .Namespace }} :: {{ .Namespace }}{{ end }} ",
+                    "properties": {
+                        "parse_kubeconfig": true
+                    }
+                },
+                {
                     "properties": {
                         "branch_template": "{{ trunc 25 .Branch }}",
                         "fetch_stash_count": true,
@@ -91,6 +103,16 @@
                     "foreground": "#C94A16",
                     "type": "status",
                     "style": "plain"
+                },
+                {
+                    "type": "executiontime",
+                    "style": "plain",
+                    "foreground": "#d4d4d4",
+                    "template": "󰔛 {{ .FormattedMs }} ",
+                    "properties": {
+                        "threshold": 500,
+                        "style": "austin"
+                    }
                 }
             ]
         },
@@ -98,6 +120,15 @@
             "type": "prompt",
             "alignment": "right",
             "segments": [
+                {
+                    "type": "docker",
+                    "style": "plain",
+                    "foreground": "#0db7ed",
+                    "template": " {{ .Context }} ",
+                    "properties": {
+                        "display_mode": "context"
+                    }
+                },
                 {
                     "properties": {
                         "display_mode": "files",
@@ -134,13 +165,28 @@
                 },
                 {
                     "properties": {
-                        "display_mode": "context",
-                        "fetch_virtual_env": false
+                        "display_mode": "files",
+                        "fetch_virtual_env": true
                     },
-                    "template": " {{ if .Error }}{{ .Error }}{{ else }}{{ .Full }}{{ end }}",
+                    "template": " {{ if .Error }}{{ .Error }}{{ else }}{{ .Full }}{{ end }}{{ if .Venv }} ({{ .Venv }}){{ end }}",
                     "foreground": "#FED142",
                     "type": "python",
                     "style": "plain"
+                },
+                {
+                    "type": "shell",
+                    "style": "plain",
+                    "foreground": "#6272a4",
+                    "template": " {{ .Name }} "
+                },
+                {
+                    "type": "time",
+                    "style": "plain",
+                    "foreground": "#6272a4",
+                    "template": " {{ .CurrentDate | date .Format }}",
+                    "properties": {
+                        "time_format": "15:04"
+                    }
                 }
             ]
         },
