@@ -33,25 +33,25 @@
                     ]
                 },
                 {
+                    "foreground": "#ff9500",
+                    "background": "#29315A",
+                    "template": "{{ if not (empty .Env.SSH_TTY) }} 󰒍{{ end }}",
+                    "type": "text",
+                    "style": "diamond"
+                },
+                {
                     "properties": {
                         "style": "mixed"
                     },
                     "foreground": "#c6ad3e",
                     "background": "#29315A",
+                    "trailing_diamond": "\ue0b4 ",
                     "template": "{{ if .Root }}root{{ else if not (empty .Env.SSH_TTY) }}{{ .UserName }}{{ end }}{{ if not (empty .Env.SSH_TTY) }}@{{ .HostName }}{{ end }}",
                     "type": "session",
                     "style": "diamond",
                     "foreground_templates": [
                         "{{ if .Root }}#ff5555{{ end }}"
                     ]
-                },
-                {
-                    "foreground": "#6272a4",
-                    "background": "#29315A",
-                    "trailing_diamond": "\ue0b4 ",
-                    "template": "{{ if not (empty .Env.SSH_TTY) }}󰒍{{ end }}",
-                    "type": "text",
-                    "style": "diamond"
                 },
                 {
                     "properties": {
@@ -65,18 +65,7 @@
                     "type": "path",
                     "style": "diamond"
                 },
-                {
-                    "type": "kubectl",
-                    "style": "diamond",
-                    "leading_diamond": " \ue0b6",
-                    "trailing_diamond": "\ue0b4",
-                    "foreground": "#326CE5",
-                    "background": "#29315A",
-                    "template": " 󱃾 {{ .Context }}{{ if .Namespace }} :: {{ .Namespace }}{{ end }} ",
-                    "properties": {
-                        "parse_kubeconfig": true
-                    }
-                },
+
                 {
                     "properties": {
                         "branch_template": "{{ trunc 25 .Branch }}",
@@ -120,6 +109,15 @@
             "type": "prompt",
             "alignment": "right",
             "segments": [
+                {
+                    "type": "kubectl",
+                    "style": "plain",
+                    "foreground": "#326CE5",
+                    "template": "󱃾 {{ .Context }}{{ if .Namespace }}::{{ .Namespace }}{{ end }} ",
+                    "properties": {
+                        "parse_kubeconfig": true
+                    }
+                },
                 {
                     "type": "docker",
                     "style": "plain",
