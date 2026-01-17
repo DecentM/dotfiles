@@ -25,6 +25,15 @@ else
   zplug zsh-users/zsh-autosuggestions
   zplug zsh-users/zsh-completions
   zplug zsh-users/zsh-syntax-highlighting
+  zplug MichaelAquilina/zsh-you-should-use
+  zplug MichaelAquilina/zsh-auto-notify
+
+  # Git enhancements
+  zplug wfxr/forgit
+  zplug junegunn/fzf-git.sh
+
+  # Performance
+  zplug romkatv/zsh-defer, defer:0
 
   # Language support
   if vercmd python; then
