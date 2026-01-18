@@ -21,7 +21,6 @@
 
       "node -e*": "deny", // use node-code-mcp
 
-      "rm*": "deny",
       "git add*": "deny",
       "git commit*": "deny",
       "git diff*": "allow",
