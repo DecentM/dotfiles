@@ -31,3 +31,5 @@ export DOTFILES_BASEDIR
 . "$DOTFILES_BASEDIR/zsh/history.zsh"
 . "$DOTFILES_BASEDIR/zsh/brew.zsh"
 . "$DOTFILES_BASEDIR/zsh/oh-my-posh.zsh"
+
+. "$DOTFILES_BASEDIR/opencode/setup.zsh"

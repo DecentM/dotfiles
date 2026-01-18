@@ -1,0 +1,66 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "share": "disabled",
+  "permission": {
+    // MCPs
+    "github_get_*": "allow",
+    "github_list_*": "allow",
+    "github_*read": "allow",
+    "github_search_*": "allow",
+
+    "jira_atlassianUserInfo": "allow",
+    "jira_fetch": "allow",
+    "jira_get*": "allow",
+    "jira_lookup*": "allow",
+    "jira_search*": "allow",
+    "jira_search": "allow",
+  },
+  "instructions": ["~/.dotfiles/opencode/rules/work.md"],
+  "agent": {
+    "build": {
+      "permission": {
+        "github_*": "allow",
+      },
+    },
+    "plan": {
+      "permission": {
+        "github_fork_repository": "deny",
+        "github_add_*": "deny",
+        "github_create_*": "deny",
+        "github_delete_*": "deny",
+        "github_merge_*": "deny",
+        "github_*write": "deny",
+        "github_push_files": "deny",
+        "github_assign_copilot_to_issue": "deny",
+        "github_request_copilot_review": "deny",
+        "github_update_*": "deny",
+
+        "jira_update*": "deny",
+        "jira_edit*": "deny",
+        "jira_transition*": "deny",
+        "jira_create*": "deny",
+        "jira_add*": "deny",
+      },
+    },
+  },
+  "mcp": {
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {file:~/.config/opencode/secrets/gh_pat}",
+      },
+    },
+    "jira": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "enabled": true,
+    },
+    "notion": {
+      "type": "remote",
+      "url": "https://mcp.notion.com/mcp",
+      "enabled": true,
+    },
+  },
+}
