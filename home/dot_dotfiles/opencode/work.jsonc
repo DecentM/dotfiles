@@ -2,35 +2,53 @@
   "$schema": "https://opencode.ai/config.json",
   "share": "disabled",
   "permission": {
+    // MCPs denied at global level - specialized agents get access
     "github_*": "deny",
     "jira_*": "deny",
     "notion_*": "deny",
   },
   "instructions": ["~/.dotfiles/opencode/rules/work.md"],
   "agent": {
+    // Global agents: minimal, just for general queries
     "build": {
       "model": "github-copilot/claude-opus-4.5",
-      "permission": {
-        "github_*": "allow",
-        "jira_*": "allow",
-        "notion_*": "allow",
-      },
+      "permission": {},
     },
     "plan": {
       "model": "github-copilot/gpt-5.1-codex-max",
+      "permission": {},
+    },
+
+    // Specialized agents with MCP access
+    "reviewer": {
       "permission": {
+        // Read-only GitHub for PR reviews
         "github_get_*": "allow",
         "github_list_*": "allow",
-        "github_*read": "allow",
+        "github_pull_request_read": "allow",
+        "github_issue_read": "allow",
         "github_search_*": "allow",
-
+        // Read-only Jira for context
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
         "jira_lookup*": "allow",
         "jira_search*": "allow",
-        "jira_search": "allow",
-
+      },
+    },
+    "architect": {
+      "permission": {
+        // Read-only GitHub for design research
+        "github_get_*": "allow",
+        "github_list_*": "allow",
+        "github_search_*": "allow",
+        // Read-only Jira for requirements
+        "jira_atlassianUserInfo": "allow",
+        "jira_fetch": "allow",
+        "jira_get*": "allow",
+        "jira_lookup*": "allow",
+        "jira_search*": "allow",
+        // Read-only Notion for design docs
         "notion_notion-search": "allow",
         "notion_notion-fetch": "allow",
         "notion_notion-get-comments": "allow",
@@ -39,6 +57,57 @@
         "notion_notion-query-data": "allow",
         "notion_notion-get-self": "allow",
         "notion_notion-get-user": "allow",
+      },
+    },
+    "devops": {
+      "permission": {
+        // Full GitHub for CI/CD workflows
+        "github_*": "allow",
+        "github_request_copilot_review": "deny",
+      },
+    },
+    "writer": {
+      "permission": {
+        // Full GitHub for PR descriptions, release notes
+        "github_*": "allow",
+        "github_request_copilot_review": "deny",
+        // Full Jira for issue updates, comments
+        "jira_*": "allow",
+        // Full Notion for documentation
+        "notion_*": "allow",
+      },
+    },
+    "researcher": {
+      "permission": {
+        // Read-only GitHub for code research
+        "github_get_*": "allow",
+        "github_list_*": "allow",
+        "github_search_*": "allow",
+        // Read-only Jira for issue research
+        "jira_atlassianUserInfo": "allow",
+        "jira_fetch": "allow",
+        "jira_get*": "allow",
+        "jira_lookup*": "allow",
+        "jira_search*": "allow",
+        "jira_search": "allow",
+        // Read-only Notion for docs research
+        "notion_notion-search": "allow",
+        "notion_notion-fetch": "allow",
+        "notion_notion-get-comments": "allow",
+        "notion_notion-get-teams": "allow",
+        "notion_notion-get-users": "allow",
+        "notion_notion-query-data": "allow",
+        "notion_notion-get-self": "allow",
+        "notion_notion-get-user": "allow",
+      },
+    },
+    "git": {
+      "permission": {
+        // Read-only GitHub for remote operations
+        "github_get_*": "allow",
+        "github_list_*": "allow",
+        "github_pull_request_read": "allow",
+        "github_search_*": "allow",
       },
     },
   },

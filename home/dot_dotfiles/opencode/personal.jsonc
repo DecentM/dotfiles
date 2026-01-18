@@ -1,34 +1,91 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "permission": {
+    // MCPs denied at global level - specialized agents get access
     "github_*": "deny",
     "grafana_*": "deny",
   },
+  "instructions": ["~/.dotfiles/opencode/rules/personal.md"],
   "agent": {
+    // Global agents: only homeassistant (home automation isn't code-specific)
     "build": {
       "permission": {
-        "github_*": "allow",
-        "github_request_copilot_review": "deny",
-        "grafana_*": "allow",
         "homeassistant_*": "allow",
       },
     },
     "plan": {
       "permission": {
+        "homeassistant_Get*": "allow",
+        "homeassistant_todo_get_items": "allow",
+      },
+    },
+
+    // Specialized agents with MCP access
+    "reviewer": {
+      "permission": {
+        // Read-only GitHub for PR reviews
         "github_get_*": "allow",
         "github_list_*": "allow",
-        "github_*read": "allow",
+        "github_pull_request_read": "allow",
+        "github_issue_read": "allow",
         "github_search_*": "allow",
-
+        // Read-only Grafana for performance context
+        "grafana_get_*": "allow",
+        "grafana_list_*": "allow",
+        "grafana_query_*": "allow",
+        "grafana_search_*": "allow",
+      },
+    },
+    "architect": {
+      "permission": {
+        // Read-only GitHub for design research
+        "github_get_*": "allow",
+        "github_list_*": "allow",
+        "github_search_*": "allow",
+        // Read-only Grafana for system understanding
+        "grafana_get_*": "allow",
+        "grafana_list_*": "allow",
+        "grafana_search_*": "allow",
+      },
+    },
+    "devops": {
+      "permission": {
+        // Full GitHub for CI/CD workflows
+        "github_*": "allow",
+        "github_request_copilot_review": "deny",
+        // Full Grafana for dashboards and alerts
+        "grafana_*": "allow",
+      },
+    },
+    "writer": {
+      "permission": {
+        // Full GitHub for PR descriptions, release notes
+        "github_*": "allow",
+        "github_request_copilot_review": "deny",
+      },
+    },
+    "researcher": {
+      "permission": {
+        // Read-only GitHub for code research
+        "github_get_*": "allow",
+        "github_list_*": "allow",
+        "github_search_*": "allow",
+        // Read-only Grafana for data/metrics research
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
         "grafana_query_*": "allow",
         "grafana_fetch_*": "allow",
         "grafana_search_*": "allow",
         "grafana_find_*": "allow",
-
-        "homeassistant_Get*": "allow",
-        "homeassistant_todo_get_items": "allow",
+      },
+    },
+    "git": {
+      "permission": {
+        // Read-only GitHub for remote operations
+        "github_get_*": "allow",
+        "github_list_*": "allow",
+        "github_pull_request_read": "allow",
+        "github_search_*": "allow",
       },
     },
   },

@@ -58,6 +58,8 @@
       "npm info*": "allow",
       "cat*": "allow",
       "rg*": "allow", // ripgrep
+
+      "pnpm build": "allow",
     },
     "edit": {
       "*": "allow",
