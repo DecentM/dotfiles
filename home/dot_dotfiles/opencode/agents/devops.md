@@ -1,7 +1,6 @@
 ---
 description: DevOps and infrastructure specialist for containers, CI/CD, cloud resources, and system configuration
 mode: subagent
-model: github-copilot/gpt-5.1-codex
 temperature: 0.2
 tools:
   bash: true

@@ -1,7 +1,6 @@
 ---
 description: Creative partner for brainstorming, storytelling, analogies, and adding levity to technical work
 mode: subagent
-model: github-copilot/gpt-5-mini
 temperature: 0.85
 tools:
   bash: false

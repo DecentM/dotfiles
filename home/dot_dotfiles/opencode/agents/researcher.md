@@ -1,7 +1,6 @@
 ---
 description: Information specialist for web research, data scraping, analysis, and transformation
 mode: subagent
-model: github-copilot/claude-opus-4.5
 temperature: 0.3
 tools:
   bash: true

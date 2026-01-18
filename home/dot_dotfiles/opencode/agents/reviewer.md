@@ -1,7 +1,6 @@
 ---
 description: Code analyst for reviewing quality, security vulnerabilities, and accessibility compliance (read-only)
 mode: subagent
-model: github-copilot/claude-opus-4.5
 temperature: 0.1
 tools:
   bash: true

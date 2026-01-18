@@ -1,7 +1,6 @@
 ---
 description: Full-stack developer for implementing features, debugging, testing, refactoring, and performance optimization
 mode: subagent
-model: github-copilot/gpt-5.1-codex-max
 temperature: 0.2
 tools:
   bash: true

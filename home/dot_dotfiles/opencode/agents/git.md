@@ -1,7 +1,6 @@
 ---
 description: Version control specialist for complex git operations, history management, and collaboration workflows (read-only)
 mode: subagent
-model: github-copilot/claude-haiku-4.5
 temperature: 0.1
 tools:
   bash: true
