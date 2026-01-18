@@ -60,6 +60,8 @@
       "rg*": "allow", // ripgrep
 
       "pnpm build": "allow",
+      "pnpm install": "allow",
+      "pnpm moon": "allow",
     },
     "edit": {
       "*": "allow",
