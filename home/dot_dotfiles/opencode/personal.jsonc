@@ -33,6 +33,19 @@
     },
   },
   "mcp": {
+    "memory": {
+      "type": "local",
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "-v",
+        "mcp-memory:/app/dist",
+        "mcp/memory",
+      ],
+      "enabled": true,
+    },
     "homeassistant": {
       "type": "remote",
       "url": "https://hass.cluster.arpa/api/mcp",

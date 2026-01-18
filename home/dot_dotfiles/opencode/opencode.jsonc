@@ -103,19 +103,6 @@
       "command": ["docker", "run", "--rm", "-i", "mcp/sequentialthinking"],
       "enabled": true,
     },
-    "memory": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "--rm",
-        "-i",
-        "-v",
-        "mcp-memory:/app/dist",
-        "mcp/memory",
-      ],
-      "enabled": true,
-    },
     "time": {
       "type": "local",
       "command": ["docker", "run", "--rm", "-i", "mcp/time"],

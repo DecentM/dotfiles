@@ -41,6 +41,19 @@
     },
   },
   "mcp": {
+    "memory": {
+      "type": "local",
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "-v",
+        "mcp-memory-work:/app/dist",
+        "mcp/memory",
+      ],
+      "enabled": true,
+    },
     "github": {
       "type": "remote",
       "url": "https://api.githubcopilot.com/mcp",
