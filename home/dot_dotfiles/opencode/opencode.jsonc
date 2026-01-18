@@ -100,7 +100,7 @@
   "agent": {
     "compaction": {
       "hidden": true,
-      "prompt": "Save your memories with the memory tool. Then, provide a detailed prompt for continuing our conversation above. Focus on information that would be helpful for continuing the conversation, including what we did, what we're doing, which files we're working on, and what we're going to do next considering new session will not have access to our conversation.",
+      "prompt": "Write your memories into the memory tool. Then, provide a detailed prompt for continuing our conversation above. Focus on information that would be helpful for continuing the conversation, including what we did, what we're doing, which files we're working on, and what we're going to do next considering new session will not have access to our conversation.",
     },
   },
   "instructions": [

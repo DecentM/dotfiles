@@ -1,6 +1,7 @@
 ---
 description: System designer for architecture decisions, API design, scalability planning, and technical strategy
 mode: subagent
+model: github-copilot/claude-opus-4.5
 temperature: 0.3
 tools:
   bash: false

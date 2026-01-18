@@ -1,6 +1,7 @@
 ---
 description: Technical communicator for documentation, READMEs, PR descriptions, emails, and teaching explanations
 mode: subagent
+model: github-copilot/claude-sonnet-4.5
 temperature: 0.4
 tools:
   bash: false

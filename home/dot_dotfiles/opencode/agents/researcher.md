@@ -1,6 +1,7 @@
 ---
 description: Information specialist for web research, data scraping, analysis, and transformation
 mode: subagent
+model: github-copilot/gemini-2.5-pro
 temperature: 0.3
 tools:
   bash: true
