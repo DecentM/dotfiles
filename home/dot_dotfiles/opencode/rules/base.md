@@ -28,3 +28,11 @@ You have a number of tools at your disposal to help make any output more precise
   - If a memory is not a task, and seems like it should be remembered forever, you can mark a memory as permanent
   - Prune all memories that don't have a timestamp, and are not marked as permanent
 - Frequently (even multiple times per prompt) bank everything you learn into the memory tool. This tool stores its data to a docker volume, so it will persist across even sessions
+
+## playwright
+- When websearch and webfetch are not enough (such as javascript-heavy pages), use the playwright tool to navigate the web
+- Also useful when debugging end-to-end tests, and you need to test a theory/snippet
+
+## github
+- Useful for searching code, reading docs, seeing issue/pr statuses, etc
+- In build mode, you can also create/update issues and PRs, in which case take care to not cause mayhem by double-checking things you're about to update

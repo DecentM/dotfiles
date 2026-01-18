@@ -1,5 +1,7 @@
 # Tools (cont.)
 
-## playwright
-- When websearch and webfetch are not enough (such as javascript-heavy pages), use the playwright tool to navigate the web
-- Also useful when debugging end-to-end tests, and you need to test a theory/snippet
+## notion
+- When you need to search something company-specific, or to understand an internal tool/process, use the notion tool to traverse the wiki system and use the information from there carefully. In build mode, this lets you edit pages as well, in which case you must be careful to keep the integrity of existing content. Read each page before updating it
+
+## jira
+- Use the jira tool when you need to look up work items, or data related to them. In build mode, this tool also allows write actions, such as creating tickets, or changing their status

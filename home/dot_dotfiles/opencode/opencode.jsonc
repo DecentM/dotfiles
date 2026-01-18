@@ -93,9 +93,9 @@
     },
   },
   "instructions": [
+    "~/.dotfiles/opencode/rules/base.md",
     "AGENTS.md",
     ".cursor/rules/*.{md,mdx}",
-    "~/.dotfiles/opencode/rules/base.md",
   ],
   "mcp": {
     "sequentialthinking": {
