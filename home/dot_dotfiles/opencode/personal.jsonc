@@ -9,13 +9,13 @@
   "agent": {
     // Global agents: only homeassistant (home automation isn't code-specific)
     "build": {
-      "model": "openrouter/anthropic/claude-opus-4",
+      "model": "openrouter/anthropic/claude-3.7-sonnet",
       "permission": {
         "homeassistant_*": "allow",
       },
     },
     "plan": {
-      "model": "openrouter/anthropic/claude-opus-4",
+      "model": "openrouter/anthropic/claude-3.7-sonnet",
       "permission": {
         "homeassistant_Get*": "allow",
         "homeassistant_todo_get_items": "allow",
@@ -24,10 +24,10 @@
 
     // Specialized agents with MCP access
     "coder": {
-      "model": "openrouter/openai/o3",
+      "model": "openrouter/qwen3-coder",
     },
     "reviewer": {
-      "model": "openrouter/anthropic/claude-opus-4",
+      "model": "openrouter/qwen3-coder",
       "permission": {
         // Read-only GitHub for PR reviews
         "github_get_*": "allow",
@@ -43,7 +43,7 @@
       },
     },
     "architect": {
-      "model": "openrouter/anthropic/claude-opus-4",
+      "model": "openrouter/qwen3-coder",
       "permission": {
         // Read-only GitHub for design research
         "github_get_*": "allow",
@@ -56,7 +56,7 @@
       },
     },
     "devops": {
-      "model": "openrouter/openai/o3-mini",
+      "model": "openrouter/qwen3-coder",
       "permission": {
         // Full GitHub for CI/CD workflows
         "github_*": "allow",
@@ -66,7 +66,7 @@
       },
     },
     "writer": {
-      "model": "openrouter/anthropic/claude-sonnet-4",
+      "model": "openrouter/z-ai/glm-4.6",
       "permission": {
         // Full GitHub for PR descriptions, release notes
         "github_*": "allow",
@@ -74,7 +74,7 @@
       },
     },
     "researcher": {
-      "model": "openrouter/anthropic/claude-opus-4",
+      "model": "openrouter/z-ai/glm-4.6",
       "permission": {
         // Read-only GitHub for code research
         "github_get_*": "allow",
@@ -90,7 +90,7 @@
       },
     },
     "git": {
-      "model": "openrouter/anthropic/claude-3.5-haiku",
+      "model": "openrouter/qwen/qwen3-coder",
       "permission": {
         // Read-only GitHub for remote operations
         "github_get_*": "allow",
@@ -100,7 +100,7 @@
       },
     },
     "creative": {
-      "model": "github-copilot/openai/gpt-5-mini",
+      "model": "github-copilot/z-ai/glm-4.6",
     },
   },
   "mcp": {
