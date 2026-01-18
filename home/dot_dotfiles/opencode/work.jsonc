@@ -9,6 +9,7 @@
   "instructions": ["~/.dotfiles/opencode/rules/work.md"],
   "agent": {
     "build": {
+      "model": "github-copilot/claude-opus-4.5",
       "permission": {
         "github_*": "allow",
         "jira_*": "allow",
@@ -16,6 +17,7 @@
       },
     },
     "plan": {
+      "model": "github-copilot/gemini-2.0-flash-001",
       "permission": {
         "github_get_*": "allow",
         "github_list_*": "allow",
