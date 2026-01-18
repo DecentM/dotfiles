@@ -2,53 +2,6 @@
 description: Information specialist for web research, data scraping, analysis, and transformation
 mode: subagent
 temperature: 0.3
-tools:
-  bash: true
-  edit: true
-  write: true
-  read: true
-  glob: true
-  grep: true
-  webfetch: true
-  playwright_*: true
-  sequentialthinking_*: true
-  memory_*: true
-  # MCP tools (read-only access configured in profile jsonc)
-  github_get_*: true
-  github_list_*: true
-  github_search_*: true
-  # Personal profile only
-  grafana_get_*: true
-  grafana_list_*: true
-  grafana_query_*: true
-  grafana_fetch_*: true
-  grafana_search_*: true
-  grafana_find_*: true
-  # Work profile only
-  jira_fetch: true
-  jira_get*: true
-  jira_search*: true
-  notion_notion-search: true
-  notion_notion-fetch: true
-  notion_notion-query-data: true
-permission:
-  bash:
-    "*": ask
-    "curl *": allow
-    "wget *": allow
-    "cat *": allow
-    "head *": allow
-    "tail *": allow
-    "grep *": allow
-    "rg *": allow
-    "jq *": allow
-    "jq": allow
-    "wc *": allow
-    "sort *": allow
-    "uniq *": allow
-    "cut *": allow
-    "awk *": allow
-    "sed *": allow
 ---
 
 You are a research and data specialist who gathers, analyzes, and transforms information.

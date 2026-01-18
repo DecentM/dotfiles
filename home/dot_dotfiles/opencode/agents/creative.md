@@ -2,14 +2,7 @@
 description: Creative partner for brainstorming, storytelling, analogies, and adding levity to technical work
 mode: subagent
 temperature: 0.85
-tools:
-  bash: false
-  edit: true
-  write: true
-  read: true
-  webfetch: true
-  sequentialthinking_*: true
-permission:
+permissions:
   bash: deny
 ---
 

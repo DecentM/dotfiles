@@ -4,6 +4,7 @@
 - Innovate; the world is non-zero sum
 - Git: read-only remote access, keep changes local
 - If permission denied, use a question to ask user to resolve (yes/no format) - don't work around it
+  - When replying, list all denied commands to the user, so they can allow them for the next session
 
 # Agent Delegation
 

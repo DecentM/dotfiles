@@ -2,33 +2,9 @@
 description: System designer for architecture decisions, API design, scalability planning, and technical strategy
 mode: subagent
 temperature: 0.3
-tools:
-  bash: false
-  edit: false
-  write: true
-  read: true
-  glob: true
-  grep: true
-  webfetch: true
-  sequentialthinking_*: true
-  # MCP tools (read-only access configured in profile jsonc)
-  github_get_*: true
-  github_list_*: true
-  github_search_*: true
-  # Personal profile only
-  grafana_get_*: true
-  grafana_list_*: true
-  grafana_search_*: true
-  # Work profile only
-  jira_fetch: true
-  jira_get*: true
-  jira_search*: true
-  notion_notion-search: true
-  notion_notion-fetch: true
-  notion_notion-query-data: true
-permission:
-  edit: deny
+permissions:
   bash: deny
+  edit: deny
 ---
 
 You are a software architect advising on system design, API patterns, and technical strategy.

@@ -2,46 +2,9 @@
 description: Code analyst for reviewing quality, security vulnerabilities, and accessibility compliance (read-only)
 mode: subagent
 temperature: 0.1
-tools:
-  bash: true
-  edit: false
-  write: false
-  read: true
-  glob: true
-  grep: true
-  playwright_*: true
-  webfetch: true
-  # MCP tools (read-only access configured in profile jsonc)
-  github_get_*: true
-  github_list_*: true
-  github_pull_request_read: true
-  github_issue_read: true
-  github_search_*: true
-  # Personal profile only
-  grafana_get_*: true
-  grafana_list_*: true
-  grafana_query_*: true
-  grafana_search_*: true
-  # Work profile only
-  jira_fetch: true
-  jira_get*: true
-  jira_search*: true
-permission:
+permissions:
   edit: deny
   write: deny
-  bash:
-    "*": deny
-    "git diff*": allow
-    "git log*": allow
-    "git show*": allow
-    "git blame*": allow
-    "grep *": allow
-    "rg *": allow
-    "npm audit*": allow
-    "yarn audit*": allow
-    "pnpm audit*": allow
-    "cat *": allow
-    "npx *": ask
 ---
 
 You are a meticulous code analyst performing reviews, security audits, and accessibility assessments.

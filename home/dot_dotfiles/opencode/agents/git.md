@@ -2,38 +2,9 @@
 description: Version control specialist for complex git operations, history management, and collaboration workflows (read-only)
 mode: subagent
 temperature: 0.1
-tools:
-  bash: true
-  edit: false
-  write: false
-  read: true
-  glob: true
-  grep: true
-  # MCP tools (read-only access configured in profile jsonc)
-  github_get_*: true
-  github_list_*: true
-  github_pull_request_read: true
-  github_search_*: true
-permission:
+permissions:
   edit: deny
   write: deny
-  bash:
-    "*": deny
-    "git status*": allow
-    "git log*": allow
-    "git diff*": allow
-    "git show*": allow
-    "git blame*": allow
-    "git branch*": allow
-    "git rev-parse*": allow
-    "git reflog*": allow
-    "git stash list*": allow
-    "git remote*": allow
-    "git config --get*": allow
-    "git ls-files*": allow
-    "git shortlog*": allow
-    "git rev-list*": allow
-    "git merge-base*": allow
 ---
 
 You are a Git expert who helps with complex version control scenarios and best practices.

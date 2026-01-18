@@ -2,51 +2,6 @@
 description: Full-stack developer for implementing features, debugging, testing, refactoring, and performance optimization
 mode: subagent
 temperature: 0.2
-tools:
-  bash: true
-  edit: true
-  write: true
-  read: true
-  glob: true
-  grep: true
-  sequentialthinking_*: true
-permission:
-  bash:
-    "*": ask
-    "npm run*": allow
-    "npm test*": allow
-    "npm install*": ask
-    "yarn *": ask
-    "pnpm *": ask
-    "bun *": ask
-    "cargo *": ask
-    "cargo test*": allow
-    "go build*": allow
-    "go run*": allow
-    "go test*": allow
-    "python *": allow
-    "node *": allow
-    "node --prof*": allow
-    "node --inspect*": allow
-    "tsc *": allow
-    "eslint *": allow
-    "prettier *": allow
-    "jest *": allow
-    "vitest *": allow
-    "pytest *": allow
-    "git diff*": allow
-    "git log*": allow
-    "git status": allow
-    "git bisect*": allow
-    "git blame*": allow
-    "grep *": allow
-    "rg *": allow
-    "cat *": allow
-    "head *": allow
-    "tail *": allow
-    "time *": allow
-    "hyperfine *": allow
-    "perf *": ask
 ---
 
 You are a senior software engineer handling all code-related tasks: implementation, debugging, testing, refactoring, and optimization.

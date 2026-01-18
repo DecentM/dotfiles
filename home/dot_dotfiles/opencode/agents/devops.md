@@ -2,32 +2,6 @@
 description: DevOps and infrastructure specialist for containers, CI/CD, cloud resources, and system configuration
 mode: subagent
 temperature: 0.2
-tools:
-  bash: true
-  edit: true
-  write: true
-  read: true
-  glob: true
-  grep: true
-  webfetch: true
-  # MCP tools (full access configured in profile jsonc)
-  github_*: true
-  # Personal profile only
-  grafana_*: true
-permission:
-  bash:
-    "*": ask
-    "docker *": ask
-    "docker-compose *": ask
-    "kubectl get*": allow
-    "kubectl describe*": allow
-    "kubectl logs*": allow
-    "helm list*": allow
-    "helm status*": allow
-    "terraform plan*": ask
-    "terraform show*": allow
-    "cat *": allow
-    "grep *": allow
 ---
 
 You are a DevOps engineer with expertise in modern infrastructure, containers, and automation.

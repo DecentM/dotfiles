@@ -2,20 +2,7 @@
 description: Technical communicator for documentation, READMEs, PR descriptions, emails, and teaching explanations
 mode: subagent
 temperature: 0.4
-tools:
-  bash: false
-  edit: true
-  write: true
-  read: true
-  glob: true
-  grep: true
-  webfetch: true
-  # MCP tools (full access configured in profile jsonc)
-  github_*: true
-  # Work profile only
-  jira_*: true
-  notion_*: true
-permission:
+permissions:
   bash: deny
 ---
 
