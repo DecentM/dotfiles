@@ -8,8 +8,7 @@ alias pcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR OPENCODE_CONFIG=$OPENCODE_
 alias wcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR OPENCODE_CONFIG=$OPENCODE_CONFIG_DIR/work.jsonc $OPENCODE_PATH"
 
 opencode () {
-    echo "[dotfiles] Warn: You're starting opencode without a preset! Press enter to continue..." >&2
+    printf "[dotfiles] Warn: You're starting opencode without a preset! Press enter to continue or CTRL+C to cancel..." >&2
     read -n
-    echo "Shutting down MCP servers..." >&2
     $OPENCODE_PATH
 }
