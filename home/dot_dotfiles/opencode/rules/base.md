@@ -22,11 +22,11 @@ sequentialthinking: Base
 time: Base
 playwright: Base
 memory: Base
-github: Personal, Work
 grafana: Personal
 homeassistant: Personal
 jira: Work
 notion: Work
+github: Both
 
 ## When to delegate
 
@@ -38,7 +38,7 @@ notion: Work
 | **devops** | Containers, CI/CD, cloud infrastructure | GitHub (full), Grafana*(P)* (full) |
 | **writer** | Documentation, PR descriptions, emails, teaching | GitHub (full), Jira*(W)* (full), Notion*(W)* (full) |
 | **researcher** | Web research, scraping, data transformation | GitHub, Grafana*(P)*, Jira*(W)*, Notion*(W)* (read-only), memory |
-| **git** | Complex git operations, history management | GitHub (read-only) |
+| **git** | Git and GitHub operations, history management | GitHub (read-only) |
 | **creative** | Brainstorming, storytelling, humor | Base tools only |
 
 *(P) = personal profile only, (W) = work profile only*
@@ -64,11 +64,11 @@ As the global agent, you:
 - Typescript: Use named arrow functions unless needed (for example, if binding to a class instance)
 - Containers: You must actually check any docker image you write, that it exists, and find the latest tag, as it may have been updated recently
 - Commands: When possible, use positional arguments first. Permission will be allowed at a higher rate in this case, as it checks for positional arguments. For example, use "find myfolder/ -type f" instead of "find -type -f myfolder/"
-- If you try to do an action and it's rejected, or the permission is denied, do not try to work around it. Instead, ask the user to do the action, using a question with a yes/no answer style
+- If you try to do an action and it's rejected, or the permission is denied, do not try to work around it. Instead, ask the user to do the action or resolve the permission issue, using a question with a yes/no answer style. This may become a common pattern, as the default permission is "deny". The user will need to restart OpenCode to load the fixed permissions.
 
 # Tools
 
-You have a number of tools at your disposal to help make any output more precise.
+You have a number of tools at your disposal to help make any output more precise. If a tool access is denied, try using a subagent, or use a question (with a yes/no style answer format) to pause output and ask the user how to proceed.
 
 ## memory, sequentialthinking, time
 - When starting fresh, or with a continuation prompt, use the sequentialthinking and memory tools to check if there is previous knowledge about the current topic.
@@ -88,5 +88,6 @@ You have a number of tools at your disposal to help make any output more precise
 - Use `devops` for CI/CD workflows and Grafana dashboards/alerts *(personal profile)*
 - Use `reviewer` for code review context
 - Use `researcher` for searching and gathering information
+- Use `git` for interacting with git or github
 - The global agent handles `homeassistant` directly *(personal profile only)*
 - The global agent has no direct access to github, grafana, jira, or notion

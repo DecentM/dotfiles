@@ -2,7 +2,7 @@
   "$schema": "https://opencode.ai/config.json",
   "share": "manual",
   "permission": {
-    "*": "ask",
+    "*": "deny",
     "bash": {
       "kubectl patch*": "deny",
       "kubectl apply*": "deny",
@@ -19,7 +19,8 @@
       "kubectl version*": "allow",
       "kubectl version": "allow",
 
-      "node -e*": "deny", // use node-code-mcp
+      "node -e*": "deny", // use sandbox-node MCP
+      "python*": "deny", // use sandbox-python MCP
 
       "git add*": "deny",
       "git commit*": "deny",
@@ -31,6 +32,8 @@
       "git log*": "allow",
 
       "grep*": "allow",
+      "sed*": "allow",
+      "uniq": "allow",
       "tail*": "allow",
       "tail": "allow",
       "head*": "allow",
@@ -58,10 +61,21 @@
       "npm info*": "allow",
       "cat*": "allow",
       "rg*": "allow", // ripgrep
+      "basename*": "allow",
+      "chmod*": "ask",
+      "timeout*": "ask",
+      "*.sh": "ask",
 
       "pnpm build": "allow",
       "pnpm install": "allow",
       "pnpm moon": "allow",
+
+      "npm search*": "allow",
+      "npm view*": "allow",
+
+      "docker build*": "allow",
+
+      "docker manifest inspect*": "allow",
     },
     "edit": {
       "*": "allow",
@@ -96,6 +110,10 @@
     "memory_*": "allow",
     "time_*": "allow",
     "playwright_*": "allow",
+
+    // Sandbox MCPs - code execution in isolated containers
+    "sandbox-node_*": "allow",
+    "sandbox-python_*": "allow",
   },
   "agent": {
     "compaction": {
@@ -128,6 +146,25 @@
         "-i",
         "--init",
         "mcr.microsoft.com/playwright/mcp",
+      ],
+      "enabled": true,
+    },
+    // Sandbox MCP servers for safe code execution (builds inline on first run)
+    "sandbox-node": {
+      "type": "local",
+      "command": [
+        "bash",
+        "-c",
+        "docker run --rm -i --init --network=none --memory=512m --cpus=1 $(docker build -q -f ~/.dotfiles/opencode/docker/repl-mcp.dockerfile ~/.dotfiles/opencode/docker)",
+      ],
+      "enabled": true,
+    },
+    "sandbox-python": {
+      "type": "local",
+      "command": [
+        "bash",
+        "-c",
+        "docker run --rm -i --init --network=none --memory=512m --cpus=1 $(docker build -q -f ~/.dotfiles/opencode/docker/mcp-python.dockerfile ~/.dotfiles/opencode/docker)",
       ],
       "enabled": true,
     },
