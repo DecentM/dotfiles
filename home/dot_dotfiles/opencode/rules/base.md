@@ -13,7 +13,7 @@ Delegate to specialized agents instead of doing everything yourself.
 
 | Agent | Use for | MCPs |
 |-------|---------|------|
-| **coder** | Implementation, debugging, testing, refactoring | sandbox-node, sandbox-python |
+| **coder** | Implementation, debugging, testing, refactoring | sandbox-node-deno, sandbox-python |
 | **reviewer** | Code review, security, accessibility | GitHub, Grafana*(P)*, Jira*(W)* (read-only) |
 | **architect** | System design, API patterns, technical strategy | GitHub, Grafana*(P)*, Jira*(W)*, Notion*(W)* (read-only) |
 | **devops** | Containers, CI/CD, infrastructure | GitHub, Grafana*(P)* (full) |
