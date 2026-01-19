@@ -9,13 +9,13 @@
   "agent": {
     // Global agents: only homeassistant (home automation isn't code-specific)
     "build": {
-      "model": "openrouter/openai/gpt-oss-120b",
+      "model": "openrouter/minimax/minimax-m1",
       "permission": {
         "homeassistant_*": "allow",
       },
     },
     "plan": {
-      "model": "openrouter/openai/gpt-oss-120b",
+      "model": "openrouter/minimax/minimax-m1",
       "permission": {
         "homeassistant_Get*": "allow",
         "homeassistant_todo_get_items": "allow",
@@ -24,10 +24,10 @@
 
     // Specialized agents with MCP access
     "coder": {
-      "model": "openrouter/x-ai/grok-code-fast-1",
+      "model": "openrouter/minimax/minimax-m2.1",
     },
     "reviewer": {
-      "model": "openrouter/qwen/qwen3-235b-a22b-thinking-2507",
+      "model": "openrouter/minimax/minimax-m2.1",
       "permission": {
         // Read-only GitHub for PR reviews
         "github_get_*": "allow",
@@ -43,7 +43,7 @@
       },
     },
     "architect": {
-      "model": "openrouter/qwen/qwen3-235b-a22b-thinking-2507",
+      "model": "openrouter/minimax/minimax-m2.1",
       "permission": {
         // Read-only GitHub for design research
         "github_get_*": "allow",
@@ -56,7 +56,7 @@
       },
     },
     "devops": {
-      "model": "openrouter/qwen/qwen3-235b-a22b-thinking-2507",
+      "model": "openrouter/minimax/minimax-m2.1",
       "permission": {
         // Full GitHub for CI/CD workflows
         "github_*": "allow",
@@ -66,7 +66,7 @@
       },
     },
     "writer": {
-      "model": "openrouter/z-ai/glm-4.5-air",
+      "model": "openrouter/deepseek/deepseek-v3.2",
       "permission": {
         // Full GitHub for PR descriptions, release notes
         "github_*": "allow",
@@ -74,7 +74,7 @@
       },
     },
     "researcher": {
-      "model": "openrouter/z-ai/glm-4.5-air",
+      "model": "openrouter/deepseek/deepseek-v3.2",
       "permission": {
         // Read-only GitHub for code research
         "github_get_*": "allow",
@@ -90,7 +90,7 @@
       },
     },
     "git": {
-      "model": "openrouter/qwen/qwen3-235b-a22b-thinking-2507",
+      "model": "openrouter/minimax/minimax-m2.1",
       "permission": {
         // Read-only GitHub for remote operations
         "github_get_*": "allow",
@@ -100,7 +100,7 @@
       },
     },
     "creative": {
-      "model": "github-copilot/z-ai/glm-4.5-air",
+      "model": "openrouter/deepseek/deepseek-v3.2",
     },
   },
   "mcp": {
