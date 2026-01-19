@@ -5,6 +5,8 @@ temperature: 0.1
 permission:
   edit: deny
   write: deny
+  sandbox-node-deno_*: allow
+  sandbox-python_*: allow
   task: deny
 ---
 

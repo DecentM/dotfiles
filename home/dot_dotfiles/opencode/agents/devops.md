@@ -3,6 +3,8 @@ description: DevOps and infrastructure specialist for containers, CI/CD, cloud r
 mode: subagent
 temperature: 0.2
 permission:
+  sandbox-node-deno_*: allow
+  sandbox-python_*: allow
   task: deny
 ---
 

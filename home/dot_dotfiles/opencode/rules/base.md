@@ -38,7 +38,6 @@
 ## When You May Act Directly
 
 - Quick file reads/edits for orientation (glob, grep, read, edit)
-- Simple git status checks
 - Coordinating between multiple agent results
 - Answering direct questions from context already gathered
 - homeassistant operations *(personal profile only)*

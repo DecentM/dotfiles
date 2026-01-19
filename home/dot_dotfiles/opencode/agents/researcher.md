@@ -3,6 +3,8 @@ description: Information specialist for web research, data scraping, analysis, a
 mode: subagent
 temperature: 0.3
 permission:
+  sandbox-node-deno_*: allow
+  sandbox-python_*: allow
   task: deny
 ---
 

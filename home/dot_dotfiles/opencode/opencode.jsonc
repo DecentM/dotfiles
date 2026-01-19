@@ -119,23 +119,8 @@
       "docker manifest inspect*": "allow",
       // End docker
 
-      // Git
-      "git status": "allow",
-      "git bisect*": "allow",
-      "git log": "allow",
-      "git status*": "allow",
-      "git log*": "allow",
-      "git diff*": "allow",
-      "git show*": "allow",
-      "git blame*": "allow",
-      "git branch*": "allow",
-      "git rev-parse*": "allow",
-      "git reflog*": "allow",
-      "git stash list*": "allow",
-      "git config --get*": "allow",
-      "git ls-files*": "allow",
-      "git shortlog*": "allow",
-      "git rev-list*": "allow",
+      // Git - delegate to git agent
+      "git*": "deny",
       // End git
     },
     "edit": {
@@ -172,9 +157,9 @@
     "time_*": "allow",
     "playwright_*": "allow",
 
-    // Sandbox MCPs - code execution in isolated containers
-    "sandbox-node-deno_*": "allow",
-    "sandbox-python_*": "allow",
+    // Sandbox MCPs - delegate to specialized agents (coder, devops, researcher, reviewer)
+    "sandbox-node-deno_*": "deny",
+    "sandbox-python_*": "deny",
   },
   "agent": {
     "compaction": {
