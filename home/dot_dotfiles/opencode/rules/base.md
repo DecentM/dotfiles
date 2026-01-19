@@ -20,7 +20,7 @@ Delegate to specialized agents instead of doing everything yourself.
 | **writer** | Docs, PRs, emails, teaching | GitHub, Jira*(W)*, Notion*(W)* (full) |
 | **researcher** | Web research, data gathering | GitHub, Grafana*(P)*, Jira*(W)*, Notion*(W)* (read-only), memory |
 | **git** | Git operations, history | GitHub (read-only) |
-| **creative** | Brainstorming, storytelling | Base only |
+| **creative** | Brainstorming, storytelling | Both |
 
 *(P) = personal, (W) = work*
 
@@ -35,15 +35,15 @@ Delegate to specialized agents instead of doing everything yourself.
 # Tools
 
 ## memory, sequentialthinking, time
-- On fresh/continuation: check memory and use sequential thinking
-- Timestamp memories, prune >2 weeks old (unless permanent)
+- On fresh/continuation: check memory and use sequentialthinking
+- Timestamp all memory you insert, prune >2 weeks old (unless permanent)
 - Bank learnings frequently - persists across sessions
 
 ## playwright
 - For JS-heavy pages when webfetch insufficient
 - Useful for e2e test debugging
 
-## sandbox-node, sandbox-python
+## sandbox-node-deno, sandbox-python
 - Isolated containers: no network, 512MB RAM, 1 CPU
 - Delegate to `coder` for execution tasks
 
