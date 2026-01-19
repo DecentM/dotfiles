@@ -6,12 +6,21 @@
 
 FROM node:22-bookworm-slim
 
-# Install build dependencies for native modules (ast-grep)
+# Install build dependencies for native modules (ast-grep) and tools for Deno
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     make \
     g++ \
+    curl \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Deno
+ARG DENO_VERSION=2.6.5
+RUN curl -fsSL https://github.com/denoland/deno/releases/download/v${DENO_VERSION}/deno-x86_64-unknown-linux-gnu.zip -o /tmp/deno.zip \
+    && unzip /tmp/deno.zip -d /usr/local/bin \
+    && rm /tmp/deno.zip \
+    && chmod +x /usr/local/bin/deno
 
 WORKDIR /app
 
