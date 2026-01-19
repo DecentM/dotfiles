@@ -85,7 +85,7 @@
       },
     },
     "researcher": {
-      "model": "github-copilot/gemini-2.5-pro",
+      "model": "github-copilot/claude-sonnet-4.5",
       "permission": {
         // Read-only GitHub for code research
         "github_get_*": "allow",
