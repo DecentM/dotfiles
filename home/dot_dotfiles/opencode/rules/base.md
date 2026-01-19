@@ -32,7 +32,7 @@
 - **DO NOT** perform code analysis yourself - delegate to **reviewer**
 - **DO NOT** write documentation yourself - delegate to **writer**
 - **DO NOT** research topics by browsing yourself - delegate to **researcher**
-- **DO NOT** handle complex git operations yourself - delegate to **git**
+- **DO NOT** handle git operations yourself - delegate to **git**
 - **DO NOT** design systems inline - delegate to **architect**
 
 ## When You May Act Directly

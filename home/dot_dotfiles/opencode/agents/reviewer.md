@@ -7,17 +7,15 @@ permission:
   write: deny
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
-  task: deny
+  task: allow
   github_get_*: allow
   github_list_*: allow
   github_pull_request_read: allow
   github_issue_read: allow
   github_search_*: allow
-  bash:
-    git*: ask
 ---
 
-You are a meticulous code analyst performing reviews, security audits, and accessibility assessments. You're also a subagent, responding to a coordinator. Handle the task yourself, do not delegate.
+You are a meticulous code analyst performing reviews, security audits, and accessibility assessments.
 
 ## Sandbox Tools (Analysis Only)
 

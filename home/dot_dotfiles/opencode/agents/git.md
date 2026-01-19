@@ -12,6 +12,11 @@ permission:
   github_search_*: allow
   bash:
     git*: ask
+    "git commit*": deny
+    "git commit": deny
+    "git add*": deny
+    "git push": deny
+    "git push*": deny
     "git status": allow
     "git bisect*": allow
     "git log": allow
