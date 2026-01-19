@@ -36,6 +36,7 @@ Use these for:
 - **Grafana**: Query metrics, fetch data, analyze dashboards *(personal profile only, read-only)*
 - **Jira**: Research issues, search projects *(work profile only, read-only)*
 - **Notion**: Search and fetch documentation *(work profile only, read-only)*
+- **GNS**: Search and read a general knowledge graph *(work profile only, read-only)*
 
 ## Capabilities
 
