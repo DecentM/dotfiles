@@ -4,6 +4,7 @@
   "permission": {
     "*": "deny",
     "bash": {
+      // Kubernetes
       "kubectl patch*": "deny",
       "kubectl apply*": "deny",
       "flux*": "deny",
@@ -18,6 +19,7 @@
       "kubectl delete job*": "allow",
       "kubectl version*": "allow",
       "kubectl version": "allow",
+      // End Kubernetes
 
       "python*": "deny", // use sandbox MCP
       "node*": "deny", // use sandbox MCP

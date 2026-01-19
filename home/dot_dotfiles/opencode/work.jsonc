@@ -9,22 +9,22 @@
   },
   "instructions": ["~/.dotfiles/opencode/rules/work.md"],
   "agent": {
-    // Global agents: minimal, just for general queries
+    // Global agents: reasoning models for orchestration
     "build": {
-      "model": "github-copilot/claude-opus-4.5",
+      "model": "github-copilot/claude-opus-4-5",
       "permission": {},
     },
     "plan": {
-      "model": "github-copilot/claude-opus-4.5",
+      "model": "github-copilot/claude-sonnet-4-5",
       "permission": {},
     },
 
     // Specialized agents with MCP access
     "coder": {
-      "model": "github-copilot/gpt-5.1-codex-max",
+      "model": "github-copilot/gpt-5.1-codex",
     },
     "reviewer": {
-      "model": "github-copilot/claude-opus-4.5",
+      "model": "github-copilot/claude-sonnet-4",
       "permission": {
         // Read-only GitHub for PR reviews
         "github_get_*": "allow",
@@ -41,7 +41,7 @@
       },
     },
     "architect": {
-      "model": "github-copilot/claude-opus-4.5",
+      "model": "github-copilot/claude-sonnet-4-5",
       "permission": {
         // Read-only GitHub for design research
         "github_get_*": "allow",
@@ -65,7 +65,7 @@
       },
     },
     "devops": {
-      "model": "github-copilot/gpt-5.1-codex",
+      "model": "github-copilot/gpt-4.1",
       "permission": {
         // Full GitHub for CI/CD workflows
         "github_*": "allow",
@@ -73,7 +73,7 @@
       },
     },
     "writer": {
-      "model": "github-copilot/claude-sonnet-4.5",
+      "model": "github-copilot/claude-sonnet-4",
       "permission": {
         // Full GitHub for PR descriptions, release notes
         "github_*": "allow",
@@ -85,7 +85,7 @@
       },
     },
     "researcher": {
-      "model": "github-copilot/claude-opus-4.5",
+      "model": "github-copilot/gemini-2.5-pro",
       "permission": {
         // Read-only GitHub for code research
         "github_get_*": "allow",
@@ -110,7 +110,7 @@
       },
     },
     "git": {
-      "model": "github-copilot/claude-haiku-4.5",
+      "model": "github-copilot/gpt-4.1-nano",
       "permission": {
         // Read-only GitHub for remote operations
         "github_get_*": "allow",
@@ -120,7 +120,7 @@
       },
     },
     "creative": {
-      "model": "github-copilot/gpt-5-mini",
+      "model": "github-copilot/claude-sonnet-4-5",
     },
   },
   "mcp": {
