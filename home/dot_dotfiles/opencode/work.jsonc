@@ -7,6 +7,7 @@
     "jira_*": "deny",
     "notion_*": "deny",
     "slack_*": "deny",
+    "{env:WORK_MCP_NAME}_*": "deny",
   },
   "instructions": ["~/.dotfiles/opencode/rules/work.md"],
   "agent": {
@@ -75,6 +76,23 @@
     "researcher": {
       "model": "github-copilot/claude-sonnet-4.5",
       "permission": {
+        "{env:WORK_MCP_NAME}_get": "allow",
+        "{env:WORK_MCP_NAME}_list": "allow",
+        "{env:WORK_MCP_NAME}_traverse": "allow",
+        "{env:WORK_MCP_NAME}_batch_get": "allow",
+        "{env:WORK_MCP_NAME}_search": "allow",
+        "{env:WORK_MCP_NAME}_aggregate": "allow",
+        "{env:WORK_MCP_NAME}_tag_list": "allow",
+        "{env:WORK_MCP_NAME}_get_paths": "allow",
+        "{env:WORK_MCP_NAME}_list_mounts": "allow",
+        "{env:WORK_MCP_NAME}_validate": "allow",
+        "{env:WORK_MCP_NAME}_validate_keyspace": "allow",
+        "{env:WORK_MCP_NAME}_analyze_keyspace": "allow",
+        "{env:WORK_MCP_NAME}_list_assignments": "allow",
+        "{env:WORK_MCP_NAME}_pipe_read": "allow",
+        "{env:WORK_MCP_NAME}_analyze_image": "allow",
+        "{env:WORK_MCP_NAME}_export": "allow",
+
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
@@ -108,7 +126,7 @@
       "command": [
         "bash",
         "-c",
-        "docker run --rm -i --init --memory=256m --cpus=0.5 -e MCP_REMOTE_URL={env:WORK_MCP_URL} -e SOCKS_PROXY={env:WORK_MCP_PROXY} $(docker build -q -f ~/.dotfiles/opencode/docker/mcp-socks-proxy.dockerfile ~/.dotfiles/opencode/docker)",
+        "docker run --rm -i --init --network=host --memory=256m --cpus=0.5 -e MCP_REMOTE_URL={env:WORK_MCP_URL} -e SOCKS_PROXY={env:WORK_MCP_PROXY} $(docker build -q -f ~/.dotfiles/opencode/docker/mcp-socks-proxy.dockerfile ~/.dotfiles/opencode/docker)",
       ],
       "enabled": true,
     },

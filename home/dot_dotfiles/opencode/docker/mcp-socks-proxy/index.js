@@ -1,16 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * MCP SOCKS5 Proxy Wrapper
- *
- * Receives MCP requests via stdio, forwards them to a remote MCP server
- * through a SOCKS5 proxy, and returns responses back via stdio.
- *
- * Environment variables:
- *   MCP_REMOTE_URL - The remote MCP server URL (required)
- *   SOCKS_PROXY    - SOCKS5 proxy URL, e.g., socks5://host:port (required)
- */
-
 import { createInterface } from "node:readline";
 import { request as httpsRequest } from "node:https";
 import { request as httpRequest } from "node:http";
@@ -18,6 +7,7 @@ import { SocksProxyAgent } from "socks-proxy-agent";
 
 const MCP_REMOTE_URL = process.env.MCP_REMOTE_URL;
 const SOCKS_PROXY = process.env.SOCKS_PROXY;
+const MCP_TOKEN = process.env.MCP_TOKEN;
 
 if (!MCP_REMOTE_URL) {
   console.error("Error: MCP_REMOTE_URL environment variable is required");
@@ -32,52 +22,52 @@ if (!SOCKS_PROXY) {
 const log = (...args) => console.error("[mcp-socks-proxy]", ...args);
 
 log(`Connecting to ${MCP_REMOTE_URL} via ${SOCKS_PROXY}`);
+if (MCP_TOKEN) {
+  log("Using MCP_TOKEN for authentication");
+}
 
-// Parse remote URL
 const remoteUrl = new URL(MCP_REMOTE_URL);
 const isHttps = remoteUrl.protocol === "https:";
 const requestFn = isHttps ? httpsRequest : httpRequest;
 
-// Create SOCKS proxy agent
 const socksAgent = new SocksProxyAgent(SOCKS_PROXY);
 
-// Track session ID for MCP HTTP transport
-let sessionId = null;
+const SERVER_INFO = {
+  name: "mcp-proxy",
+  version: "1.0.0",
+};
 
-/**
- * Make an HTTP(S) request through the SOCKS proxy
- */
-function makeRequest(body) {
+let cachedTools = null;
+
+function buildHeaders(contentLength = 0) {
+  const headers = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+
+  if (contentLength > 0) {
+    headers["Content-Length"] = contentLength;
+  }
+
+  if (MCP_TOKEN) {
+    headers["Authorization"] = `Bearer ${MCP_TOKEN}`;
+  }
+
+  return headers;
+}
+
+function makeGetRequest(path) {
   return new Promise((resolve, reject) => {
-    const headers = {
-      "Content-Type": "application/json",
-      Accept: "application/json, text/event-stream",
-      "Content-Length": Buffer.byteLength(body),
-    };
-
-    // Include session ID if we have one
-    if (sessionId) {
-      headers["Mcp-Session-Id"] = sessionId;
-    }
-
     const options = {
       hostname: remoteUrl.hostname,
       port: remoteUrl.port || (isHttps ? 443 : 80),
-      path: remoteUrl.pathname + remoteUrl.search,
-      method: "POST",
-      headers,
+      path: path,
+      method: "GET",
+      headers: buildHeaders(),
       agent: socksAgent,
     };
 
     const req = requestFn(options, (res) => {
-      // Capture session ID from response
-      const newSessionId = res.headers["mcp-session-id"];
-      if (newSessionId) {
-        sessionId = newSessionId;
-        log(`Session ID: ${sessionId}`);
-      }
-
-      const contentType = res.headers["content-type"] || "";
       const chunks = [];
 
       res.on("data", (chunk) => chunks.push(chunk));
@@ -86,7 +76,6 @@ function makeRequest(body) {
         const data = Buffer.concat(chunks).toString("utf8");
         resolve({
           status: res.statusCode,
-          contentType,
           data,
         });
       });
@@ -95,92 +84,217 @@ function makeRequest(body) {
     });
 
     req.on("error", reject);
-    req.write(body);
     req.end();
   });
 }
 
 /**
- * Send a JSON-RPC message to the remote MCP server
+ * Make an HTTP(S) POST request through the SOCKS proxy
  */
-async function sendToRemote(message) {
-  try {
-    const body = JSON.stringify(message);
-    const response = await makeRequest(body);
+function makePostRequest(path, body) {
+  return new Promise((resolve, reject) => {
+    const bodyStr = JSON.stringify(body);
+    const options = {
+      hostname: remoteUrl.hostname,
+      port: remoteUrl.port || (isHttps ? 443 : 80),
+      path: path,
+      method: "POST",
+      headers: buildHeaders(Buffer.byteLength(bodyStr)),
+      agent: socksAgent,
+    };
 
-    if (response.contentType.includes("text/event-stream")) {
-      // Handle SSE response
-      handleSSEData(response.data);
-    } else if (response.contentType.includes("application/json")) {
-      // Handle simple JSON response
-      const data = JSON.parse(response.data);
-      writeResponse(data);
-    } else if (response.status === 202) {
-      // Accepted - no response body (notification)
-      log("Notification accepted (202)");
-    } else {
-      log(`Unexpected response: ${response.status} ${response.contentType}`);
-      log(`Response body: ${response.data}`);
-    }
-  } catch (error) {
-    log(`Error sending to remote: ${error.message}`);
+    const req = requestFn(options, (res) => {
+      const chunks = [];
 
-    // If it's a request (has id), send error response
-    if (message.id !== undefined) {
-      writeResponse({
-        jsonrpc: "2.0",
-        id: message.id,
-        error: {
-          code: -32000,
-          message: `Proxy error: ${error.message}`,
-        },
+      res.on("data", (chunk) => chunks.push(chunk));
+
+      res.on("end", () => {
+        const data = Buffer.concat(chunks).toString("utf8");
+        resolve({
+          status: res.statusCode,
+          data,
+        });
       });
-    }
-  }
+
+      res.on("error", reject);
+    });
+
+    req.on("error", reject);
+    req.write(bodyStr);
+    req.end();
+  });
 }
 
-/**
- * Parse SSE data and extract JSON-RPC messages
- */
-function handleSSEData(data) {
-  const events = data.split("\n\n");
-
-  for (const event of events) {
-    if (!event.trim()) continue;
-
-    const lines = event.split("\n");
-    let eventType = "message";
-    let eventData = "";
-
-    for (const line of lines) {
-      if (line.startsWith("event:")) {
-        eventType = line.slice(6).trim();
-      } else if (line.startsWith("data:")) {
-        eventData += line.slice(5).trim();
-      }
-    }
-
-    if (eventData && eventType === "message") {
-      try {
-        const parsed = JSON.parse(eventData);
-        writeResponse(parsed);
-      } catch (e) {
-        log(`Failed to parse SSE data: ${eventData}`);
-      }
-    }
-  }
-}
-
-/**
- * Write a JSON-RPC response to stdout
- */
 function writeResponse(data) {
   process.stdout.write(JSON.stringify(data) + "\n");
 }
 
-/**
- * Main: Read JSON-RPC messages from stdin and forward to remote
- */
+function writeError(id, code, message) {
+  writeResponse({
+    jsonrpc: "2.0",
+    id,
+    error: { code, message },
+  });
+}
+
+function handleInitialize(message) {
+  log("Handling initialize");
+  writeResponse({
+    jsonrpc: "2.0",
+    id: message.id,
+    result: {
+      protocolVersion: "2024-11-05",
+      capabilities: {
+        tools: {},
+      },
+      serverInfo: SERVER_INFO,
+    },
+  });
+}
+
+function handleInitialized() {
+  log("Received initialized notification");
+}
+
+async function handleToolsList(message) {
+  log("Handling tools/list");
+
+  try {
+    // Use cached tools if available
+    if (cachedTools) {
+      log(`Returning ${cachedTools.length} cached tools`);
+      writeResponse({
+        jsonrpc: "2.0",
+        id: message.id,
+        result: { tools: cachedTools },
+      });
+      return;
+    }
+
+    const response = await makeGetRequest("/api/tools");
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP ${response.status}: ${response.data}`);
+    }
+
+    const serverResponse = JSON.parse(response.data);
+
+    if (!serverResponse.success) {
+      throw new Error(serverResponse.error || "Failed to fetch tools");
+    }
+
+    // returns: { success: true, tools: [{ name, description, inputSchema }] }
+    // expects: { tools: [{ name, description, inputSchema }] }
+    const tools = serverResponse.tools.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      inputSchema: tool.inputSchema,
+    }));
+
+    cachedTools = tools;
+    log(`Fetched and cached ${tools.length} tools`);
+
+    writeResponse({
+      jsonrpc: "2.0",
+      id: message.id,
+      result: { tools },
+    });
+  } catch (error) {
+    log(`Error fetching tools: ${error.message}`);
+    writeError(message.id, -32000, `Failed to fetch tools: ${error.message}`);
+  }
+}
+
+async function handleToolsCall(message) {
+  const { name, arguments: args } = message.params;
+  log(`Handling tools/call: ${name}`);
+
+  try {
+    // /api/call expects: { method: "tools/call", params: { name, arguments } }
+    const serverResponse = {
+      method: "tools/call",
+      params: {
+        name,
+        arguments: args || {},
+      },
+    };
+
+    const response = await makePostRequest("/api/call", serverResponse);
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP ${response.status}: ${response.data}`);
+    }
+
+    const serverToolResponse = JSON.parse(response.data);
+
+    if (!serverToolResponse.success) {
+      throw new Error(serverToolResponse.error || "Tool call failed");
+    }
+
+    // returns: { success: true, data: <tool_result> }
+    // expects: { content: [{ type: "text", text: "..." }] }
+    const resultText =
+      typeof serverToolResponse.data === "string"
+        ? serverToolResponse.data
+        : JSON.stringify(serverToolResponse.data, null, 2);
+
+    writeResponse({
+      jsonrpc: "2.0",
+      id: message.id,
+      result: {
+        content: [
+          {
+            type: "text",
+            text: resultText,
+          },
+        ],
+      },
+    });
+
+    log(`Tool ${name} completed successfully`);
+  } catch (error) {
+    log(`Error calling tool ${name}: ${error.message}`);
+    writeError(message.id, -32000, `Tool call failed: ${error.message}`);
+  }
+}
+
+async function processMessage(message) {
+  const { method, id } = message;
+
+  // Handle requests (have id) and notifications (no id)
+  switch (method) {
+    case "initialize":
+      handleInitialize(message);
+      break;
+
+    case "initialized":
+      handleInitialized();
+      break;
+
+    case "notifications/initialized":
+      handleInitialized();
+      break;
+
+    case "tools/list":
+      await handleToolsList(message);
+      break;
+
+    case "tools/call":
+      await handleToolsCall(message);
+      break;
+
+    default:
+      if (id !== undefined) {
+        // Unknown request - return error
+        log(`Unknown method: ${method}`);
+        writeError(id, -32601, `Method not found: ${method}`);
+      } else {
+        // Unknown notification - ignore
+        log(`Ignoring unknown notification: ${method}`);
+      }
+  }
+}
+
 async function main() {
   const rl = createInterface({
     input: process.stdin,
@@ -195,8 +309,8 @@ async function main() {
 
     try {
       const message = JSON.parse(trimmed);
-      log(`→ ${message.method || "response"} (id: ${message.id})`);
-      await sendToRemote(message);
+      log(`-> ${message.method || "response"} (id: ${message.id})`);
+      await processMessage(message);
     } catch (error) {
       log(`Failed to parse input: ${error.message}`);
     }
@@ -205,7 +319,6 @@ async function main() {
   log("stdin closed, exiting");
 }
 
-// Handle graceful shutdown
 process.on("SIGINT", () => {
   log("Received SIGINT, exiting");
   process.exit(0);
