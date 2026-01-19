@@ -33,6 +33,10 @@
       "chmod*": "ask",
       "timeout*": "ask",
       "*.sh": "ask",
+      "bin/*": "ask",
+      "./*": "ask",
+      "true": "ask",
+      "false": "ask",
 
       "grep*": "allow",
       "sed*": "allow",
