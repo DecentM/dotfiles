@@ -2,7 +2,7 @@
 description: Version control specialist for complex git operations, history management, and collaboration workflows (read-only)
 mode: subagent
 temperature: 0.1
-permissions:
+permission:
   edit: deny
   write: deny
   task: deny

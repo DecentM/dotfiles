@@ -2,7 +2,7 @@
 description: Technical communicator for documentation, READMEs, PR descriptions, emails, and teaching explanations
 mode: subagent
 temperature: 0.4
-permissions:
+permission:
   bash: deny
   task: deny
 ---

@@ -2,7 +2,7 @@
 description: Full-stack developer for implementing features, debugging, testing, refactoring, and performance optimization
 mode: subagent
 temperature: 0.2
-permissions:
+permission:
   task: deny
 ---
 

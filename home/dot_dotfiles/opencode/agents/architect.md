@@ -2,7 +2,7 @@
 description: System designer for architecture decisions, API design, scalability planning, and technical strategy
 mode: subagent
 temperature: 0.3
-permissions:
+permission:
   bash: deny
   edit: deny
   task: deny

@@ -2,7 +2,7 @@
 description: Information specialist for web research, data scraping, analysis, and transformation
 mode: subagent
 temperature: 0.3
-permissions:
+permission:
   task: deny
 ---
 

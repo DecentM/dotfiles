@@ -2,7 +2,7 @@
 description: DevOps and infrastructure specialist for containers, CI/CD, cloud resources, and system configuration
 mode: subagent
 temperature: 0.2
-permissions:
+permission:
   task: deny
 ---
 
