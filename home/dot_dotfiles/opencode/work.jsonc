@@ -26,12 +26,6 @@
     "reviewer": {
       "model": "github-copilot/claude-sonnet-4",
       "permission": {
-        "github_get_*": "allow",
-        "github_list_*": "allow",
-        "github_pull_request_read": "allow",
-        "github_issue_read": "allow",
-        "github_search_*": "allow",
-
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
@@ -45,11 +39,6 @@
     "architect": {
       "model": "github-copilot/claude-sonnet-4.5",
       "permission": {
-
-        "github_get_*": "allow",
-        "github_list_*": "allow",
-        "github_search_*": "allow",
-
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
@@ -71,21 +60,12 @@
     },
     "devops": {
       "model": "github-copilot/claude-opus-4.5",
-      "permission": {
-
-        "github_*": "allow",
-        "github_request_copilot_review": "deny",
-      },
     },
     "writer": {
       "model": "github-copilot/claude-sonnet-4",
       "permission": {
-
         "github_*": "allow",
-        "github_request_copilot_review": "deny",
-
         "jira_*": "allow",
-
         "notion_*": "allow",
 
         "slack_conversations_*": "allow",
@@ -95,10 +75,6 @@
     "researcher": {
       "model": "github-copilot/claude-sonnet-4.5",
       "permission": {
-        "github_get_*": "allow",
-        "github_list_*": "allow",
-        "github_search_*": "allow",
-
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
@@ -121,12 +97,6 @@
     },
     "git": {
       "model": "github-copilot/claude-sonnet-4.5",
-      "permission": {
-        "github_get_*": "allow",
-        "github_list_*": "allow",
-        "github_pull_request_read": "allow",
-        "github_search_*": "allow",
-      },
     },
     "creative": {
       "model": "github-copilot/claude-sonnet-4.5",

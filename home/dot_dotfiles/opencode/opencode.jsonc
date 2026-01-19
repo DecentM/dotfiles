@@ -120,10 +120,6 @@
       "docker search*": "allow",
       "docker pull*": "allow",
       // End docker
-
-      // Git - delegate to git agent
-      "git*": "deny",
-      // End git
     },
     "edit": {
       "*": "allow",
@@ -162,12 +158,6 @@
     // Sandbox MCPs - delegate to specialized agents (coder, devops, researcher, reviewer)
     "sandbox-node-deno_*": "deny",
     "sandbox-python_*": "deny",
-  },
-  "agent": {
-    "compaction": {
-      "hidden": true,
-      "prompt": "Write your memories into the memory tool. Then, provide a detailed prompt for continuing our conversation above. Focus on information that would be helpful for continuing the conversation, including what we did, what we're doing, which files we're working on, and what we're going to do next considering new session will not have access to our conversation.",
-    },
   },
   "instructions": [
     "~/.dotfiles/opencode/rules/base.md",
