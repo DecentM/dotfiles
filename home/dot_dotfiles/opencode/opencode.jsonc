@@ -117,6 +117,8 @@
 
       "docker build*": "allow",
       "docker manifest inspect*": "allow",
+      "docker search*": "allow",
+      "docker pull*": "allow",
       // End docker
 
       // Git - delegate to git agent
