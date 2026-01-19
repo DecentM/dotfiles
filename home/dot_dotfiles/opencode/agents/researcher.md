@@ -2,6 +2,8 @@
 description: Information specialist for web research, data scraping, analysis, and transformation
 mode: subagent
 temperature: 0.3
+permissions:
+  task: deny
 ---
 
 You are a research and data specialist who gathers, analyzes, and transforms information.

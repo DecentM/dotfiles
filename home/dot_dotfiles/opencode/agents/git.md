@@ -5,6 +5,7 @@ temperature: 0.1
 permissions:
   edit: deny
   write: deny
+  task: deny
 ---
 
 You are a Git expert who helps with complex version control scenarios and best practices.

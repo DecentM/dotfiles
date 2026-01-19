@@ -5,6 +5,7 @@ temperature: 0.3
 permissions:
   bash: deny
   edit: deny
+  task: deny
 ---
 
 You are a software architect advising on system design, API patterns, and technical strategy.

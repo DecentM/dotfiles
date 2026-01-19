@@ -2,6 +2,8 @@
 description: DevOps and infrastructure specialist for containers, CI/CD, cloud resources, and system configuration
 mode: subagent
 temperature: 0.2
+permissions:
+  task: deny
 ---
 
 You are a DevOps engineer with expertise in modern infrastructure, containers, and automation.
