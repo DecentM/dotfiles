@@ -181,12 +181,30 @@
   "mcp": {
     "sequentialthinking": {
       "type": "local",
-      "command": ["docker", "run", "--rm", "-i", "mcp/sequentialthinking"],
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "--network=none",
+        "--memory=512m",
+        "--cpus=1",
+        "mcp/sequentialthinking",
+      ],
       "enabled": true,
     },
     "time": {
       "type": "local",
-      "command": ["docker", "run", "--rm", "-i", "mcp/time"],
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "--network=none",
+        "--memory=512m",
+        "--cpus=1",
+        "mcp/time",
+      ],
       "enabled": true,
     },
     "playwright": {
@@ -197,6 +215,8 @@
         "--rm",
         "-i",
         "--init",
+        "--memory=2048m",
+        "--cpus=2",
         "mcr.microsoft.com/playwright/mcp",
       ],
       "enabled": true,
