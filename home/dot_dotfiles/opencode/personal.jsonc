@@ -100,7 +100,7 @@
       "url": "https://hass.cluster.arpa/api/mcp",
       "enabled": true,
       "headers": {
-        "Authorization": "Bearer {HOMEASSISTANT_TOKEN}",
+        "Authorization": "Bearer {env:HOMEASSISTANT_TOKEN}",
       },
     },
     "grafana": {
