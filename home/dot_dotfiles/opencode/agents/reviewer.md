@@ -7,7 +7,9 @@ permission:
   write: deny
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
-  task: allow
+  task: 
+    "*": allow
+    reviewer: deny
   github_get_*: allow
   github_list_*: allow
   github_pull_request_read: allow

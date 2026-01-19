@@ -5,7 +5,9 @@ temperature: 0.3
 permission:
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
-  task: allow
+  task: 
+    "*": allow
+    researcher: deny
   github_get_*: allow
   github_list_*: allow
   github_search_*: allow

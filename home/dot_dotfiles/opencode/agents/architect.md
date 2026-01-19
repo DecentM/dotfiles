@@ -5,7 +5,9 @@ temperature: 0.3
 permission:
   bash: deny
   edit: deny
-  task: allow
+  task: 
+    "*": allow
+    architect: deny
   github_get_*: allow
   github_list_*: allow
   github_search_*: allow
