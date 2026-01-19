@@ -71,8 +71,11 @@
       "wget*": "allow",
       "jq*": "allow",
       "jq": "allow",
+      "yq*": "allow",
+      "yq": "allow",
       "uniq*": "allow",
       "pwd": "allow",
+      "which*": "allow",
       // End shell utils
 
       // Package management
