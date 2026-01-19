@@ -111,7 +111,7 @@
       "perf*": "ask",
       // End build and test
 
-      // Docker
+      // Containers
       "docker*": "ask",
       "docker-compose*": "ask",
 
@@ -119,7 +119,8 @@
       "docker manifest inspect*": "allow",
       "docker search*": "allow",
       "docker pull*": "allow",
-      // End docker
+      "distrobox*": "ask"
+      // End containers
     },
     "edit": {
       "*": "allow",
