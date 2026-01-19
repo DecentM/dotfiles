@@ -21,7 +21,7 @@
 
     // Specialized agents with MCP access
     "coder": {
-      "model": "github-copilot/gpt-5.1-codex",
+      "model": "github-copilot/claude-opus-4.5",
     },
     "reviewer": {
       "model": "github-copilot/claude-sonnet-4",
@@ -65,7 +65,7 @@
       },
     },
     "devops": {
-      "model": "github-copilot/gpt-4.1",
+      "model": "github-copilot/claude-opus-4.5",
       "permission": {
         // Full GitHub for CI/CD workflows
         "github_*": "allow",
@@ -110,7 +110,7 @@
       },
     },
     "git": {
-      "model": "github-copilot/gpt-4.1-nano",
+      "model": "github-copilot/claude-sonnet-4.5",
       "permission": {
         // Read-only GitHub for remote operations
         "github_get_*": "allow",
