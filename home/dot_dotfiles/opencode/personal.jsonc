@@ -9,13 +9,13 @@
   "agent": {
     // Global agents: only homeassistant (home automation isn't code-specific)
     "build": {
-      "model": "openrouter/anthropic/claude-sonnet-4",
+      "model": "openrouter/openai/gpt-oss-120b",
       "permission": {
         "homeassistant_*": "allow",
       },
     },
     "plan": {
-      "model": "openrouter/anthropic/claude-sonnet-4",
+      "model": "openrouter/openai/gpt-oss-120b",
       "permission": {
         "homeassistant_Get*": "allow",
         "homeassistant_todo_get_items": "allow",
