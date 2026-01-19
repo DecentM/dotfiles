@@ -67,6 +67,7 @@
       "jq*": "allow",
       "jq": "allow",
       "uniq*": "allow",
+      "pwd": "allow",
       // End shell utils
 
       // Package management
