@@ -73,7 +73,7 @@
       },
     },
     "researcher": {
-      "model": "github-copilot/claude-sonnet-4.5",
+      "model": "github-copilot/gemini-3-pro-preview",
       "permission": {
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
