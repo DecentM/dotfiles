@@ -7,7 +7,7 @@
     "jira_*": "deny",
     "notion_*": "deny",
     "slack_*": "deny",
-    "{env:WORK_MCP_NAME}_*": "deny",
+    "{env:WORK_MCP_NAME}_*": "ask",
   },
   "instructions": ["~/.dotfiles/opencode/rules/work.md"],
   "agent": {

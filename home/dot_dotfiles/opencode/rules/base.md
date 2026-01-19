@@ -84,7 +84,3 @@ Otherwise                           → You may handle directly
 - **NOT available to root agent** - delegate to specialized agents
 - coder, devops, researcher, reviewer have access
 - Isolated containers: no network, 512MB RAM, 1 CPU
-
-## External MCPs
-- github, grafana, jira, notion → delegated (see table)
-- homeassistant → global agent direct *(P)*
