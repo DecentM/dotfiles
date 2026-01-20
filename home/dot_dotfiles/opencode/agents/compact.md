@@ -7,6 +7,7 @@ permission:
   edit: deny
   write: deny
   bash: deny
+  sh: deny
   task: deny
   todowrite: deny
 ---

@@ -71,6 +71,13 @@ Otherwise                           → You may handle directly
 
 # Tools
 
+## sh (shell commands)
+- **Use `sh` instead of `bash`** - bash is denied, sh is the custom shell tool
+- sh enforces an allowlist of permitted commands with audit logging
+- All command executions are logged to SQLite for security auditing
+- Denied commands return clear error messages with the matched pattern
+- Audit tools available: `sh_stats`, `sh_export_logs`, `sh_hierarchy`
+
 ## memory, sequentialthinking, time
 - On fresh/continuation: check memory and use sequentialthinking
 - Timestamp all memory you insert, prune >2 weeks old (unless permanent)

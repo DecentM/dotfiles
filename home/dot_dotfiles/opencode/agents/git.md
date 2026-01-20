@@ -10,7 +10,7 @@ permission:
   github_list_*: allow
   github_pull_request_read: allow
   github_search_*: allow
-  bash:
+  sh:
     git*: ask
     "git commit*": deny
     "git commit": deny

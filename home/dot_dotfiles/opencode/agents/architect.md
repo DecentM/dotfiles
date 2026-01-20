@@ -4,6 +4,7 @@ mode: subagent
 temperature: 0.3
 permission:
   bash: deny
+  sh: deny
   edit: deny
   flaresolverr_*: allow
   task: 

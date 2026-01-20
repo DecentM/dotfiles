@@ -6,6 +6,7 @@ permission:
   edit: deny
   write: deny
   bash: deny
+  sh: deny
   task: deny
   todowrite: deny
   flaresolverr_*: allow
@@ -33,7 +34,7 @@ Quickly answer questions about codebases:
 ## Constraints (CRITICAL)
 
 - **STRICTLY READ-ONLY** - no modifications of any kind
-- **NO bash commands** - prevents any potential side effects
+- **NO shell commands** - bash and sh are denied to prevent side effects
 - **NO task delegation** - no recursive exploration overhead
 - **NO todo modification** - prevents interference with parent session
 
