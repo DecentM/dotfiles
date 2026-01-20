@@ -17,7 +17,11 @@ RUN uv pip install --system \
     requests \
     httpx \
     pyyaml \
-    python-dateutil
+    python-dateutil \
+    sympy \
+    scipy \
+    mpmath \
+    numexpr
 
 # Run as non-root user for security
 RUN useradd -m -s /bin/bash sandbox
