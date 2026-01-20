@@ -9,7 +9,7 @@ const MCP_REMOTE_URL = process.env.MCP_REMOTE_URL;
 const SOCKS_PROXY = process.env.SOCKS_PROXY;
 const MCP_TOKEN = process.env.MCP_TOKEN;
 // Strip this prefix from tool names to avoid double-prefixing
-// (e.g., if remote returns "gns_get" and MCP is named "gns", we'd get "gns_gns_get")
+// (e.g., if remote returns "tool_get" and MCP is named "tool", we'd get "tool_tool_get")
 const MCP_STRIP_PREFIX = process.env.MCP_STRIP_PREFIX || "";
 
 if (!MCP_REMOTE_URL) {

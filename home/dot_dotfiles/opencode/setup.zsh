@@ -9,10 +9,6 @@ if vercmd opencode; then
         export $(cat "$OPENCODE_CONFIG_DIR/.env" | xargs)
     fi
 
-    if [ -f "~/.gns/token.*.production" ]; then
-        export WORK_MCP_TOKEN=$(cat ~/.gns/token.*.production)
-    fi
-
     alias pcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR OPENCODE_CONFIG=$OPENCODE_CONFIG_DIR/personal.jsonc $OPENCODE_PATH"
     alias wcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR OPENCODE_CONFIG=$OPENCODE_CONFIG_DIR/work.jsonc $OPENCODE_PATH"
 

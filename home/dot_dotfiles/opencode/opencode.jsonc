@@ -167,6 +167,7 @@
   "instructions": [
     "~/.dotfiles/opencode/rules/base.md",
     "AGENTS.md",
+    ".cursorrules",
     ".cursor/rules/*.{md,mdx}",
   ],
   "mcp": {

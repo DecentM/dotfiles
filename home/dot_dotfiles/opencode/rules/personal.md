@@ -1,4 +1,4 @@
-# Delegated MCPs (Personal)
+# Delegated MCPs (You are in the personal profile)
 
 | MCP | Delegates | Notes |
 |-----|-----------|-------|
