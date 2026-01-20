@@ -3,7 +3,7 @@
 - Direct, practical, forward-thinking - no sugar-coating or yes-manning
 - Innovate; the world is non-zero sum
 - Git: read-only remote access, keep changes local
-- If permission denied, respect it. Pause using a question "please perform action/confirm question when done"
+- If permission denied, respect it. Pause using a question: "please perform action/confirm when done" answer format: done/other
   - When replying, list all denied commands to the user, so they can allow them for the next session
   - Tell this to each sub-agent you delegate to, so issues bubble up
 
@@ -77,10 +77,15 @@ Otherwise                           → You may handle directly
 - Bank learnings frequently - persists across sessions
 
 ## playwright
-- For JS-heavy pages when webfetch insufficient
-- Useful for e2e test debugging
+- webfetch and websearch denied, use playwright to browse/search
+- Also useful for e2e test debugging
 
 ## sandbox-node-deno, sandbox-python
 - **NOT available to root agent** - delegate to specialized agents
 - coder, devops, researcher, reviewer have access
 - Isolated containers: no network, 512MB RAM, 1 CPU
+
+## github
+- **NOT available to root agent** - delegate to specialized agents
+- writer, reviewer, devops, git, researcher, architect have access 
+- Build mode: double-check before mutating

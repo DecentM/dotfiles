@@ -2,7 +2,6 @@
   "$schema": "https://opencode.ai/config.json",
   "permission": {
     // MCPs denied at global level - specialized agents get access
-    "github_*": "deny",
     "grafana_*": "deny",
   },
   "instructions": ["~/.dotfiles/opencode/rules/personal.md"],
@@ -28,12 +27,6 @@
     "reviewer": {
       "model": "openrouter/minimax/minimax-m2.1",
       "permission": {
-        "github_get_*": "allow",
-        "github_list_*": "allow",
-        "github_pull_request_read": "allow",
-        "github_issue_read": "allow",
-        "github_search_*": "allow",
-
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
         "grafana_query_*": "allow",
@@ -56,9 +49,6 @@
     },
     "writer": {
       "model": "openrouter/deepseek/deepseek-v3.2",
-      "permission": {
-        "github_*": "allow",
-      }
     },
     "researcher": {
       "model": "openrouter/deepseek/deepseek-v3.2",
@@ -107,14 +97,6 @@
       "type": "remote",
       "url": "https://mcp-grafana.cluster.arpa/sse",
       "enabled": true,
-    },
-    "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp",
-      "enabled": true,
-      "headers": {
-        "Authorization": "Bearer {env:GITHUB_TOKEN}",
-      },
     },
   },
 }

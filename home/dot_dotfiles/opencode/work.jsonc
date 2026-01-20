@@ -3,7 +3,6 @@
   "share": "disabled",
   "permission": {
     // MCPs denied at global level - specialized agents get access
-    "github_*": "deny",
     "jira_*": "deny",
     "notion_*": "deny",
     "slack_*": "deny",
@@ -65,7 +64,6 @@
     "writer": {
       "model": "github-copilot/claude-sonnet-4",
       "permission": {
-        "github_*": "allow",
         "jira_*": "allow",
         "notion_*": "allow",
 
@@ -145,14 +143,6 @@
         "mcp/memory",
       ],
       "enabled": true,
-    },
-    "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp",
-      "enabled": true,
-      "headers": {
-        "Authorization": "Bearer {env:GITHUB_TOKEN}",
-      },
     },
     "jira": {
       "type": "remote",

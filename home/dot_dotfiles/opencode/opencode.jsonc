@@ -108,7 +108,7 @@
       "pytest*": "allow",
       "time*": "allow",
       "hyperfine*": "allow",
-      "perf*": "ask",
+      "perf*": "allow",
       // End build and test
 
       // Containers
@@ -132,8 +132,8 @@
     "glob": {
       "*": "allow",
     },
-    "webfetch": "allow",
-    "websearch": "allow",
+    "webfetch": "deny", // use Playwright
+    "websearch": "deny", // use Playwright
     "grep": "allow",
     "list": "allow",
     "lsp": "allow",
@@ -193,6 +193,14 @@
         "mcp/time",
       ],
       "enabled": true,
+    },
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_TOKEN}",
+      },
     },
     "playwright": {
       "type": "local",
