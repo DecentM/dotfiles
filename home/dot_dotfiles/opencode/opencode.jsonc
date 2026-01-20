@@ -3,11 +3,6 @@
   "share": "manual",
   "permission": {
     "*": "deny",
-
-    // Blanket deny bash - use custom sh tool instead
-    // The sh tool enforces its own permission allowlist and audits all commands
-    "bash": "deny",
-
     // Custom shell tool with permission enforcement and auditing
     // See ~/.config/opencode/tools/sh.ts for implementation
     "sh": "allow",
