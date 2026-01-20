@@ -3,6 +3,7 @@ description: Fast, read-only agent for exploring codebases and answering questio
 mode: subagent
 temperature: 0.2
 permission:
+  task: deny
   # Base tools
   read:
     "*": allow

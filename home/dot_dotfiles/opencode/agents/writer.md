@@ -3,6 +3,10 @@ description: Technical communicator for documentation, READMEs, PR descriptions,
 mode: subagent
 temperature: 0.4
 permission:
+  task:
+    researcher: allow
+    explore: allow
+    reviewer: allow
   # Base tools
   read:
     "*": allow

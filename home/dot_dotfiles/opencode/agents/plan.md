@@ -3,18 +3,7 @@ description: Read-only planning agent for analyzing code and suggesting changes 
 mode: primary
 temperature: 0.1
 permission:
-  edit: deny
-  write: deny
-  # Deny tools to force delegation to specialized subagents
-  webfetch: deny
-  websearch: deny
-  grep: deny
-  lsp: deny
-  codesearch: deny
-  skill: deny
-  task:
-    "*": allow
-    plan: deny
+  task: allow
 ---
 
 You are in **plan mode** - a READ-ONLY planning and analysis agent. Your purpose is to analyze code, suggest changes, and create detailed plans WITHOUT making any actual modifications.

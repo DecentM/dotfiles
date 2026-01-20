@@ -16,8 +16,10 @@ permission:
   skill: allow
   # Web scraping
   flaresolverr_*: allow
-  task: 
-    "*": allow
+  task:
+    researcher: allow
+    explore: allow
+    coder: allow
     architect: deny
   # Profile MCPs (work) - defined in profile jsonc
   github_get_*: allow
@@ -128,3 +130,4 @@ Architecture advice includes:
 - Tradeoffs acknowledged
 - Diagram or structure description
 - Migration path if changing existing system
+- No code, small snippets allowed

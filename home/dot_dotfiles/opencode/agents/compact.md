@@ -4,6 +4,7 @@ mode: subagent
 hidden: true
 temperature: 0.1
 permission:
+  task: deny
   # Base tools - read-only for summarization
   read:
     "*": allow

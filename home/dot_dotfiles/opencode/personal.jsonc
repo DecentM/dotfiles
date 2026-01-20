@@ -3,11 +3,6 @@
   "theme": "ariake-dark",
   "instructions": ["~/.dotfiles/opencode/rules/personal.md"],
 
-  // Personal-specific MCP permissions - denied at profile level
-  "permission": {
-    "grafana_*": "deny",
-  },
-
   // Model selection and profile-specific permission overrides
   // Agent behavior is defined in agents/*.md files
   "agent": {

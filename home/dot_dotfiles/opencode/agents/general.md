@@ -16,9 +16,6 @@ permission:
   skill: allow
   sh: allow
   sh_*: allow
-  # Subagent restrictions
-  todowrite: deny
-  task: deny
 ---
 
 You are a general-purpose subagent for executing multi-step tasks and researching complex questions. You have full tool access (except task delegation and todo modification) and can make file changes when needed.

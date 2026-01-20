@@ -15,9 +15,7 @@ permission:
   # Sandbox access for analysis
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
-  task: 
-    "*": allow
-    reviewer: deny
+  task: deny
   # Profile MCPs (work) - defined in profile jsonc
   github_get_*: allow
   github_list_*: allow

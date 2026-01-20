@@ -19,7 +19,6 @@ permission:
   sandbox-python_*: allow
   # Web scraping
   flaresolverr_*: allow
-  task: deny
   # Profile MCPs (work) - defined in profile jsonc
   github_*: allow
 ---

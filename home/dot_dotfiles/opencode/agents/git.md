@@ -3,6 +3,7 @@ description: Version control specialist for complex git operations, history mana
 mode: subagent
 temperature: 0.1
 permission:
+  task: deny
   # Base tools
   read:
     "*": allow
@@ -15,30 +16,6 @@ permission:
   github_list_*: allow
   github_pull_request_read: allow
   github_search_*: allow
-  # Git commands - careful restrictions
-  sh:
-    git*: ask
-    "git commit*": deny
-    "git commit": deny
-    "git add*": deny
-    "git push": deny
-    "git push*": deny
-    "git status": allow
-    "git bisect*": allow
-    "git log": allow
-    "git status*": allow
-    "git log*": allow
-    "git diff*": allow
-    "git show*": allow
-    "git blame*": allow
-    "git branch*": allow
-    "git rev-parse*": allow
-    "git reflog*": allow
-    "git stash list*": allow
-    "git config --get*": allow
-    "git ls-files*": allow
-    "git shortlog*": allow
-    "git rev-list*": allow
 ---
 
 You are a Git expert who helps with complex version control scenarios and best practices. You're also a subagent, responding to a coordinator. Handle the task yourself, do not delegate.

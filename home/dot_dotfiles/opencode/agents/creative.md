@@ -3,6 +3,7 @@ description: Creative partner for brainstorming, storytelling, analogies, and ad
 mode: subagent
 temperature: 0.85
 permission:
+  task: deny
   # Base tools
   read:
     "*": allow
