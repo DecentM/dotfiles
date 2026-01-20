@@ -4,8 +4,15 @@
 
 import { tool } from "@opencode-ai/plugin";
 
+import {
+  getCommandsWithDecisions,
+  getLogs,
+  getOverallStats,
+  getPatternStats,
+  getTopDeniedCommands,
+} from "./db";
+import type { Decision } from "./types";
 import { parseSince } from "./utils";
-import { dbManager } from "./db";
 
 // =============================================================================
 // Stats Tool
@@ -25,80 +32,16 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
       .describe("Filter by decision type"),
   },
   async execute(args) {
-    const db = dbManager.get();
     const { since, decision } = args;
 
-    // Build WHERE clause
-    const conditions: string[] = [];
-    const params: (string | null)[] = [];
-
-    if (since) {
-      const sinceDate = parseSince(since);
-      conditions.push("timestamp >= ?");
-      params.push(sinceDate.toISOString());
-    }
-
-    if (decision) {
-      conditions.push("decision = ?");
-      params.push(decision);
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-
-    // Get overall stats
-    const overallQuery = `
-      SELECT
-        COUNT(*) as total,
-        SUM(CASE WHEN decision = 'allow' THEN 1 ELSE 0 END) as allowed,
-        SUM(CASE WHEN decision = 'deny' THEN 1 ELSE 0 END) as denied,
-        AVG(CASE WHEN decision = 'allow' THEN duration_ms ELSE NULL END) as avg_duration_ms
-      FROM command_log
-      ${whereClause}
-    `;
-
-    const overall = db.query(overallQuery).get(...params) as {
-      total: number;
-      allowed: number;
-      denied: number;
-      avg_duration_ms: number | null;
+    const filter = {
+      since: since ? parseSince(since) : undefined,
+      decision: decision as Decision | undefined,
     };
 
-    // Get top patterns
-    const patternsQuery = `
-      SELECT
-        pattern_matched,
-        decision,
-        COUNT(*) as count
-      FROM command_log
-      ${whereClause}
-      GROUP BY pattern_matched, decision
-      ORDER BY count DESC
-      LIMIT 15
-    `;
-
-    const patterns = db.query(patternsQuery).all(...params) as Array<{
-      pattern_matched: string | null;
-      decision: string;
-      count: number;
-    }>;
-
-    // Get top commands (denied)
-    const deniedQuery = `
-      SELECT command, COUNT(*) as count
-      FROM command_log
-      WHERE decision = 'deny'
-      ${since ? "AND timestamp >= ?" : ""}
-      GROUP BY command
-      ORDER BY count DESC
-      LIMIT 10
-    `;
-
-    const deniedCommands = since
-      ? (db.query(deniedQuery).all(parseSince(since).toISOString()) as Array<{
-          command: string;
-          count: number;
-        }>)
-      : (db.query(deniedQuery).all() as Array<{ command: string; count: number }>);
+    const overall = getOverallStats(filter);
+    const patterns = getPatternStats(filter);
+    const deniedCommands = getTopDeniedCommands(filter.since);
 
     // Format output
     let output = "# Shell Command Statistics\n\n";
@@ -107,8 +50,8 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
     output += `- Total commands: ${overall.total}\n`;
     output += `- Allowed: ${overall.allowed} (${((overall.allowed / overall.total) * 100 || 0).toFixed(1)}%)\n`;
     output += `- Denied: ${overall.denied} (${((overall.denied / overall.total) * 100 || 0).toFixed(1)}%)\n`;
-    if (overall.avg_duration_ms !== null) {
-      output += `- Avg execution time: ${overall.avg_duration_ms.toFixed(0)}ms\n`;
+    if (overall.avgDurationMs !== null) {
+      output += `- Avg execution time: ${overall.avgDurationMs.toFixed(0)}ms\n`;
     }
     output += "\n";
 
@@ -117,7 +60,7 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
       output += "| Pattern | Decision | Count |\n";
       output += "|---------|----------|-------|\n";
       for (const p of patterns) {
-        output += `| ${p.pattern_matched ?? "(no match)"} | ${p.decision} | ${p.count} |\n`;
+        output += `| ${p.patternMatched ?? "(no match)"} | ${p.decision} | ${p.count} |\n`;
       }
       output += "\n";
     }
@@ -165,45 +108,13 @@ export const export_logs = tool({
       .describe("Maximum number of records"),
   },
   async execute(args) {
-    const db = dbManager.get();
     const { format = "csv", since, decision, limit = 1000 } = args;
 
-    // Build query
-    const conditions: string[] = [];
-    const params: (string | number)[] = [];
-
-    if (since) {
-      conditions.push("timestamp >= ?");
-      params.push(parseSince(since).toISOString());
-    }
-
-    if (decision) {
-      conditions.push("decision = ?");
-      params.push(decision);
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-
-    const query = `
-      SELECT timestamp, session_id, command, workdir, pattern_matched, decision, exit_code, duration_ms
-      FROM command_log
-      ${whereClause}
-      ORDER BY timestamp DESC
-      LIMIT ?
-    `;
-
-    params.push(limit);
-
-    const rows = db.query(query).all(...params) as Array<{
-      timestamp: string;
-      session_id: string | null;
-      command: string;
-      workdir: string | null;
-      pattern_matched: string | null;
-      decision: string;
-      exit_code: number | null;
-      duration_ms: number | null;
-    }>;
+    const rows = getLogs({
+      since: since ? parseSince(since) : undefined,
+      decision: decision as Decision | undefined,
+      limit,
+    });
 
     if (format === "json") {
       return JSON.stringify(rows, null, 2);
@@ -212,13 +123,13 @@ export const export_logs = tool({
     // CSV format
     const headers = [
       "timestamp",
-      "session_id",
+      "sessionId",
       "command",
       "workdir",
-      "pattern_matched",
+      "patternMatched",
       "decision",
-      "exit_code",
-      "duration_ms",
+      "exitCode",
+      "durationMs",
     ];
 
     let csv = headers.join(",") + "\n";
@@ -226,13 +137,13 @@ export const export_logs = tool({
     for (const row of rows) {
       const values = [
         row.timestamp,
-        row.session_id ?? "",
+        row.sessionId ?? "",
         `"${row.command.replace(/"/g, '""')}"`,
         row.workdir ?? "",
-        row.pattern_matched ?? "",
+        row.patternMatched ?? "",
         row.decision,
-        row.exit_code?.toString() ?? "",
-        row.duration_ms?.toString() ?? "",
+        row.exitCode?.toString() ?? "",
+        row.durationMs?.toString() ?? "",
       ];
       csv += values.join(",") + "\n";
     }
@@ -260,30 +171,9 @@ Groups commands by their first words to show patterns of usage.`,
       .describe("Minimum count to display"),
   },
   async execute(args) {
-    const db = getDb();
     const { since, minCount = 1 } = args;
 
-    // Build query
-    const conditions: string[] = [];
-    const params: string[] = [];
-
-    if (since) {
-      conditions.push("timestamp >= ?");
-      params.push(parseSince(since).toISOString());
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-
-    const query = `
-      SELECT command, decision
-      FROM command_log
-      ${whereClause}
-    `;
-
-    const rows = db.query(query).all(...params) as Array<{
-      command: string;
-      decision: string;
-    }>;
+    const rows = getCommandsWithDecisions(since ? parseSince(since) : undefined);
 
     // Build hierarchy tree
     interface TreeNode {
