@@ -65,7 +65,9 @@ Otherwise                           → You may handle directly
 
 # Coding
 
-- TypeScript: named arrow functions unless binding needed
+- TypeScript
+  - named arrow functions unless binding needed
+  - use Number. namespace instead of global parseInt, isNan, etc.
 - Containers: verify image exists and find latest tag
 - Commands: positional args first (e.g., `find myfolder/ -type f`)
 
