@@ -21,6 +21,9 @@
     "sequentialthinking_*": "allow",
     "memory_*": "allow",
     "time_*": "allow",
+
+    // Custom tools
+    "sandbox-python_*": "allow",
   },
   "instructions": [
     "~/.dotfiles/opencode/rules/base.md",
@@ -68,15 +71,8 @@
       ],
       "enabled": true,
     },
-    "sandbox-python": {
-      "type": "local",
-      "command": [
-        "bash",
-        "-c",
-        "docker run --rm -i --init --network=none --memory=512m --cpus=1 $(docker build -q -f ~/.dotfiles/opencode/docker/mcp-python.dockerfile ~/.dotfiles/opencode/docker)",
-      ],
-      "enabled": true,
-    },
+    // sandbox-python is now a standalone tool at ~/.dotfiles/opencode/tools/sandbox-python.ts
+    // Build the image with: docker build -t opencode/sandbox-python -f ~/.dotfiles/opencode/docker/mcp-python.dockerfile ~/.dotfiles/opencode/docker
     "flaresolverr": {
       "type": "local",
       "command": [
