@@ -8,7 +8,7 @@
 
 import { tool } from "@opencode-ai/plugin";
 import { Database } from "bun:sqlite";
-import { mkdirSync, existsSync } from "node:fs";
+import { mkdirSync, existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -58,625 +58,66 @@ type Decision = "allow" | "deny";
 interface PermissionPattern {
   pattern: string;
   decision: Decision;
-  comment?: string;
+  reason?: string;
 }
 
-// Order matters: first match wins. More specific patterns should come first.
-// This is migrated from opencode.jsonc bash permissions.
-const PERMISSIONS: PermissionPattern[] = [
-  // ─────────────────────────────────────────────────────────────────────────
-  // Explicit denies - dangerous commands
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "python*", decision: "deny", comment: "use sandbox MCP" },
-  { pattern: "node*", decision: "deny", comment: "use sandbox MCP" },
-  { pattern: "rm*", decision: "deny", comment: "too dangerous" },
-  { pattern: "htop*", decision: "deny", comment: "interactive, use top -bn1" },
+interface PermissionsConfig {
+  rules: PermissionPattern[];
+  default: Decision;
+  default_reason: string;
+}
 
-  // Shell scripts - deny (was 'ask')
-  { pattern: "*.sh", decision: "deny", comment: "shell scripts need review" },
-  { pattern: "bin/*", decision: "deny", comment: "bin scripts need review" },
-  { pattern: "./*", decision: "deny", comment: "relative executables need review" },
+// Default fallback configuration if YAML fails to load
+const FALLBACK_CONFIG: PermissionsConfig = {
+  rules: [],
+  default: "deny",
+  default_reason: "Permissions file failed to load - all commands denied for safety",
+};
 
-  // Containers - fallback deny, specific allows below
-  { pattern: "docker*", decision: "deny" },
-  { pattern: "docker-compose*", decision: "deny" },
-  { pattern: "distrobox*", decision: "deny" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Infrastructure - kubectl
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "kubectl describe*", decision: "allow" },
-  { pattern: "kubectl get*", decision: "allow" },
-  { pattern: "kubectl logs*", decision: "allow" },
-  { pattern: "kubectl run*", decision: "allow" },
-  { pattern: "kubectl exec*", decision: "allow" },
-  { pattern: "kubectl wait*", decision: "allow" },
-  { pattern: "kubectl create job*", decision: "allow" },
-  { pattern: "kubectl delete job*", decision: "allow" },
-  { pattern: "kubectl version*", decision: "allow" },
-  { pattern: "kubectl version", decision: "allow" },
-  { pattern: "kubectl config view*", decision: "allow" },
-  { pattern: "kubectl config get*", decision: "allow" },
-  { pattern: "kubectl config current-context*", decision: "allow" },
-  { pattern: "kubectl cluster-info*", decision: "allow" },
-  { pattern: "kubectl api-resources*", decision: "allow" },
-  { pattern: "kubectl api-versions*", decision: "allow" },
-  { pattern: "kubectl explain*", decision: "allow" },
-  { pattern: "kubectl top*", decision: "allow" },
-  { pattern: "kubectl auth can-i*", decision: "allow" },
-  { pattern: "kubectl diff*", decision: "allow" },
-  { pattern: "kubectl events*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Infrastructure - helm
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "helm list*", decision: "allow" },
-  { pattern: "helm status*", decision: "allow" },
-  { pattern: "helm get*", decision: "allow" },
-  { pattern: "helm show*", decision: "allow" },
-  { pattern: "helm search*", decision: "allow" },
-  { pattern: "helm repo list*", decision: "allow" },
-  { pattern: "helm history*", decision: "allow" },
-  { pattern: "helm template*", decision: "allow" },
-  { pattern: "helm lint*", decision: "allow" },
-  { pattern: "helm verify*", decision: "allow" },
-  { pattern: "helm version*", decision: "allow" },
-  { pattern: "helm env*", decision: "allow" },
-  { pattern: "helm dependency list*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Infrastructure - terraform
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "terraform show*", decision: "allow" },
-  { pattern: "terraform validate*", decision: "allow" },
-  { pattern: "terraform fmt*", decision: "allow" },
-  { pattern: "terraform version*", decision: "allow" },
-  { pattern: "terraform output*", decision: "allow" },
-  { pattern: "terraform state list*", decision: "allow" },
-  { pattern: "terraform state show*", decision: "allow" },
-  { pattern: "terraform providers*", decision: "allow" },
-  { pattern: "terraform graph*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Shell utilities
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "true", decision: "allow" },
-  { pattern: "false", decision: "allow" },
-  { pattern: "grep*", decision: "allow" },
-  { pattern: "sed*", decision: "allow" },
-  { pattern: "uniq*", decision: "allow" },
-  { pattern: "uniq", decision: "allow" },
-  { pattern: "tail*", decision: "allow" },
-  { pattern: "tail", decision: "allow" },
-  { pattern: "head*", decision: "allow" },
-  { pattern: "head", decision: "allow" },
-  { pattern: "sort*", decision: "allow" },
-  { pattern: "sort", decision: "allow" },
-  { pattern: "awk*", decision: "allow" },
-  { pattern: "cut*", decision: "allow" },
-  { pattern: "wc*", decision: "allow" },
-  { pattern: "wc", decision: "allow" },
-  { pattern: "ping*", decision: "allow" },
-  { pattern: "curl*", decision: "allow" },
-  { pattern: "echo*", decision: "allow" },
-  { pattern: "echo", decision: "allow" },
-  { pattern: "printf*", decision: "allow" },
-  { pattern: "printf", decision: "allow" },
-  { pattern: "ls*", decision: "allow" },
-  { pattern: "ls", decision: "allow" },
-  { pattern: "paste*", decision: "allow" },
-  { pattern: "column*", decision: "allow" },
-  { pattern: "xargs*", decision: "allow" },
-  { pattern: "find*", decision: "allow" },
-  { pattern: "cat*", decision: "allow" },
-  { pattern: "rg*", decision: "allow" },
-  { pattern: "basename*", decision: "allow" },
-  { pattern: "tree*", decision: "allow" },
-  { pattern: "wget*", decision: "allow" },
-  { pattern: "jq*", decision: "allow" },
-  { pattern: "jq", decision: "allow" },
-  { pattern: "yq*", decision: "allow" },
-  { pattern: "yq", decision: "allow" },
-  { pattern: "pwd", decision: "allow" },
-  { pattern: "which*", decision: "allow" },
-  { pattern: "sleep*", decision: "allow" },
-  { pattern: "mkdir*", decision: "allow" },
-  { pattern: "dirname*", decision: "allow" },
-  { pattern: "touch*", decision: "allow" },
-  { pattern: "cp*", decision: "allow" },
-  { pattern: "cp -*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // System info - read-only
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "uname*", decision: "allow" },
-  { pattern: "hostname", decision: "allow" },
-  { pattern: "hostname -f", decision: "allow" },
-  { pattern: "hostname -I", decision: "allow" },
-  { pattern: "whoami", decision: "allow" },
-  { pattern: "id", decision: "allow" },
-  { pattern: "id*", decision: "allow" },
-  { pattern: "groups", decision: "allow" },
-  { pattern: "groups*", decision: "allow" },
-  { pattern: "uptime*", decision: "allow" },
-  { pattern: "free*", decision: "allow" },
-  { pattern: "df*", decision: "allow" },
-  { pattern: "du*", decision: "allow" },
-  { pattern: "lsblk*", decision: "allow" },
-  { pattern: "lscpu*", decision: "allow" },
-  { pattern: "lsmem*", decision: "allow" },
-  { pattern: "lspci*", decision: "allow" },
-  { pattern: "lsusb*", decision: "allow" },
-  { pattern: "lsmod*", decision: "allow" },
-  { pattern: "lsns*", decision: "allow" },
-  { pattern: "lsof*", decision: "allow" },
-  { pattern: "lsipc*", decision: "allow" },
-  { pattern: "lslocks*", decision: "allow" },
-  { pattern: "nproc*", decision: "allow" },
-  { pattern: "getconf*", decision: "allow" },
-  { pattern: "arch", decision: "allow" },
-  { pattern: "w", decision: "allow" },
-  { pattern: "who", decision: "allow" },
-  { pattern: "who*", decision: "allow" },
-  { pattern: "last*", decision: "allow" },
-  { pattern: "lastlog*", decision: "allow" },
-  { pattern: "getent*", decision: "allow" },
-  { pattern: "locale*", decision: "allow" },
-  { pattern: "timedatectl", decision: "allow" },
-  { pattern: "timedatectl status", decision: "allow" },
-  { pattern: "timedatectl show", decision: "allow" },
-  { pattern: "hostnamectl", decision: "allow" },
-  { pattern: "hostnamectl status", decision: "allow" },
-  { pattern: "loginctl list*", decision: "allow" },
-  { pattern: "loginctl show*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Process info - read-only
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "ps*", decision: "allow" },
-  { pattern: "ps", decision: "allow" },
-  { pattern: "pgrep*", decision: "allow" },
-  { pattern: "pidof*", decision: "allow" },
-  { pattern: "top -bn1*", decision: "allow" },
-  { pattern: "pstree*", decision: "allow" },
-  { pattern: "fuser*", decision: "allow" },
-  { pattern: "jobs", decision: "allow" },
-  { pattern: "wait*", decision: "allow" },
-  { pattern: "watch*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Logs and debug - read-only
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "journalctl*", decision: "allow" },
-  { pattern: "dmesg*", decision: "allow" },
-  { pattern: "systemctl status*", decision: "allow" },
-  { pattern: "systemctl is-active*", decision: "allow" },
-  { pattern: "systemctl is-enabled*", decision: "allow" },
-  { pattern: "systemctl is-failed*", decision: "allow" },
-  { pattern: "systemctl list-units*", decision: "allow" },
-  { pattern: "systemctl list-unit-files*", decision: "allow" },
-  { pattern: "systemctl list-timers*", decision: "allow" },
-  { pattern: "systemctl list-sockets*", decision: "allow" },
-  { pattern: "systemctl list-jobs*", decision: "allow" },
-  { pattern: "systemctl list-dependencies*", decision: "allow" },
-  { pattern: "systemctl show*", decision: "allow" },
-  { pattern: "systemctl cat*", decision: "allow" },
-  { pattern: "systemctl help*", decision: "allow" },
-  { pattern: "systemctl --version", decision: "allow" },
-  { pattern: "strace*", decision: "allow" },
-  { pattern: "ltrace*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // File info and checksums - read-only
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "stat*", decision: "allow" },
-  { pattern: "file*", decision: "allow" },
-  { pattern: "readlink*", decision: "allow" },
-  { pattern: "realpath*", decision: "allow" },
-  { pattern: "namei*", decision: "allow" },
-  { pattern: "getfacl*", decision: "allow" },
-  { pattern: "lsattr*", decision: "allow" },
-  { pattern: "md5sum*", decision: "allow" },
-  { pattern: "sha1sum*", decision: "allow" },
-  { pattern: "sha256sum*", decision: "allow" },
-  { pattern: "sha512sum*", decision: "allow" },
-  { pattern: "sha224sum*", decision: "allow" },
-  { pattern: "sha384sum*", decision: "allow" },
-  { pattern: "b2sum*", decision: "allow" },
-  { pattern: "cksum*", decision: "allow" },
-  { pattern: "sum*", decision: "allow" },
-  { pattern: "diff*", decision: "allow" },
-  { pattern: "cmp*", decision: "allow" },
-  { pattern: "comm*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Text processing
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "tr*", decision: "allow" },
-  { pattern: "tee*", decision: "allow" },
-  { pattern: "rev*", decision: "allow" },
-  { pattern: "nl*", decision: "allow" },
-  { pattern: "expand*", decision: "allow" },
-  { pattern: "unexpand*", decision: "allow" },
-  { pattern: "fold*", decision: "allow" },
-  { pattern: "fmt*", decision: "allow" },
-  { pattern: "join*", decision: "allow" },
-  { pattern: "split*", decision: "allow" },
-  { pattern: "csplit*", decision: "allow" },
-  { pattern: "colrm*", decision: "allow" },
-  { pattern: "pr*", decision: "allow" },
-  { pattern: "tsort*", decision: "allow" },
-  { pattern: "numfmt*", decision: "allow" },
-  { pattern: "base64*", decision: "allow" },
-  { pattern: "base32*", decision: "allow" },
-  { pattern: "od*", decision: "allow" },
-  { pattern: "xxd*", decision: "allow" },
-  { pattern: "hexdump*", decision: "allow" },
-  { pattern: "strings*", decision: "allow" },
-  { pattern: "iconv*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Network diagnostics - read-only
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "ip addr*", decision: "allow" },
-  { pattern: "ip link*", decision: "allow" },
-  { pattern: "ip route*", decision: "allow" },
-  { pattern: "ip neigh*", decision: "allow" },
-  { pattern: "ip -s*", decision: "allow" },
-  { pattern: "ip a*", decision: "allow" },
-  { pattern: "ip r*", decision: "allow" },
-  { pattern: "ss*", decision: "allow" },
-  { pattern: "netstat*", decision: "allow" },
-  { pattern: "ifconfig*", decision: "allow" },
-  { pattern: "route*", decision: "allow" },
-  { pattern: "dig*", decision: "allow" },
-  { pattern: "nslookup*", decision: "allow" },
-  { pattern: "host*", decision: "allow" },
-  { pattern: "traceroute*", decision: "allow" },
-  { pattern: "tracepath*", decision: "allow" },
-  { pattern: "mtr*", decision: "allow" },
-  { pattern: "whois*", decision: "allow" },
-  { pattern: "arp*", decision: "allow" },
-  { pattern: "ethtool*", decision: "allow" },
-  { pattern: "iwconfig*", decision: "allow" },
-  { pattern: "iw*", decision: "allow" },
-  { pattern: "nmcli*", decision: "allow" },
-  { pattern: "resolvectl*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Archive operations - read/extract only
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "tar tf*", decision: "allow" },
-  { pattern: "tar tvf*", decision: "allow" },
-  { pattern: "tar xf*", decision: "allow" },
-  { pattern: "tar xvf*", decision: "allow" },
-  { pattern: "tar xzf*", decision: "allow" },
-  { pattern: "tar xjf*", decision: "allow" },
-  { pattern: "tar --list*", decision: "allow" },
-  { pattern: "tar -tf*", decision: "allow" },
-  { pattern: "tar -tvf*", decision: "allow" },
-  { pattern: "tar -xf*", decision: "allow" },
-  { pattern: "tar -xvf*", decision: "allow" },
-  { pattern: "tar -xzf*", decision: "allow" },
-  { pattern: "tar -xjf*", decision: "allow" },
-  { pattern: "unzip*", decision: "allow" },
-  { pattern: "zipinfo*", decision: "allow" },
-  { pattern: "zcat*", decision: "allow" },
-  { pattern: "zless*", decision: "allow" },
-  { pattern: "zmore*", decision: "allow" },
-  { pattern: "zgrep*", decision: "allow" },
-  { pattern: "gunzip*", decision: "allow" },
-  { pattern: "gzip -l*", decision: "allow" },
-  { pattern: "gzip -t*", decision: "allow" },
-  { pattern: "xz -l*", decision: "allow" },
-  { pattern: "xz -t*", decision: "allow" },
-  { pattern: "xzcat*", decision: "allow" },
-  { pattern: "unxz*", decision: "allow" },
-  { pattern: "bzip2 -d*", decision: "allow" },
-  { pattern: "bunzip2*", decision: "allow" },
-  { pattern: "bzcat*", decision: "allow" },
-  { pattern: "7z l*", decision: "allow" },
-  { pattern: "7z x*", decision: "allow" },
-  { pattern: "7z e*", decision: "allow" },
-  { pattern: "unrar*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Date, time, math utilities
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "date*", decision: "allow" },
-  { pattern: "cal*", decision: "allow" },
-  { pattern: "ncal*", decision: "allow" },
-  { pattern: "bc*", decision: "allow" },
-  { pattern: "dc*", decision: "allow" },
-  { pattern: "expr*", decision: "allow" },
-  { pattern: "seq*", decision: "allow" },
-  { pattern: "shuf*", decision: "allow" },
-  { pattern: "factor*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Environment inspection
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "env", decision: "allow" },
-  { pattern: "printenv*", decision: "allow" },
-  { pattern: "set", decision: "allow" },
-  { pattern: "declare -p*", decision: "allow" },
-  { pattern: "type*", decision: "allow" },
-  { pattern: "command -v*", decision: "allow" },
-  { pattern: "hash*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Man pages and help
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "man*", decision: "allow" },
-  { pattern: "info*", decision: "allow" },
-  { pattern: "apropos*", decision: "allow" },
-  { pattern: "whatis*", decision: "allow" },
-  { pattern: "tldr*", decision: "allow" },
-  { pattern: "help*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Build tools
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "make*", decision: "allow" },
-  { pattern: "cmake*", decision: "allow" },
-  { pattern: "ninja*", decision: "allow" },
-  { pattern: "meson*", decision: "allow" },
-  { pattern: "autoconf*", decision: "allow" },
-  { pattern: "automake*", decision: "allow" },
-  { pattern: "configure*", decision: "allow" },
-  { pattern: "gcc*", decision: "allow" },
-  { pattern: "g++*", decision: "allow" },
-  { pattern: "clang*", decision: "allow" },
-  { pattern: "clang++*", decision: "allow" },
-  { pattern: "cc*", decision: "allow" },
-  { pattern: "c++*", decision: "allow" },
-  { pattern: "ld*", decision: "allow" },
-  { pattern: "ar*", decision: "allow" },
-  { pattern: "nm*", decision: "allow" },
-  { pattern: "objdump*", decision: "allow" },
-  { pattern: "readelf*", decision: "allow" },
-  { pattern: "size*", decision: "allow" },
-
-  // Go
-  { pattern: "go build*", decision: "allow" },
-  { pattern: "go test*", decision: "allow" },
-  { pattern: "go run*", decision: "allow" },
-  { pattern: "go mod*", decision: "allow" },
-  { pattern: "go fmt*", decision: "allow" },
-  { pattern: "go vet*", decision: "allow" },
-  { pattern: "go doc*", decision: "allow" },
-  { pattern: "go list*", decision: "allow" },
-  { pattern: "go env*", decision: "allow" },
-  { pattern: "go version*", decision: "allow" },
-  { pattern: "go generate*", decision: "allow" },
-  { pattern: "go clean*", decision: "allow" },
-
-  // Rust
-  { pattern: "rustc*", decision: "allow" },
-  { pattern: "rustup show*", decision: "allow" },
-  { pattern: "rustup which*", decision: "allow" },
-  { pattern: "rustup doc*", decision: "allow" },
-  { pattern: "rustup --version", decision: "allow" },
-  { pattern: "rustfmt*", decision: "allow" },
-  { pattern: "rust-analyzer*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Package management - npm
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "npm info*", decision: "allow" },
-  { pattern: "npm run*", decision: "allow" },
-  { pattern: "npm audit*", decision: "allow" },
-  { pattern: "npm search*", decision: "allow" },
-  { pattern: "npm view*", decision: "allow" },
-  { pattern: "npm list*", decision: "allow" },
-  { pattern: "npm ls*", decision: "allow" },
-  { pattern: "npm outdated*", decision: "allow" },
-  { pattern: "npm explain*", decision: "allow" },
-  { pattern: "npm why*", decision: "allow" },
-  { pattern: "npm fund*", decision: "allow" },
-  { pattern: "npm doctor*", decision: "allow" },
-  { pattern: "npm prefix*", decision: "allow" },
-  { pattern: "npm root*", decision: "allow" },
-  { pattern: "npm bin*", decision: "allow" },
-  { pattern: "npm config list*", decision: "allow" },
-  { pattern: "npm config get*", decision: "allow" },
-  { pattern: "npm pack*", decision: "allow" },
-  { pattern: "npm version", decision: "allow" },
-  { pattern: "npm help*", decision: "allow" },
-  { pattern: "npm exec*", decision: "allow" },
-  { pattern: "npm test*", decision: "allow" },
-  { pattern: "npm start*", decision: "allow" },
-  { pattern: "npm rebuild*", decision: "allow" },
-  { pattern: "npm dedupe*", decision: "allow" },
-  { pattern: "npm prune*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Package management - yarn
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "yarn audit*", decision: "allow" },
-  { pattern: "yarn info*", decision: "allow" },
-  { pattern: "yarn list*", decision: "allow" },
-  { pattern: "yarn why*", decision: "allow" },
-  { pattern: "yarn outdated*", decision: "allow" },
-  { pattern: "yarn config list*", decision: "allow" },
-  { pattern: "yarn config get*", decision: "allow" },
-  { pattern: "yarn version", decision: "allow" },
-  { pattern: "yarn versions", decision: "allow" },
-  { pattern: "yarn cache list*", decision: "allow" },
-  { pattern: "yarn workspaces list*", decision: "allow" },
-  { pattern: "yarn licenses list*", decision: "allow" },
-  { pattern: "yarn run*", decision: "allow" },
-  { pattern: "yarn build*", decision: "allow" },
-  { pattern: "yarn test*", decision: "allow" },
-  { pattern: "yarn lint*", decision: "allow" },
-  { pattern: "yarn start*", decision: "allow" },
-  { pattern: "yarn dedupe*", decision: "allow" },
-  { pattern: "yarn explain*", decision: "allow" },
-  { pattern: "yarn pack*", decision: "allow" },
-  { pattern: "yarn help*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Package management - pnpm
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "pnpm audit*", decision: "allow" },
-  { pattern: "pnpm list*", decision: "allow" },
-  { pattern: "pnpm ls*", decision: "allow" },
-  { pattern: "pnpm outdated*", decision: "allow" },
-  { pattern: "pnpm why*", decision: "allow" },
-  { pattern: "pnpm licenses list*", decision: "allow" },
-  { pattern: "pnpm run*", decision: "allow" },
-  { pattern: "pnpm exec*", decision: "allow" },
-  { pattern: "pnpm env list*", decision: "allow" },
-  { pattern: "pnpm root*", decision: "allow" },
-  { pattern: "pnpm bin*", decision: "allow" },
-  { pattern: "pnpm prefix*", decision: "allow" },
-  { pattern: "pnpm store status*", decision: "allow" },
-  { pattern: "pnpm config list*", decision: "allow" },
-  { pattern: "pnpm config get*", decision: "allow" },
-  { pattern: "pnpm build", decision: "allow" },
-  { pattern: "pnpm test", decision: "allow" },
-  { pattern: "pnpm start", decision: "allow" },
-  { pattern: "pnpm moon", decision: "allow" },
-  { pattern: "pnpm dedupe*", decision: "allow" },
-  { pattern: "pnpm rebuild*", decision: "allow" },
-  { pattern: "pnpm prune*", decision: "allow" },
-  { pattern: "pnpm pack*", decision: "allow" },
-  { pattern: "pnpm help*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Package management - bun
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "bun run*", decision: "allow" },
-  { pattern: "bun test*", decision: "allow" },
-  { pattern: "bun build*", decision: "allow" },
-  { pattern: "bun pm ls*", decision: "allow" },
-  { pattern: "bun pm cache*", decision: "allow" },
-  { pattern: "bun outdated*", decision: "allow" },
-  { pattern: "bun --version", decision: "allow" },
-  { pattern: "bun --help", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Package management - cargo
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "cargo check*", decision: "allow" },
-  { pattern: "cargo build*", decision: "allow" },
-  { pattern: "cargo test*", decision: "allow" },
-  { pattern: "cargo run*", decision: "allow" },
-  { pattern: "cargo doc*", decision: "allow" },
-  { pattern: "cargo bench*", decision: "allow" },
-  { pattern: "cargo tree*", decision: "allow" },
-  { pattern: "cargo metadata*", decision: "allow" },
-  { pattern: "cargo search*", decision: "allow" },
-  { pattern: "cargo info*", decision: "allow" },
-  { pattern: "cargo fetch*", decision: "allow" },
-  { pattern: "cargo verify-project*", decision: "allow" },
-  { pattern: "cargo locate-project*", decision: "allow" },
-  { pattern: "cargo read-manifest*", decision: "allow" },
-  { pattern: "cargo pkgid*", decision: "allow" },
-  { pattern: "cargo generate-lockfile*", decision: "allow" },
-  { pattern: "cargo clippy*", decision: "allow" },
-  { pattern: "cargo fmt*", decision: "allow" },
-  { pattern: "cargo audit*", decision: "allow" },
-  { pattern: "cargo fix*", decision: "allow" },
-  { pattern: "cargo clean*", decision: "allow" },
-  { pattern: "cargo vendor*", decision: "allow" },
-  { pattern: "cargo version*", decision: "allow" },
-  { pattern: "cargo --version", decision: "allow" },
-  { pattern: "cargo help*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Build and test tools
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "tsc*", decision: "allow" },
-  { pattern: "eslint*", decision: "allow" },
-  { pattern: "prettier*", decision: "allow" },
-  { pattern: "jest*", decision: "allow" },
-  { pattern: "vitest*", decision: "allow" },
-  { pattern: "pytest*", decision: "allow" },
-  { pattern: "time*", decision: "allow" },
-  { pattern: "hyperfine*", decision: "allow" },
-  { pattern: "perf*", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Docker - read-only and safe commands
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "docker build*", decision: "allow" },
-  { pattern: "docker manifest inspect*", decision: "allow" },
-  { pattern: "docker search*", decision: "allow" },
-  { pattern: "docker pull*", decision: "allow" },
-  { pattern: "docker logs*", decision: "allow" },
-  { pattern: "docker images*", decision: "allow" },
-  { pattern: "docker run*", decision: "allow" },
-  { pattern: "docker ps*", decision: "allow" },
-  { pattern: "docker inspect*", decision: "allow" },
-  { pattern: "docker info*", decision: "allow" },
-  { pattern: "docker info", decision: "allow" },
-  { pattern: "docker version*", decision: "allow" },
-  { pattern: "docker version", decision: "allow" },
-  { pattern: "docker stats*", decision: "allow" },
-  { pattern: "docker top*", decision: "allow" },
-  { pattern: "docker port*", decision: "allow" },
-  { pattern: "docker diff*", decision: "allow" },
-  { pattern: "docker history*", decision: "allow" },
-  { pattern: "docker events*", decision: "allow" },
-  { pattern: "docker cp*", decision: "allow" },
-  { pattern: "docker tag*", decision: "allow" },
-  { pattern: "docker network ls*", decision: "allow" },
-  { pattern: "docker network inspect*", decision: "allow" },
-  { pattern: "docker volume ls*", decision: "allow" },
-  { pattern: "docker volume inspect*", decision: "allow" },
-  { pattern: "docker system df*", decision: "allow" },
-  { pattern: "docker system info*", decision: "allow" },
-  { pattern: "docker container ls*", decision: "allow" },
-  { pattern: "docker container logs*", decision: "allow" },
-  { pattern: "docker container inspect*", decision: "allow" },
-  { pattern: "docker image ls*", decision: "allow" },
-  { pattern: "docker image inspect*", decision: "allow" },
-  { pattern: "docker image history*", decision: "allow" },
-  { pattern: "docker buildx*", decision: "allow" },
-  { pattern: "docker context*", decision: "allow" },
-  { pattern: "docker help*", decision: "allow" },
-  { pattern: "docker --version", decision: "allow" },
-  { pattern: "docker --help", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Docker Compose - read-only and safe commands
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "docker compose ps*", decision: "allow" },
-  { pattern: "docker compose logs*", decision: "allow" },
-  { pattern: "docker compose config*", decision: "allow" },
-  { pattern: "docker compose top*", decision: "allow" },
-  { pattern: "docker compose images*", decision: "allow" },
-  { pattern: "docker compose port*", decision: "allow" },
-  { pattern: "docker compose version*", decision: "allow" },
-  { pattern: "docker compose ls*", decision: "allow" },
-  { pattern: "docker compose --help", decision: "allow" },
-  { pattern: "docker-compose ps*", decision: "allow" },
-  { pattern: "docker-compose logs*", decision: "allow" },
-  { pattern: "docker-compose config*", decision: "allow" },
-  { pattern: "docker-compose top*", decision: "allow" },
-  { pattern: "docker-compose images*", decision: "allow" },
-  { pattern: "docker-compose port*", decision: "allow" },
-  { pattern: "docker-compose version*", decision: "allow" },
-  { pattern: "docker-compose --help", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Distrobox - read-only commands only
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "distrobox list*", decision: "allow" },
-  { pattern: "distrobox ls*", decision: "allow" },
-  { pattern: "distrobox version*", decision: "allow" },
-  { pattern: "distrobox --help", decision: "allow" },
-  { pattern: "distrobox-export --list-apps*", decision: "allow" },
-  { pattern: "distrobox-export --list-binaries*", decision: "allow" },
-  { pattern: "distrobox-export --help", decision: "allow" },
-  { pattern: "distrobox-export --version", decision: "allow" },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Git - version control (read-heavy, some writes)
-  // ─────────────────────────────────────────────────────────────────────────
-  { pattern: "git*", decision: "allow" },
-];
+/**
+ * Load permissions from YAML file.
+ * Uses a singleton pattern to load only once.
+ */
+const getPermissions = (() => {
+  let config: PermissionsConfig | null = null;
+  
+  return (): PermissionsConfig => {
+    if (config) return config;
+    
+    const yamlPath = join(import.meta.dir, "sh-permissions.yaml");
+    
+    try {
+      const yamlContent = readFileSync(yamlPath, "utf-8");
+      const parsed = Bun.YAML.parse(yamlContent) as {
+        rules?: Array<{ pattern: string; decision: string; reason?: string | null }>;
+        default?: string;
+        default_reason?: string;
+      };
+      
+      if (!parsed || !Array.isArray(parsed.rules)) {
+        console.error("[sh] Invalid permissions YAML structure - missing rules array");
+        config = FALLBACK_CONFIG;
+        return config;
+      }
+      
+      config = {
+        rules: parsed.rules.map((rule) => ({
+          pattern: rule.pattern,
+          decision: rule.decision as Decision,
+          reason: rule.reason ?? undefined,
+        })),
+        default: (parsed.default as Decision) ?? "deny",
+        default_reason: parsed.default_reason ?? "Command not in allowlist",
+      };
+      
+      return config;
+    } catch (error) {
+      console.error(`[sh] Failed to load permissions from ${yamlPath}:`, error);
+      config = FALLBACK_CONFIG;
+      return config;
+    }
+  };
+})();
 
 // =============================================================================
 // Pattern Matching
@@ -696,7 +137,8 @@ const patternToRegex = (pattern: string): RegExp => {
 interface MatchResult {
   decision: Decision;
   pattern: string | null;
-  comment?: string;
+  reason?: string;
+  isDefault?: boolean;
 }
 
 /**
@@ -704,23 +146,25 @@ interface MatchResult {
  */
 const matchCommand = (command: string): MatchResult => {
   const trimmed = command.trim();
+  const config = getPermissions();
   
-  for (const perm of PERMISSIONS) {
+  for (const perm of config.rules) {
     const regex = patternToRegex(perm.pattern);
     if (regex.test(trimmed)) {
       return {
         decision: perm.decision,
         pattern: perm.pattern,
-        comment: perm.comment,
+        reason: perm.reason,
       };
     }
   }
   
-  // Default: deny if no pattern matches
+  // Default: use config default (typically deny) if no pattern matches
   return {
-    decision: "deny",
+    decision: config.default,
     pattern: null,
-    comment: "no matching pattern found",
+    reason: config.default_reason,
+    isDefault: true,
   };
 };
 
@@ -798,11 +242,22 @@ Denied commands will return an error with the reason.`,
         decision: "deny",
       });
       
-      const reason = match.pattern
-        ? `Command denied: pattern "${match.pattern}" matched${match.comment ? ` (${match.comment})` : ""}`
-        : `Command denied: no matching allow pattern found`;
+      // Format error message based on whether a pattern matched or it was the default deny
+      let errorMessage: string;
+      if (match.pattern) {
+        errorMessage = `Error: Command denied
+Pattern: ${match.pattern}
+Reason: ${match.reason ?? "No reason provided"}
+
+Command: ${command}`;
+      } else {
+        errorMessage = `Error: Command denied
+Reason: ${match.reason ?? "Command not in allowlist"}
+
+Command: ${command}`;
+      }
       
-      return `Error: ${reason}\n\nCommand: ${command}`;
+      return errorMessage;
     }
     
     // Log the allowed attempt (will update with exit code after)
