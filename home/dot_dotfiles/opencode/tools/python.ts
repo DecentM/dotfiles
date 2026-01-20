@@ -6,9 +6,6 @@
 
 import { tool } from "@opencode-ai/plugin";
 
-// Docker image name - matches the dockerfile
-const DOCKER_IMAGE = "opencode/python";
-
 // Default timeout in milliseconds
 const DEFAULT_TIMEOUT_MS = 60_000;
 
@@ -61,26 +58,14 @@ Error: No code provided
 
     try {
       // Spawn docker container with Python
-      // Pass code via stdin to avoid shell escaping issues
-      const proc = Bun.spawn(
-        [
-          "docker",
-          "run",
-          "--rm", // Auto-remove after exit
-          "-i", // Keep stdin open
-          "--init", // Proper signal handling
-          "--network=none", // Network isolation
-          `--memory=${MEMORY_LIMIT}`,
-          `--cpus=${CPU_LIMIT}`,
-          DOCKER_IMAGE,
-          "-", // Read script from stdin
-        ],
-        {
-          stdin: "pipe",
-          stdout: "pipe",
-          stderr: "pipe",
-        }
-      );
+      // Build image inline and run - pass code via stdin to avoid shell escaping issues
+      const dockerCommand = `docker run --rm -i --init --network=none --memory=${MEMORY_LIMIT} --cpus=${CPU_LIMIT} $(docker build -q -f ~/.dotfiles/opencode/docker/mcp-python.dockerfile ~/.dotfiles/opencode/docker) -`;
+
+      const proc = Bun.spawn(["bash", "-c", dockerCommand], {
+        stdin: "pipe",
+        stdout: "pipe",
+        stderr: "pipe",
+      });
 
       // Write code to stdin and close
       proc.stdin.write(code);
@@ -195,24 +180,6 @@ ${truncate(stderr, "stderr") || '(empty)'}
 Docker daemon not running. Start Docker and try again.
 
 Original error: ${message}
-\`\`\`
-`;
-      }
-
-      if (message.includes("No such image") || message.includes("Unable to find image")) {
-        return `## Execution Result
-
-**Exit Code:** -1
-**Duration:** ${durationMs}ms
-
-### stdout
-\`\`\`
-(empty)
-\`\`\`
-
-### stderr
-\`\`\`
-Docker image "${DOCKER_IMAGE}" not found. Original error: ${message}
 \`\`\`
 `;
       }
