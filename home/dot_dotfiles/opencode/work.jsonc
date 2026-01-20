@@ -212,6 +212,8 @@
         "SLACK_MCP_XOXC_TOKEN={env:SLACK_MCP_XOXC_TOKEN}",
         "-e",
         "SLACK_MCP_XOXD_TOKEN={env:SLACK_MCP_XOXD_TOKEN}",
+        "-e",
+        "SLACK_MCP_ADD_MESSAGE_TOOL={env:SLACK_MCP_ALLOWED_CHANNELS}",
         "ghcr.io/korotovsky/slack-mcp-server",
         "mcp-server",
         "--transport",
