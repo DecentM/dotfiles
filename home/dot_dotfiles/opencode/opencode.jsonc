@@ -122,6 +122,7 @@
       "docker pull*": "allow",
       "docker logs*": "allow",
       "docker images*": "allow",
+      "docker run*": "allow",
       "distrobox*": "ask"
       // End containers
     },

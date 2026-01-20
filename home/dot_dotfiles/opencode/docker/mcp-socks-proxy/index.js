@@ -8,6 +8,9 @@ import { SocksProxyAgent } from "socks-proxy-agent";
 const MCP_REMOTE_URL = process.env.MCP_REMOTE_URL;
 const SOCKS_PROXY = process.env.SOCKS_PROXY;
 const MCP_TOKEN = process.env.MCP_TOKEN;
+// Strip this prefix from tool names to avoid double-prefixing
+// (e.g., if remote returns "gns_get" and MCP is named "gns", we'd get "gns_gns_get")
+const MCP_STRIP_PREFIX = process.env.MCP_STRIP_PREFIX || "";
 
 if (!MCP_REMOTE_URL) {
   console.error("Error: MCP_REMOTE_URL environment variable is required");
@@ -24,6 +27,9 @@ const log = (...args) => console.error("[mcp-socks-proxy]", ...args);
 log(`Connecting to ${MCP_REMOTE_URL} via ${SOCKS_PROXY}`);
 if (MCP_TOKEN) {
   log("Using MCP_TOKEN for authentication");
+}
+if (MCP_STRIP_PREFIX) {
+  log(`Stripping prefix "${MCP_STRIP_PREFIX}" from tool names`);
 }
 
 const remoteUrl = new URL(MCP_REMOTE_URL);
@@ -185,11 +191,18 @@ async function handleToolsList(message) {
 
     // returns: { success: true, tools: [{ name, description, inputSchema }] }
     // expects: { tools: [{ name, description, inputSchema }] }
-    const tools = serverResponse.tools.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-      inputSchema: tool.inputSchema,
-    }));
+    // Strip prefix from tool names to avoid double-prefixing by opencode
+    const tools = serverResponse.tools.map((tool) => {
+      let name = tool.name;
+      if (MCP_STRIP_PREFIX && name.startsWith(MCP_STRIP_PREFIX)) {
+        name = name.slice(MCP_STRIP_PREFIX.length);
+      }
+      return {
+        name,
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+      };
+    });
 
     cachedTools = tools;
     log(`Fetched and cached ${tools.length} tools`);
@@ -207,14 +220,16 @@ async function handleToolsList(message) {
 
 async function handleToolsCall(message) {
   const { name, arguments: args } = message.params;
-  log(`Handling tools/call: ${name}`);
+  // Add prefix back when calling remote server
+  const remoteName = MCP_STRIP_PREFIX ? MCP_STRIP_PREFIX + name : name;
+  log(`Handling tools/call: ${name} -> ${remoteName}`);
 
   try {
     // /api/call expects: { method: "tools/call", params: { name, arguments } }
     const serverResponse = {
       method: "tools/call",
       params: {
-        name,
+        name: remoteName,
         arguments: args || {},
       },
     };

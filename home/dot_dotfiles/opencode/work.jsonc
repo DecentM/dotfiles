@@ -161,7 +161,7 @@
       "command": [
         "bash",
         "-c",
-        "docker run --rm -i --init --network=host --memory=256m --cpus=0.5 -e MCP_REMOTE_URL={env:WORK_MCP_URL} -e SOCKS_PROXY={env:WORK_MCP_PROXY} -e MCP_TOKEN={env:WORK_MCP_TOKEN} $(docker build -q -f ~/.dotfiles/opencode/docker/mcp-socks-proxy.dockerfile ~/.dotfiles/opencode/docker)",
+        "docker run --rm -i --init --network=host --memory=256m --cpus=0.5 -e MCP_REMOTE_URL={env:WORK_MCP_URL} -e SOCKS_PROXY={env:WORK_MCP_PROXY} -e MCP_TOKEN={env:WORK_MCP_TOKEN} -e MCP_STRIP_PREFIX={env:WORK_MCP_NAME}_ $(docker build -q -f ~/.dotfiles/opencode/docker/mcp-socks-proxy.dockerfile ~/.dotfiles/opencode/docker)",
       ],
       "enabled": true,
     },
