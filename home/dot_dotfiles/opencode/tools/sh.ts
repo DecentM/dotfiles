@@ -10,7 +10,7 @@ import { tool } from "@opencode-ai/plugin";
 import { Database } from "bun:sqlite";
 import { mkdirSync, existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, resolve, basename } from "node:path";
+import { join, resolve, basename, relative, isAbsolute } from "node:path";
 
 // =============================================================================
 // Database Setup
@@ -19,9 +19,13 @@ import { join, resolve, basename } from "node:path";
 const AUDIT_DIR = join(homedir(), ".opencode", "audit");
 const DB_PATH = join(AUDIT_DIR, "commands.db");
 
-const getDb = (() => {
+/**
+ * Database connection manager with cleanup support.
+ */
+const dbManager = (() => {
   let db: Database | null = null;
-  return () => {
+
+  const get = (): Database => {
     if (!db) {
       if (!existsSync(AUDIT_DIR)) {
         mkdirSync(AUDIT_DIR, { recursive: true });
@@ -47,7 +51,34 @@ const getDb = (() => {
     }
     return db;
   };
+
+  const close = (): void => {
+    if (db) {
+      try {
+        db.close();
+      } catch {
+        // Ignore close errors during shutdown
+      }
+      db = null;
+    }
+  };
+
+  return { get, close };
 })();
+
+// Register cleanup handlers for graceful shutdown
+process.on("exit", () => dbManager.close());
+process.on("SIGINT", () => {
+  dbManager.close();
+  process.exit(0);
+});
+process.on("SIGTERM", () => {
+  dbManager.close();
+  process.exit(0);
+});
+
+/** @deprecated Use dbManager.get() - kept for backward compatibility */
+const getDb = () => dbManager.get();
 
 // =============================================================================
 // Permission Patterns
@@ -106,8 +137,15 @@ export interface PermissionPattern {
   constraints?: ConstraintConfig[];   // Multiple constraints
 }
 
+/**
+ * Compiled permission pattern with pre-built regex for performance.
+ */
+interface CompiledPermissionPattern extends PermissionPattern {
+  compiledRegex: RegExp;
+}
+
 interface PermissionsConfig {
-  rules: PermissionPattern[];
+  rules: CompiledPermissionPattern[];
   default: Decision;
   default_reason: string;
 }
@@ -117,6 +155,146 @@ const FALLBACK_CONFIG: PermissionsConfig = {
   rules: [],
   default: "deny",
   default_reason: "Permissions file failed to load - all commands denied for safety",
+};
+
+// =============================================================================
+// YAML Schema Validation
+// =============================================================================
+
+/**
+ * Validate a constraint configuration.
+ * Returns an error message if invalid, undefined if valid.
+ */
+const validateConstraint = (c: unknown, index: number, ruleIndex: number): string | undefined => {
+  if (typeof c === 'string') {
+    const validTypes: ConstraintType[] = ['cwd_only', 'no_recursive', 'no_force', 'max_depth', 'require_flag'];
+    if (!validTypes.includes(c as ConstraintType)) {
+      return `Rule ${ruleIndex}: Invalid constraint type '${c}'`;
+    }
+    // String shorthand for max_depth/require_flag is invalid (needs params)
+    if (c === 'max_depth' || c === 'require_flag') {
+      return `Rule ${ruleIndex}: Constraint '${c}' requires object form with parameters`;
+    }
+    return undefined;
+  }
+
+  if (typeof c !== 'object' || c === null) {
+    return `Rule ${ruleIndex}: Constraint ${index} must be a string or object`;
+  }
+
+  const obj = c as Record<string, unknown>;
+  if (typeof obj.type !== 'string') {
+    return `Rule ${ruleIndex}: Constraint ${index} missing 'type' field`;
+  }
+
+  switch (obj.type) {
+    case 'cwd_only':
+      if (obj.also_allow !== undefined && !Array.isArray(obj.also_allow)) {
+        return `Rule ${ruleIndex}: cwd_only.also_allow must be an array`;
+      }
+      if (obj.exclude !== undefined && !Array.isArray(obj.exclude)) {
+        return `Rule ${ruleIndex}: cwd_only.exclude must be an array`;
+      }
+      break;
+    case 'max_depth':
+      if (typeof obj.value !== 'number' || obj.value < 0) {
+        return `Rule ${ruleIndex}: max_depth requires a non-negative 'value'`;
+      }
+      break;
+    case 'require_flag':
+      if (typeof obj.flag !== 'string' || obj.flag.length === 0) {
+        return `Rule ${ruleIndex}: require_flag requires a non-empty 'flag'`;
+      }
+      break;
+    case 'no_recursive':
+    case 'no_force':
+      break;
+    default:
+      return `Rule ${ruleIndex}: Unknown constraint type '${obj.type}'`;
+  }
+
+  return undefined;
+};
+
+/**
+ * Validate a single YAML rule.
+ * Returns an error message if invalid, undefined if valid.
+ */
+const validateYamlRule = (rule: unknown, index: number): string | undefined => {
+  if (typeof rule !== 'object' || rule === null) {
+    return `Rule ${index}: Must be an object`;
+  }
+
+  const r = rule as Record<string, unknown>;
+
+  // Must have pattern or patterns
+  const hasPattern = typeof r.pattern === 'string';
+  const hasPatterns = Array.isArray(r.patterns) && r.patterns.every(p => typeof p === 'string');
+  if (!hasPattern && !hasPatterns) {
+    return `Rule ${index}: Must have 'pattern' (string) or 'patterns' (string array)`;
+  }
+
+  // Must have valid decision
+  if (r.decision !== 'allow' && r.decision !== 'deny') {
+    return `Rule ${index}: 'decision' must be 'allow' or 'deny'`;
+  }
+
+  // Reason is optional but must be string or null
+  if (r.reason !== undefined && r.reason !== null && typeof r.reason !== 'string') {
+    return `Rule ${index}: 'reason' must be a string or null`;
+  }
+
+  // Validate single constraint
+  if (r.constraint !== undefined) {
+    const err = validateConstraint(r.constraint, 0, index);
+    if (err) return err;
+  }
+
+  // Validate constraints array
+  if (r.constraints !== undefined) {
+    if (!Array.isArray(r.constraints)) {
+      return `Rule ${index}: 'constraints' must be an array`;
+    }
+    for (let i = 0; i < r.constraints.length; i++) {
+      const err = validateConstraint(r.constraints[i], i, index);
+      if (err) return err;
+    }
+  }
+
+  return undefined;
+};
+
+/**
+ * Validate the entire YAML config structure.
+ * Returns array of error messages (empty if valid).
+ */
+const validateYamlConfig = (parsed: unknown): string[] => {
+  const errors: string[] = [];
+
+  if (typeof parsed !== 'object' || parsed === null) {
+    return ['Config must be an object'];
+  }
+
+  const config = parsed as Record<string, unknown>;
+
+  if (!Array.isArray(config.rules)) {
+    return ['Config must have a "rules" array'];
+  }
+
+  for (let i = 0; i < config.rules.length; i++) {
+    const err = validateYamlRule(config.rules[i], i);
+    if (err) errors.push(err);
+  }
+
+  if (config.default !== undefined && config.default !== 'allow' && config.default !== 'deny') {
+    errors.push("'default' must be 'allow' or 'deny'");
+  }
+
+  if (config.default_reason !== undefined && typeof config.default_reason !== 'string') {
+    errors.push("'default_reason' must be a string");
+  }
+
+  return errors;
 };
 
 /**
@@ -132,8 +310,20 @@ interface YamlRule {
 }
 
 /**
+ * Convert a glob pattern to a regex.
+ * Supports * as wildcard (matches any characters).
+ */
+export const patternToRegex = (pattern: string): RegExp => {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*/g, ".*");
+  return new RegExp(`^${escaped}$`, "i");
+};
+
+/**
  * Load permissions from YAML file.
  * Uses a singleton pattern to load only once.
+ * Pre-compiles regexes for performance.
  *
  * Supports two rule formats:
  * 1. Single pattern:  { pattern: "rm*", decision: "deny", reason: "..." }
@@ -149,22 +339,29 @@ const getPermissions = (() => {
 
     try {
       const yamlContent = readFileSync(yamlPath, "utf-8");
-      const parsed = Bun.YAML.parse(yamlContent) as {
-        rules?: YamlRule[];
-        default?: string;
-        default_reason?: string;
-      };
+      const parsed = Bun.YAML.parse(yamlContent);
 
-      if (!parsed || !Array.isArray(parsed.rules)) {
-        console.error("[sh] Invalid permissions YAML structure - missing rules array");
+      // Validate YAML structure
+      const validationErrors = validateYamlConfig(parsed);
+      if (validationErrors.length > 0) {
+        console.error("[sh] Invalid permissions YAML:");
+        for (const err of validationErrors) {
+          console.error(`  - ${err}`);
+        }
         config = FALLBACK_CONFIG;
         return config;
       }
 
-      // Expand multi-pattern rules into individual pattern rules
-      const expandedRules: PermissionPattern[] = [];
+      const typedParsed = parsed as {
+        rules: YamlRule[];
+        default?: string;
+        default_reason?: string;
+      };
 
-      for (const rule of parsed.rules) {
+      // Expand multi-pattern rules into individual pattern rules with pre-compiled regex
+      const expandedRules: CompiledPermissionPattern[] = [];
+
+      for (const rule of typedParsed.rules) {
         const patterns = rule.patterns ?? (rule.pattern ? [rule.pattern] : []);
         const decision = rule.decision as Decision;
         const reason = rule.reason ?? undefined;
@@ -172,14 +369,21 @@ const getPermissions = (() => {
         const constraints = rule.constraints;
 
         for (const pattern of patterns) {
-          expandedRules.push({ pattern, decision, reason, constraint, constraints });
+          expandedRules.push({
+            pattern,
+            decision,
+            reason,
+            constraint,
+            constraints,
+            compiledRegex: patternToRegex(pattern),
+          });
         }
       }
 
       config = {
         rules: expandedRules,
-        default: (parsed.default as Decision) ?? "deny",
-        default_reason: parsed.default_reason ?? "Command not in allowlist",
+        default: (typedParsed.default as Decision) ?? "deny",
+        default_reason: typedParsed.default_reason ?? "Command not in allowlist",
       };
 
       return config;
@@ -195,17 +399,6 @@ const getPermissions = (() => {
 // Pattern Matching
 // =============================================================================
 
-/**
- * Convert a glob pattern to a regex.
- * Supports * as wildcard (matches any characters).
- */
-export const patternToRegex = (pattern: string): RegExp => {
-  const escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*/g, ".*");
-  return new RegExp(`^${escaped}$`, "i");
-};
-
 export interface MatchResult {
   decision: Decision;
   pattern: string | null;
@@ -216,14 +409,14 @@ export interface MatchResult {
 
 /**
  * Find the first matching permission pattern for a command.
+ * Uses pre-compiled regexes for performance.
  */
 export const matchCommand = (command: string): MatchResult => {
   const trimmed = command.trim();
   const config = getPermissions();
 
   for (const perm of config.rules) {
-    const regex = patternToRegex(perm.pattern);
-    if (regex.test(trimmed)) {
+    if (perm.compiledRegex.test(trimmed)) {
       return {
         decision: perm.decision,
         pattern: perm.pattern,
@@ -315,10 +508,13 @@ const PATH_EXTRACTORS: Record<string, (args: string[]) => string[]> = {
   'cd': (args) => {
     // cd with no args goes to ~
     if (args.length === 0) return ['~'];
+    // Special case: cd - (previous directory) - check BEFORE filtering
+    // since "-" looks like a flag but has special meaning for cd
+    if (args[0] === '-' || args.includes('-')) {
+      return ['-'];
+    }
     const filtered = extractNonFlagArgs(args);
     if (filtered.length === 0) return ['~'];
-    // cd - goes to previous dir
-    if (filtered[0] === '-') return ['-'];
     return [filtered[0]];
   },
   'ls': (args) => {
@@ -393,6 +589,49 @@ const matchPattern = (value: string, pattern: string): boolean => {
   return regex.test(value);
 };
 
+/**
+ * Check if a path matches any of the given glob patterns.
+ * Checks both the full path segments and basename.
+ */
+const matchesExcludePattern = (resolvedPath: string, patterns: string[]): string | undefined => {
+  const segments = resolvedPath.split('/').filter(Boolean);
+  const base = basename(resolvedPath);
+
+  for (const pattern of patterns) {
+    // Check basename
+    if (matchPattern(base, pattern)) {
+      return pattern;
+    }
+    // Check each path segment
+    for (const segment of segments) {
+      if (matchPattern(segment, pattern)) {
+        return pattern;
+      }
+    }
+  }
+  return undefined;
+};
+
+/**
+ * Check if a resolved path is within a base directory using path.relative().
+ * This is more robust than string prefix matching.
+ */
+const isPathWithin = (resolvedPath: string, baseDir: string): boolean => {
+  const normalizedBase = baseDir.endsWith('/') ? baseDir.slice(0, -1) : baseDir;
+  const rel = relative(normalizedBase, resolvedPath);
+  // Path is within if relative path doesn't start with '..' and isn't absolute
+  return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel);
+};
+
+/**
+ * Check if a resolved path equals or is within a base directory.
+ */
+const isPathWithinOrEqual = (resolvedPath: string, baseDir: string): boolean => {
+  const normalizedBase = baseDir.endsWith('/') ? baseDir.slice(0, -1) : baseDir;
+  if (resolvedPath === normalizedBase) return true;
+  return isPathWithin(resolvedPath, normalizedBase);
+};
+
 // =============================================================================
 // Constraint Validators
 // =============================================================================
@@ -415,14 +654,14 @@ export const validateCwdOnly = (
   for (const p of paths) {
     // Special case: cd - (previous directory)
     if (p === '-') {
-      return { valid: false, violation: `'cd -' not allowed (unknown destination)` };
+      return { valid: false, violation: `Command denied: 'cd -' not allowed (unknown destination)` };
     }
 
     // Special case: home directory
     if (p === '~' || p.startsWith('~/')) {
       // Check if ~ is in also_allow
       if (options?.also_allow?.includes('~')) continue;
-      return { valid: false, violation: `Home directory (~) not allowed` };
+      return { valid: false, violation: `Command denied: Home directory (~) not allowed` };
     }
 
     // Resolve to absolute path
@@ -430,30 +669,17 @@ export const validateCwdOnly = (
 
     // Check exclude patterns first
     if (options?.exclude) {
-      for (const pattern of options.exclude) {
-        // Check against basename
-        if (matchPattern(basename(resolved), pattern)) {
-          return {
-            valid: false,
-            violation: `Path '${p}' matches excluded pattern '${pattern}'`
-          };
-        }
-        // Check if any path segment matches
-        const segments = resolved.split('/');
-        for (const segment of segments) {
-          if (segment && matchPattern(segment, pattern)) {
-            return {
-              valid: false,
-              violation: `Path '${p}' contains segment matching excluded pattern '${pattern}'`
-            };
-          }
-        }
+      const matchedPattern = matchesExcludePattern(resolved, options.exclude);
+      if (matchedPattern) {
+        return {
+          valid: false,
+          violation: `Command denied: Path '${p}' matches excluded pattern '${matchedPattern}'`
+        };
       }
     }
 
-    // Check if within cwd
-    const normalizedCwd = workdir.endsWith('/') ? workdir.slice(0, -1) : workdir;
-    const isWithinCwd = resolved === normalizedCwd || resolved.startsWith(normalizedCwd + '/');
+    // Check if within cwd using robust path.relative() method
+    const isWithinCwd = isPathWithinOrEqual(resolved, workdir);
 
     if (!isWithinCwd) {
       // Check also_allow list
@@ -461,8 +687,7 @@ export const validateCwdOnly = (
         let isAllowed = false;
         for (const allowed of options.also_allow) {
           if (allowed === '~') continue; // Already handled above
-          const normalizedAllowed = allowed.endsWith('/') ? allowed.slice(0, -1) : allowed;
-          if (resolved === normalizedAllowed || resolved.startsWith(normalizedAllowed + '/')) {
+          if (isPathWithinOrEqual(resolved, allowed)) {
             isAllowed = true;
             break;
           }
@@ -472,7 +697,7 @@ export const validateCwdOnly = (
 
       return {
         valid: false,
-        violation: `Path '${p}' resolves to '${resolved}' which is outside working directory '${workdir}'`
+        violation: `Command denied: Path '${p}' resolves to '${resolved}' which is outside working directory '${workdir}'`
       };
     }
   }
@@ -510,12 +735,12 @@ export const validateNoRecursive = (command: string): ConstraintResult => {
   for (const token of tokens) {
     // Check for long flag
     if (token === '--recursive') {
-      return { valid: false, violation: `Recursive flag not allowed: ${token}` };
+      return { valid: false, violation: `Command denied: Recursive flag not allowed (${token})` };
     }
 
     // Check for short flags -r and -R (including combined like -rf)
     if (hasShortFlag(token, '-r') || hasShortFlag(token, '-R')) {
-      return { valid: false, violation: `Recursive flag not allowed: ${token}` };
+      return { valid: false, violation: `Command denied: Recursive flag not allowed (${token})` };
     }
   }
 
@@ -531,12 +756,12 @@ export const validateNoForce = (command: string): ConstraintResult => {
   for (const token of tokens) {
     // Check for long flag
     if (token === '--force') {
-      return { valid: false, violation: `Force flag not allowed: ${token}` };
+      return { valid: false, violation: `Command denied: Force flag not allowed (${token})` };
     }
 
     // Check for short flag -f (including combined like -rf)
     if (hasShortFlag(token, '-f')) {
-      return { valid: false, violation: `Force flag not allowed: ${token}` };
+      return { valid: false, violation: `Command denied: Force flag not allowed (${token})` };
     }
   }
 
@@ -558,22 +783,22 @@ export const validateMaxDepth = (command: string, maxAllowed: number): Constrain
       const depthStr = tokens[i + 1];
 
       if (!depthStr) {
-        return { valid: false, violation: `Missing value for ${token}` };
+        return { valid: false, violation: `Command denied: Missing value for ${token}` };
       }
 
       const depth = parseInt(depthStr, 10);
       if (isNaN(depth)) {
-        return { valid: false, violation: `Invalid depth value: ${depthStr}` };
+        return { valid: false, violation: `Command denied: Invalid depth value '${depthStr}'` };
       }
 
       if (depth > maxAllowed) {
-        return { valid: false, violation: `Depth ${depth} exceeds maximum allowed ${maxAllowed}` };
+        return { valid: false, violation: `Command denied: Depth ${depth} exceeds maximum allowed (${maxAllowed})` };
       }
     }
   }
 
   if (!foundMaxdepth) {
-    return { valid: false, violation: `Must specify -maxdepth (max ${maxAllowed}) for safety` };
+    return { valid: false, violation: `Command denied: Must specify -maxdepth (max ${maxAllowed}) for safety` };
   }
 
   return { valid: true };
@@ -599,7 +824,7 @@ export const validateRequireFlag = (command: string, requiredFlag: string): Cons
     }
   }
 
-  return { valid: false, violation: `Required flag '${requiredFlag}' not found` };
+  return { valid: false, violation: `Command denied: Required flag '${requiredFlag}' not found` };
 };
 
 /**
@@ -651,7 +876,7 @@ export const validateConstraints = (
         if (typeof c === 'object' && c.type === 'max_depth') {
           result = validateMaxDepth(command, c.value);
         } else {
-          result = { valid: false, violation: `max_depth constraint requires a 'value' parameter` };
+          result = { valid: false, violation: `Command denied: max_depth constraint requires a 'value' parameter` };
         }
         break;
       }
@@ -660,13 +885,13 @@ export const validateConstraints = (
         if (typeof c === 'object' && c.type === 'require_flag') {
           result = validateRequireFlag(command, c.flag);
         } else {
-          result = { valid: false, violation: `require_flag constraint requires a 'flag' parameter` };
+          result = { valid: false, violation: `Command denied: require_flag constraint requires a 'flag' parameter` };
         }
         break;
       }
 
       default:
-        result = { valid: false, violation: `Unknown constraint type: ${type}` };
+        result = { valid: false, violation: `Command denied: Unknown constraint type '${type}'` };
     }
 
     if (!result.valid) {
@@ -751,22 +976,10 @@ Denied commands will return an error with the reason.`,
         decision: "deny",
       });
 
-      // Format error message based on whether a pattern matched or it was the default deny
-      let errorMessage: string;
-      if (match.pattern) {
-        errorMessage = `Error: Command denied
-Pattern: ${match.pattern}
-Reason: ${match.reason ?? "No reason provided"}
-
-Command: ${command}`;
-      } else {
-        errorMessage = `Error: Command denied
-Reason: ${match.reason ?? "Command not in allowlist"}
-
-Command: ${command}`;
-      }
-
-      return errorMessage;
+      // Standardized error format
+      const reason = match.reason ?? "Command not in allowlist";
+      const patternInfo = match.pattern ? `\nPattern: ${match.pattern}` : "";
+      return `Error: Command denied\nReason: ${reason}${patternInfo}\n\nCommand: ${command}`;
     }
 
     // Check constraints for allowed commands
@@ -785,11 +998,9 @@ Command: ${command}`;
           decision: "deny",
         });
 
-        return `Error: Command denied by constraint
-Pattern: ${match.pattern}
-Constraint violation: ${constraintResult.violation}${match.reason ? `\nReason: ${match.reason}` : ""}
-
-Command: ${command}`;
+        // Standardized error format - violation message already includes "Command denied:"
+        const reasonInfo = match.reason ? `\nReason: ${match.reason}` : "";
+        return `Error: ${constraintResult.violation}\nPattern: ${match.pattern}${reasonInfo}\n\nCommand: ${command}`;
       }
     }
 
@@ -813,16 +1024,45 @@ Command: ${command}`;
         stderr: "pipe",
       });
 
-      // Handle timeout
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          proc.kill();
-          reject(new Error(`Command timed out after ${timeout}ms`));
-        }, timeout);
-      });
+      /**
+       * Terminate process with signal escalation.
+       * Tries SIGTERM first, then SIGKILL after grace period.
+       */
+      const terminateProcess = async (): Promise<void> => {
+        try {
+          // First attempt: SIGTERM (graceful)
+          proc.kill("SIGTERM");
 
-      // Wait for completion or timeout
-      const exitCode = await Promise.race([proc.exited, timeoutPromise]);
+          // Wait briefly for graceful shutdown
+          const gracePeriod = 1000; // 1 second
+          const exited = await Promise.race([
+            proc.exited.then(() => true),
+            new Promise<false>((resolve) => setTimeout(() => resolve(false), gracePeriod)),
+          ]);
+
+          // If still running, escalate to SIGKILL
+          if (!exited) {
+            try {
+              proc.kill("SIGKILL");
+            } catch {
+              // Process may have exited between check and kill
+            }
+          }
+        } catch {
+          // Process may have already exited
+        }
+      };
+
+      // Handle timeout with proper cleanup
+      let timedOut = false;
+      const timeoutId = setTimeout(() => {
+        timedOut = true;
+        terminateProcess();
+      }, timeout);
+
+      // Wait for completion
+      const exitCode = await proc.exited;
+      clearTimeout(timeoutId);
 
       const durationMs = Math.round(performance.now() - startTime);
 
@@ -831,7 +1071,12 @@ Command: ${command}`;
       const stderr = await new Response(proc.stderr).text();
 
       // Update log with results
-      updateLogEntry(logId, exitCode, durationMs);
+      updateLogEntry(logId, timedOut ? -2 : exitCode, durationMs);
+
+      // Handle timeout case
+      if (timedOut) {
+        return `Error: Command timed out after ${timeout}ms and was terminated\n\nCommand: ${command}`;
+      }
 
       // Format output
       let output = "";
@@ -858,7 +1103,7 @@ Command: ${command}`;
       const durationMs = Math.round(performance.now() - startTime);
       updateLogEntry(logId, -1, durationMs);
 
-      return `Error executing command: ${error instanceof Error ? error.message : String(error)}`;
+      return `Error: Command execution failed: ${error instanceof Error ? error.message : String(error)}\n\nCommand: ${command}`;
     }
   },
 });

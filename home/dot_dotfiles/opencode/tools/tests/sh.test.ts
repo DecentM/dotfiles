@@ -334,12 +334,8 @@ describe("extractPaths", () => {
       expect(extractPaths("cd")).toEqual(["~"]);
     });
 
-    // Note: cd - currently returns ["~"] due to extractNonFlagArgs filtering "-"
-    // This is a known limitation - the special case check for "-" can't trigger
-    // because extractNonFlagArgs filters it out first. The validateCwdOnly
-    // check happens on the resolved path, not the extraction.
-    test("cd - returns ~ (filtered as flag)", () => {
-      expect(extractPaths("cd -")).toEqual(["~"]);
+    test("cd - returns [-] (previous directory)", () => {
+      expect(extractPaths("cd -")).toEqual(["-"]);
     });
 
     test("extracts path from cd with flags", () => {
@@ -504,13 +500,11 @@ describe("validateCwdOnly", () => {
     });
   });
 
-  describe("denies cd - (treated as home)", () => {
-    // Note: Due to the extractPaths limitation where "-" gets filtered,
-    // "cd -" is treated as "cd" (no args) which returns ["~"]
-    test("denies cd - (sees it as home directory)", () => {
+  describe("denies cd -", () => {
+    test("denies cd - (unknown destination)", () => {
       const result = validateCwdOnly("cd -", workdir);
       expect(result.valid).toBe(false);
-      expect(result.violation).toContain("Home directory");
+      expect(result.violation).toContain("cd -");
     });
   });
 
