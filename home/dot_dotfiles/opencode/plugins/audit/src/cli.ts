@@ -8,6 +8,7 @@
  *   opencode-audit hierarchy [options]    Show command hierarchy
  *   opencode-audit stats [options]        Show statistics
  *   opencode-audit export [options]       Export audit data
+ *   opencode-audit parse-logs [options]   Parse log files for permission data
  */
 
 import { parseArgs } from "util";
@@ -22,6 +23,14 @@ import {
   exportHierarchyCsv,
   exportHierarchyJson,
 } from "./export";
+import {
+  parseLogDirectory,
+  getDefaultLogDirectory,
+  generateSummary,
+  formatSummary,
+  formatSummaryJson,
+  type LogParseFilters,
+} from "./log-parser";
 import type { ExportFilters } from "./types";
 
 /**
@@ -39,6 +48,43 @@ const findDatabase = (): string | null => {
 };
 
 /**
+ * Parse date string into Date object
+ * Supports: ISO dates, 'today', 'week', 'month', relative like '24h', '7d'
+ */
+const parseDate = (dateStr: string): Date => {
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  const hour = 60 * 60 * 1000;
+
+  // Relative formats
+  if (dateStr === "today" || dateStr === "24h") {
+    return new Date(now - day);
+  }
+  if (dateStr === "week" || dateStr === "7d") {
+    return new Date(now - 7 * day);
+  }
+  if (dateStr === "month" || dateStr === "30d") {
+    return new Date(now - 30 * day);
+  }
+  
+  // Match relative pattern like "12h", "3d"
+  const relativeMatch = dateStr.match(/^(\d+)([hd])$/);
+  if (relativeMatch) {
+    const value = parseInt(relativeMatch[1], 10);
+    const unit = relativeMatch[2];
+    if (unit === "h") {
+      return new Date(now - value * hour);
+    }
+    if (unit === "d") {
+      return new Date(now - value * day);
+    }
+  }
+
+  // ISO date
+  return new Date(dateStr);
+};
+
+/**
  * Print usage information
  */
 const printUsage = (): void => {
@@ -50,8 +96,9 @@ Usage:
 
 Commands:
   hierarchy    Show command hierarchy sorted by denial rate
-  stats        Show permission statistics
+  stats        Show permission statistics (from database)
   export       Export audit data to file
+  parse-logs   Parse OpenCode log files for permission evaluations
 
 Global Options:
   --db <path>  Path to audit database (auto-detected if not specified)
@@ -78,6 +125,14 @@ Export Options:
   --limit <n>      Maximum entries to export
   --hierarchy      Export hierarchy instead of raw data
 
+Parse-Logs Options:
+  --since <date>   Filter from date (ISO, 'today', 'week', 'month', '24h', '7d')
+  --until <date>   Filter to date (ISO)
+  --type <type>    Filter by permission type (e.g., 'bash', 'edit')
+  --action <act>   Filter by action: allow, deny, ask
+  --log-dir <dir>  Log directory (default: ~/.local/share/opencode/log/)
+  --json           Output as JSON
+
 Examples:
   opencode-audit hierarchy
   opencode-audit hierarchy --max-depth 2 --min-denial-rate 0.5
@@ -85,6 +140,9 @@ Examples:
   opencode-audit stats --type bash --json
   opencode-audit export --format csv --output audit.csv
   opencode-audit export --format json --output hierarchy.json --hierarchy
+  opencode-audit parse-logs --since 24h
+  opencode-audit parse-logs --since week --action deny
+  opencode-audit parse-logs --type bash --json
 `);
 };
 
@@ -116,6 +174,12 @@ const main = async (): Promise<void> => {
       status: { type: "string" },
       limit: { type: "string" },
       hierarchy: { type: "boolean" },
+
+      // Parse-logs
+      since: { type: "string" },
+      until: { type: "string" },
+      action: { type: "string" },
+      "log-dir": { type: "string" },
     },
     allowPositionals: true,
   });
@@ -127,7 +191,54 @@ const main = async (): Promise<void> => {
 
   const command = positionals[0];
 
-  // Find or validate database path
+  // Handle parse-logs command separately (doesn't need database)
+  if (command === "parse-logs") {
+    const logDir = values["log-dir"] ?? getDefaultLogDirectory();
+
+    if (!existsSync(logDir)) {
+      console.error(`Error: Log directory not found at ${logDir}`);
+      process.exit(1);
+    }
+
+    // Build filters
+    const filters: LogParseFilters = {};
+    
+    if (values.since) {
+      filters.since = parseDate(values.since);
+    }
+    if (values.until) {
+      filters.until = parseDate(values.until);
+    }
+    if (values.type) {
+      filters.type = values.type;
+    }
+    if (values.action) {
+      if (!["allow", "deny", "ask"].includes(values.action)) {
+        console.error("Error: --action must be 'allow', 'deny', or 'ask'");
+        process.exit(1);
+      }
+      filters.action = values.action as "allow" | "deny" | "ask";
+    }
+
+    console.error(`Parsing logs from ${logDir}...`);
+    const entries = await parseLogDirectory(logDir, filters);
+
+    if (entries.length === 0) {
+      console.log("No permission entries found in logs.");
+      process.exit(0);
+    }
+
+    const summary = generateSummary(entries);
+    
+    if (values.json) {
+      console.log(formatSummaryJson(summary));
+    } else {
+      console.log(formatSummary(summary));
+    }
+    process.exit(0);
+  }
+
+  // Commands that need the database
   const dbPath = values.db ?? findDatabase();
 
   if (!dbPath) {
@@ -182,19 +293,11 @@ const main = async (): Promise<void> => {
         let endDate: number | undefined;
 
         if (values.start) {
-          if (values.start === "today") {
-            startDate = Date.now() - 24 * 60 * 60 * 1000;
-          } else if (values.start === "week") {
-            startDate = Date.now() - 7 * 24 * 60 * 60 * 1000;
-          } else if (values.start === "month") {
-            startDate = Date.now() - 30 * 24 * 60 * 60 * 1000;
-          } else {
-            startDate = new Date(values.start).getTime();
-          }
+          startDate = parseDate(values.start).getTime();
         }
 
         if (values.end) {
-          endDate = new Date(values.end).getTime();
+          endDate = parseDate(values.end).getTime();
         }
 
         // Rebuild hierarchy to ensure stats are fresh
@@ -243,9 +346,9 @@ const main = async (): Promise<void> => {
           status: values.status as "ask" | "allow" | "deny" | undefined,
           limit: values.limit ? parseInt(values.limit, 10) : undefined,
           startDate: values.start
-            ? new Date(values.start).getTime()
+            ? parseDate(values.start).getTime()
             : undefined,
-          endDate: values.end ? new Date(values.end).getTime() : undefined,
+          endDate: values.end ? parseDate(values.end).getTime() : undefined,
         };
 
         await exportToFile(db, filters, output);

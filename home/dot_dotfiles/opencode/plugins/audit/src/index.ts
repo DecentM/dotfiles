@@ -28,6 +28,11 @@ const pendingPermissions = new Map<string, AuditEntry>();
 const loggedPermissions = new Set<string>();
 
 /**
+ * In-memory cache for tracking in-flight tool executions
+ */
+const pendingToolExecutions = new Map<string, { sessionId: string; toolName: string; startedAt: number; title?: string }>();
+
+/**
  * Counter for batching hierarchy rebuilds
  */
 let permissionsSinceRebuild = 0;
@@ -182,6 +187,67 @@ export const AuditPlugin: Plugin = async ({
             );
           }
         }
+      }
+    },
+
+    /**
+     * Hook called before a tool executes - log the start of tool execution
+     */
+    "tool.execute.before": async (
+      input: { tool: string; sessionID: string; callID: string },
+      output: { args: unknown }
+    ) => {
+      const startedAt = Date.now();
+      
+      console.log(
+        `[audit-plugin] tool.execute.before: tool=${input.tool}, callID=${input.callID}`
+      );
+
+      // Store in-flight execution for correlation with after hook
+      pendingToolExecutions.set(input.callID, {
+        sessionId: input.sessionID,
+        toolName: input.tool,
+        startedAt,
+      });
+
+      try {
+        db.insertToolExecution({
+          id: input.callID,
+          sessionId: input.sessionID,
+          toolName: input.tool,
+          args: output.args as Record<string, unknown>,
+          startedAt,
+        });
+      } catch (error) {
+        console.error("[audit-plugin] Failed to insert tool execution:", error);
+      }
+    },
+
+    /**
+     * Hook called after a tool executes - update with completion info
+     */
+    "tool.execute.after": async (
+      input: { tool: string; sessionID: string; callID: string },
+      output: { title: string; output: string; metadata: unknown }
+    ) => {
+      const completedAt = Date.now();
+      
+      console.log(
+        `[audit-plugin] tool.execute.after: tool=${input.tool}, callID=${input.callID}, title=${output.title}`
+      );
+
+      // Clean up pending execution
+      pendingToolExecutions.delete(input.callID);
+
+      try {
+        db.updateToolExecution(
+          input.callID,
+          completedAt,
+          output.output?.length ?? 0,
+          true // Assume success if we got to after hook
+        );
+      } catch (error) {
+        console.error("[audit-plugin] Failed to update tool execution:", error);
       }
     },
 
@@ -410,6 +476,92 @@ export const AuditPlugin: Plugin = async ({
             return `Hierarchy rebuilt successfully. ${hierarchy.length} root commands indexed.`;
           } catch (error) {
             return `Error rebuilding hierarchy: ${error instanceof Error ? error.message : String(error)}`;
+          }
+        },
+      }),
+
+      /**
+       * Show tool execution statistics
+       */
+      toolExecutionStats: tool({
+        description:
+          "Show statistics about tool executions including success rates, average durations, and breakdown by tool name.",
+        args: {
+          startDate: tool.schema
+            .string()
+            .optional()
+            .describe("Start date filter (ISO format or 'today', 'week', 'month')"),
+          endDate: tool.schema
+            .string()
+            .optional()
+            .describe("End date filter (ISO format)"),
+          toolName: tool.schema
+            .string()
+            .optional()
+            .describe("Filter by specific tool name"),
+          format: tool.schema
+            .enum(["text", "json"])
+            .optional()
+            .describe("Output format (default: text)"),
+        },
+        async execute(args) {
+          try {
+            // Parse date filters
+            let startDate: number | undefined;
+            let endDate: number | undefined;
+
+            if (args.startDate) {
+              if (args.startDate === "today") {
+                startDate = Date.now() - 24 * 60 * 60 * 1000;
+              } else if (args.startDate === "week") {
+                startDate = Date.now() - 7 * 24 * 60 * 60 * 1000;
+              } else if (args.startDate === "month") {
+                startDate = Date.now() - 30 * 24 * 60 * 60 * 1000;
+              } else {
+                startDate = new Date(args.startDate).getTime();
+              }
+            }
+
+            if (args.endDate) {
+              endDate = new Date(args.endDate).getTime();
+            }
+
+            const stats = db.getToolStats({
+              startDate,
+              endDate,
+              toolName: args.toolName,
+            });
+
+            if (stats.total === 0) {
+              return "No tool execution data found. Tool executions will be logged as they occur.";
+            }
+
+            if (args.format === "json") {
+              return JSON.stringify(stats, null, 2);
+            }
+
+            // Format as text
+            const lines: string[] = [];
+            lines.push("Tool Execution Statistics");
+            lines.push("=".repeat(40));
+            lines.push(`Total Executions: ${stats.total}`);
+            lines.push(`Successful: ${stats.successful} (${((stats.successful / stats.total) * 100).toFixed(1)}%)`);
+            lines.push(`Failed: ${stats.failed} (${((stats.failed / stats.total) * 100).toFixed(1)}%)`);
+            lines.push(`Average Duration: ${stats.avgDuration.toFixed(0)}ms`);
+            lines.push("");
+            lines.push("By Tool:");
+            
+            const sortedTools = Object.entries(stats.byTool)
+              .sort((a, b) => b[1].total - a[1].total);
+            
+            for (const [toolName, toolStats] of sortedTools.slice(0, 20)) {
+              const successRate = ((toolStats.successful / toolStats.total) * 100).toFixed(0);
+              lines.push(`  ${toolName}: ${toolStats.total} (${successRate}% success, avg ${toolStats.avgDuration.toFixed(0)}ms)`);
+            }
+
+            return lines.join("\n");
+          } catch (error) {
+            return `Error retrieving tool stats: ${error instanceof Error ? error.message : String(error)}`;
           }
         },
       }),

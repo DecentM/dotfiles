@@ -174,6 +174,36 @@ export interface SessionMetadata {
 }
 
 /**
+ * Tool execution entry as stored in the database
+ */
+export interface ToolExecution {
+  id: string;
+  sessionId: string;
+  toolName: string;
+  args?: Record<string, unknown>;
+  startedAt: number;
+  completedAt?: number;
+  title?: string;
+  outputLength?: number;
+  success?: boolean;
+}
+
+/**
+ * Database row representation of a tool execution
+ */
+export interface ToolExecutionRow {
+  id: string;
+  session_id: string;
+  tool_name: string;
+  args: string | null;
+  started_at: number;
+  completed_at: number | null;
+  title: string | null;
+  output_length: number | null;
+  success: number | null;
+}
+
+/**
  * Time range presets for filtering
  */
 export type TimeRangePreset = "today" | "week" | "month" | "all";

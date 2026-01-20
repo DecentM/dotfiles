@@ -12,6 +12,8 @@ import type {
   AuditEntry,
   AuditEntryRow,
   HierarchyRow,
+  ToolExecution,
+  ToolExecutionRow,
 } from "./types";
 
 /**
@@ -86,6 +88,25 @@ export class AuditDatabase {
     `);
 
     this.db.run(`CREATE INDEX IF NOT EXISTS idx_session_started ON session_metadata(started_at)`);
+
+    // Tool executions table - tracks what tools actually run
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS tool_executions (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        tool_name TEXT NOT NULL,
+        args TEXT,
+        started_at INTEGER NOT NULL,
+        completed_at INTEGER,
+        title TEXT,
+        output_length INTEGER,
+        success INTEGER
+      )
+    `);
+
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_tool_executions_session ON tool_executions(session_id)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_tool_executions_tool ON tool_executions(tool_name)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_tool_executions_started ON tool_executions(started_at)`);
   }
 
   /**
@@ -290,7 +311,7 @@ export class AuditDatabase {
     byType: Record<string, { total: number; denied: number; allowed: number }>;
   } {
     let whereClause = "WHERE 1=1";
-    const params: unknown[] = [];
+    const params: (string | number | null)[] = [];
 
     if (filters?.startDate !== undefined) {
       whereClause += " AND created_at >= ?";
@@ -464,6 +485,218 @@ export class AuditDatabase {
    */
   close(): void {
     this.db.close();
+  }
+
+  /**
+   * Insert a new tool execution entry (called on tool.execute.before)
+   */
+  insertToolExecution(execution: ToolExecution): void {
+    const stmt = this.db.prepare(`
+      INSERT INTO tool_executions (
+        id, session_id, tool_name, args, started_at, completed_at, title, output_length, success
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      execution.id,
+      execution.sessionId,
+      execution.toolName,
+      execution.args ? JSON.stringify(execution.args) : null,
+      execution.startedAt,
+      execution.completedAt ?? null,
+      execution.title ?? null,
+      execution.outputLength ?? null,
+      execution.success !== undefined ? (execution.success ? 1 : 0) : null
+    );
+  }
+
+  /**
+   * Update a tool execution with completion info (called on tool.execute.after)
+   */
+  updateToolExecution(
+    id: string,
+    completedAt: number,
+    outputLength?: number,
+    success?: boolean
+  ): void {
+    const stmt = this.db.prepare(`
+      UPDATE tool_executions
+      SET completed_at = ?, output_length = ?, success = ?
+      WHERE id = ?
+    `);
+
+    stmt.run(
+      completedAt,
+      outputLength ?? null,
+      success !== undefined ? (success ? 1 : 0) : null,
+      id
+    );
+  }
+
+  /**
+   * Get a tool execution by ID
+   */
+  getToolExecution(id: string): ToolExecution | null {
+    const stmt = this.db.prepare(`SELECT * FROM tool_executions WHERE id = ?`);
+    const row = stmt.get(id) as ToolExecutionRow | undefined;
+    return row ? this.toolRowToExecution(row) : null;
+  }
+
+  /**
+   * Get tool executions with optional filters
+   */
+  getToolExecutions(options: {
+    sessionId?: string;
+    toolName?: string;
+    startDate?: number;
+    endDate?: number;
+    limit?: number;
+  }): ToolExecution[] {
+    const limit = options.limit ?? 1000;
+    let rows: ToolExecutionRow[];
+
+    if (options.sessionId) {
+      const stmt = this.db.prepare(`
+        SELECT * FROM tool_executions
+        WHERE session_id = ?
+        ORDER BY started_at DESC
+      `);
+      rows = stmt.all(options.sessionId) as ToolExecutionRow[];
+    } else if (options.toolName) {
+      const stmt = this.db.prepare(`
+        SELECT * FROM tool_executions
+        WHERE tool_name = ?
+        ORDER BY started_at DESC
+        LIMIT ?
+      `);
+      rows = stmt.all(options.toolName, limit) as ToolExecutionRow[];
+    } else if (options.startDate !== undefined && options.endDate !== undefined) {
+      const stmt = this.db.prepare(`
+        SELECT * FROM tool_executions
+        WHERE started_at >= ? AND started_at <= ?
+        ORDER BY started_at DESC
+      `);
+      rows = stmt.all(options.startDate, options.endDate) as ToolExecutionRow[];
+    } else {
+      const stmt = this.db.prepare(`
+        SELECT * FROM tool_executions
+        ORDER BY started_at DESC
+        LIMIT ?
+      `);
+      rows = stmt.all(limit) as ToolExecutionRow[];
+    }
+
+    return rows.map((row) => this.toolRowToExecution(row));
+  }
+
+  /**
+   * Get tool execution statistics
+   */
+  getToolStats(filters?: {
+    startDate?: number;
+    endDate?: number;
+    toolName?: string;
+  }): {
+    total: number;
+    successful: number;
+    failed: number;
+    avgDuration: number;
+    byTool: Record<string, { total: number; successful: number; avgDuration: number }>;
+  } {
+    let whereClause = "WHERE 1=1";
+    const params: (string | number | null)[] = [];
+
+    if (filters?.startDate !== undefined) {
+      whereClause += " AND started_at >= ?";
+      params.push(filters.startDate);
+    }
+    if (filters?.endDate !== undefined) {
+      whereClause += " AND started_at <= ?";
+      params.push(filters.endDate);
+    }
+    if (filters?.toolName) {
+      whereClause += " AND tool_name = ?";
+      params.push(filters.toolName);
+    }
+
+    // Total counts
+    const totalStmt = this.db.prepare(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful,
+        SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) as failed,
+        AVG(CASE WHEN completed_at IS NOT NULL THEN completed_at - started_at END) as avg_duration
+      FROM tool_executions
+      ${whereClause}
+    `);
+    const totals = totalStmt.get(...params) as {
+      total: number;
+      successful: number;
+      failed: number;
+      avg_duration: number | null;
+    };
+
+    // By tool
+    const byToolStmt = this.db.prepare(`
+      SELECT 
+        tool_name,
+        COUNT(*) as total,
+        SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful,
+        AVG(CASE WHEN completed_at IS NOT NULL THEN completed_at - started_at END) as avg_duration
+      FROM tool_executions
+      ${whereClause}
+      GROUP BY tool_name
+      ORDER BY total DESC
+    `);
+    const byToolRows = byToolStmt.all(...params) as Array<{
+      tool_name: string;
+      total: number;
+      successful: number;
+      avg_duration: number | null;
+    }>;
+
+    const byTool: Record<string, { total: number; successful: number; avgDuration: number }> = {};
+    for (const row of byToolRows) {
+      byTool[row.tool_name] = {
+        total: row.total,
+        successful: row.successful,
+        avgDuration: row.avg_duration ?? 0,
+      };
+    }
+
+    return {
+      total: totals.total,
+      successful: totals.successful,
+      failed: totals.failed,
+      avgDuration: totals.avg_duration ?? 0,
+      byTool,
+    };
+  }
+
+  /**
+   * Convert database row to ToolExecution
+   */
+  private toolRowToExecution(row: ToolExecutionRow): ToolExecution {
+    let args: Record<string, unknown> | undefined;
+    if (row.args) {
+      try {
+        args = JSON.parse(row.args);
+      } catch {
+        args = undefined;
+      }
+    }
+
+    return {
+      id: row.id,
+      sessionId: row.session_id,
+      toolName: row.tool_name,
+      args,
+      startedAt: row.started_at,
+      completedAt: row.completed_at ?? undefined,
+      title: row.title ?? undefined,
+      outputLength: row.output_length ?? undefined,
+      success: row.success !== null ? row.success === 1 : undefined,
+    };
   }
 
   /**

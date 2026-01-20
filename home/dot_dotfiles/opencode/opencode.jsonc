@@ -302,15 +302,6 @@
       "unrar*": "allow",
       // End archive operations
 
-      // Git - local operations (deny remote push)
-      "git push*": "deny",
-      "git push": "deny",
-
-      "git*": "allow",
-      "gh*": "allow",
-      "glab*": "allow",
-      // End git
-
       // Date, time, math utilities
       "date*": "allow",
       "cal*": "allow",
