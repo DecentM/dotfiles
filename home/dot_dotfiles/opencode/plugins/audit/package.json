@@ -7,17 +7,16 @@
     "opencode-audit": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "bun build src/index.ts --outdir dist --target bun && bun build src/cli.ts --outdir dist --target bun",
+    "dev": "bun build src/index.ts --outdir dist --target bun --watch",
     "typecheck": "tsc --noEmit",
     "cli": "bun run src/cli.ts"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^1.1.20",
-    "better-sqlite3": "^11.7.0"
+    "@opencode-ai/plugin": "^1.1.20"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
+    "@types/bun": "^1.2.10",
     "@types/node": "^22.13.9",
     "typescript": "^5.8.2"
   },

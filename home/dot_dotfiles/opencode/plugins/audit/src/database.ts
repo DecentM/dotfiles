@@ -2,57 +2,40 @@
  * OpenCode Permission Audit Plugin - Database Module
  *
  * SQLite database for storing permission audit entries with efficient querying.
+ * Uses Bun's native SQLite support.
  */
 
-import Database from "better-sqlite3";
+import { Database } from "bun:sqlite";
 import { mkdir } from "fs/promises";
 import { dirname } from "path";
 import type {
   AuditEntry,
   AuditEntryRow,
   HierarchyRow,
-  SessionMetadata,
 } from "./types";
 
 /**
  * Database wrapper for permission audit storage
  */
 export class AuditDatabase {
-  private db: Database.Database;
-  private stmts: {
-    insertPermission: Database.Statement;
-    updateResponse: Database.Statement;
-    getPermission: Database.Statement;
-    getPermissions: Database.Statement;
-    getPermissionsByType: Database.Statement;
-    getPermissionsBySession: Database.Statement;
-    getPermissionsByDateRange: Database.Statement;
-    insertHierarchy: Database.Statement;
-    clearHierarchy: Database.Statement;
-    getHierarchy: Database.Statement;
-    upsertSession: Database.Statement;
-    getSessionStats: Database.Statement;
-  };
+  private db: Database;
 
   constructor(dbPath: string) {
-    this.db = new Database(dbPath);
+    this.db = new Database(dbPath, { create: true });
 
     // Enable WAL mode for better concurrent access
-    this.db.pragma("journal_mode = WAL");
-    this.db.pragma("synchronous = NORMAL");
+    this.db.run("PRAGMA journal_mode = WAL");
+    this.db.run("PRAGMA synchronous = NORMAL");
 
     // Initialize schema
     this.initSchema();
-
-    // Prepare statements for performance
-    this.stmts = this.prepareStatements();
   }
 
   /**
    * Initialize database schema
    */
   private initSchema(): void {
-    this.db.exec(`
+    this.db.run(`
       -- Main permissions table
       CREATE TABLE IF NOT EXISTS permissions (
         id TEXT PRIMARY KEY,
@@ -67,15 +50,15 @@ export class AuditDatabase {
         user_response TEXT CHECK (user_response IN ('once', 'always', 'reject', NULL)),
         created_at INTEGER NOT NULL,
         responded_at INTEGER
-      );
+      )
+    `);
 
-      -- Indexes for common queries
-      CREATE INDEX IF NOT EXISTS idx_permissions_type ON permissions(type);
-      CREATE INDEX IF NOT EXISTS idx_permissions_session ON permissions(session_id);
-      CREATE INDEX IF NOT EXISTS idx_permissions_created ON permissions(created_at);
-      CREATE INDEX IF NOT EXISTS idx_permissions_status ON permissions(initial_status, user_response);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_permissions_type ON permissions(type)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_permissions_session ON permissions(session_id)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_permissions_created ON permissions(created_at)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_permissions_status ON permissions(initial_status, user_response)`);
 
-      -- Command hierarchy cache table
+    this.db.run(`
       CREATE TABLE IF NOT EXISTS command_hierarchy (
         command TEXT PRIMARY KEY,
         parent TEXT,
@@ -86,110 +69,23 @@ export class AuditDatabase {
         allowed_count INTEGER DEFAULT 0,
         denial_rate REAL DEFAULT 0,
         last_seen INTEGER
-      );
+      )
+    `);
 
-      CREATE INDEX IF NOT EXISTS idx_hierarchy_parent ON command_hierarchy(parent);
-      CREATE INDEX IF NOT EXISTS idx_hierarchy_denial_rate ON command_hierarchy(denial_rate DESC);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_hierarchy_parent ON command_hierarchy(parent)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_hierarchy_denial_rate ON command_hierarchy(denial_rate DESC)`);
 
-      -- Session metadata for correlation
+    this.db.run(`
       CREATE TABLE IF NOT EXISTS session_metadata (
         session_id TEXT PRIMARY KEY,
         agent TEXT,
         started_at INTEGER,
         last_activity INTEGER,
         total_permissions INTEGER DEFAULT 0
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_session_started ON session_metadata(started_at);
+      )
     `);
-  }
 
-  /**
-   * Prepare SQL statements for reuse
-   */
-  private prepareStatements() {
-    return {
-      insertPermission: this.db.prepare(`
-        INSERT INTO permissions (
-          id, session_id, message_id, call_id, type, pattern, title,
-          metadata, initial_status, user_response, created_at, responded_at
-        ) VALUES (
-          @id, @session_id, @message_id, @call_id, @type, @pattern, @title,
-          @metadata, @initial_status, @user_response, @created_at, @responded_at
-        )
-      `),
-
-      updateResponse: this.db.prepare(`
-        UPDATE permissions
-        SET user_response = @user_response, responded_at = @responded_at
-        WHERE id = @id
-      `),
-
-      getPermission: this.db.prepare(`
-        SELECT * FROM permissions WHERE id = ?
-      `),
-
-      getPermissions: this.db.prepare(`
-        SELECT * FROM permissions
-        ORDER BY created_at DESC
-        LIMIT ?
-      `),
-
-      getPermissionsByType: this.db.prepare(`
-        SELECT * FROM permissions
-        WHERE type = ?
-        ORDER BY created_at DESC
-        LIMIT ?
-      `),
-
-      getPermissionsBySession: this.db.prepare(`
-        SELECT * FROM permissions
-        WHERE session_id = ?
-        ORDER BY created_at DESC
-      `),
-
-      getPermissionsByDateRange: this.db.prepare(`
-        SELECT * FROM permissions
-        WHERE created_at >= ? AND created_at <= ?
-        ORDER BY created_at DESC
-      `),
-
-      insertHierarchy: this.db.prepare(`
-        INSERT OR REPLACE INTO command_hierarchy (
-          command, parent, level, total_count, denied_count,
-          asked_count, allowed_count, denial_rate, last_seen
-        ) VALUES (
-          @command, @parent, @level, @total_count, @denied_count,
-          @asked_count, @allowed_count, @denial_rate, @last_seen
-        )
-      `),
-
-      clearHierarchy: this.db.prepare(`DELETE FROM command_hierarchy`),
-
-      getHierarchy: this.db.prepare(`
-        SELECT * FROM command_hierarchy
-        ORDER BY denial_rate DESC, total_count DESC
-      `),
-
-      upsertSession: this.db.prepare(`
-        INSERT INTO session_metadata (session_id, started_at, last_activity, total_permissions)
-        VALUES (@session_id, @started_at, @last_activity, 1)
-        ON CONFLICT(session_id) DO UPDATE SET
-          last_activity = @last_activity,
-          total_permissions = total_permissions + 1
-      `),
-
-      getSessionStats: this.db.prepare(`
-        SELECT
-          session_id,
-          total_permissions as total,
-          started_at,
-          last_activity
-        FROM session_metadata
-        ORDER BY last_activity DESC
-        LIMIT ?
-      `),
-    };
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_session_started ON session_metadata(started_at)`);
   }
 
   /**
@@ -202,27 +98,38 @@ export class AuditDatabase {
         : JSON.stringify(entry.pattern)
       : null;
 
-    this.stmts.insertPermission.run({
-      id: entry.id,
-      session_id: entry.sessionId,
-      message_id: entry.messageId,
-      call_id: entry.callId ?? null,
-      type: entry.type,
+    const stmt = this.db.prepare(`
+      INSERT INTO permissions (
+        id, session_id, message_id, call_id, type, pattern, title,
+        metadata, initial_status, user_response, created_at, responded_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      entry.id,
+      entry.sessionId,
+      entry.messageId,
+      entry.callId ?? null,
+      entry.type,
       pattern,
-      title: entry.title,
-      metadata: JSON.stringify(entry.metadata),
-      initial_status: entry.initialStatus,
-      user_response: entry.userResponse ?? null,
-      created_at: entry.createdAt,
-      responded_at: entry.respondedAt ?? null,
-    });
+      entry.title,
+      JSON.stringify(entry.metadata),
+      entry.initialStatus,
+      entry.userResponse ?? null,
+      entry.createdAt,
+      entry.respondedAt ?? null
+    );
 
     // Update session metadata
-    this.stmts.upsertSession.run({
-      session_id: entry.sessionId,
-      started_at: entry.createdAt,
-      last_activity: entry.createdAt,
-    });
+    const upsertSession = this.db.prepare(`
+      INSERT INTO session_metadata (session_id, started_at, last_activity, total_permissions)
+      VALUES (?, ?, ?, 1)
+      ON CONFLICT(session_id) DO UPDATE SET
+        last_activity = excluded.last_activity,
+        total_permissions = total_permissions + 1
+    `);
+
+    upsertSession.run(entry.sessionId, entry.createdAt, entry.createdAt);
   }
 
   /**
@@ -233,18 +140,21 @@ export class AuditDatabase {
     response: "once" | "always" | "reject",
     respondedAt: number
   ): void {
-    this.stmts.updateResponse.run({
-      id,
-      user_response: response,
-      responded_at: respondedAt,
-    });
+    const stmt = this.db.prepare(`
+      UPDATE permissions
+      SET user_response = ?, responded_at = ?
+      WHERE id = ?
+    `);
+
+    stmt.run(response, respondedAt, id);
   }
 
   /**
    * Get a single permission by ID
    */
   getPermission(id: string): AuditEntry | null {
-    const row = this.stmts.getPermission.get(id) as AuditEntryRow | undefined;
+    const stmt = this.db.prepare(`SELECT * FROM permissions WHERE id = ?`);
+    const row = stmt.get(id) as AuditEntryRow | undefined;
     return row ? this.rowToEntry(row) : null;
   }
 
@@ -259,25 +169,37 @@ export class AuditDatabase {
     limit?: number;
   }): AuditEntry[] {
     const limit = options.limit ?? 1000;
-
     let rows: AuditEntryRow[];
 
     if (options.startDate !== undefined && options.endDate !== undefined) {
-      rows = this.stmts.getPermissionsByDateRange.all(
-        options.startDate,
-        options.endDate
-      ) as AuditEntryRow[];
+      const stmt = this.db.prepare(`
+        SELECT * FROM permissions
+        WHERE created_at >= ? AND created_at <= ?
+        ORDER BY created_at DESC
+      `);
+      rows = stmt.all(options.startDate, options.endDate) as AuditEntryRow[];
     } else if (options.type) {
-      rows = this.stmts.getPermissionsByType.all(
-        options.type,
-        limit
-      ) as AuditEntryRow[];
+      const stmt = this.db.prepare(`
+        SELECT * FROM permissions
+        WHERE type = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+      `);
+      rows = stmt.all(options.type, limit) as AuditEntryRow[];
     } else if (options.sessionId) {
-      rows = this.stmts.getPermissionsBySession.all(
-        options.sessionId
-      ) as AuditEntryRow[];
+      const stmt = this.db.prepare(`
+        SELECT * FROM permissions
+        WHERE session_id = ?
+        ORDER BY created_at DESC
+      `);
+      rows = stmt.all(options.sessionId) as AuditEntryRow[];
     } else {
-      rows = this.stmts.getPermissions.all(limit) as AuditEntryRow[];
+      const stmt = this.db.prepare(`
+        SELECT * FROM permissions
+        ORDER BY created_at DESC
+        LIMIT ?
+      `);
+      rows = stmt.all(limit) as AuditEntryRow[];
     }
 
     return rows.map((row) => this.rowToEntry(row));
@@ -319,31 +241,40 @@ export class AuditDatabase {
    * Save hierarchy cache to database
    */
   saveHierarchy(rows: HierarchyRow[]): void {
-    const transaction = this.db.transaction((hierarchyRows: HierarchyRow[]) => {
-      this.stmts.clearHierarchy.run();
-      for (const row of hierarchyRows) {
-        this.stmts.insertHierarchy.run({
-          command: row.command,
-          parent: row.parent,
-          level: row.level,
-          total_count: row.total_count,
-          denied_count: row.denied_count,
-          asked_count: row.asked_count,
-          allowed_count: row.allowed_count,
-          denial_rate: row.denial_rate,
-          last_seen: row.last_seen,
-        });
-      }
-    });
+    this.db.run(`DELETE FROM command_hierarchy`);
 
-    transaction(rows);
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO command_hierarchy (
+        command, parent, level, total_count, denied_count,
+        asked_count, allowed_count, denial_rate, last_seen
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const row of rows) {
+      stmt.run(
+        row.command,
+        row.parent,
+        row.level,
+        row.total_count,
+        row.denied_count,
+        row.asked_count,
+        row.allowed_count,
+        row.denial_rate,
+        row.last_seen
+      );
+    }
   }
 
   /**
    * Get cached hierarchy
    */
   getHierarchyCache(): HierarchyRow[] {
-    return this.stmts.getHierarchy.all() as HierarchyRow[];
+    const stmt = this.db.prepare(`
+      SELECT * FROM command_hierarchy
+      ORDER BY denial_rate DESC, total_count DESC
+    `);
+
+    return stmt.all() as HierarchyRow[];
   }
 
   /**
@@ -460,7 +391,18 @@ export class AuditDatabase {
   getSessionStats(
     limit = 20
   ): Array<{ sessionId: string; total: number; firstSeen: number; lastSeen: number }> {
-    const rows = this.stmts.getSessionStats.all(limit) as Array<{
+    const stmt = this.db.prepare(`
+      SELECT
+        session_id,
+        total_permissions as total,
+        started_at,
+        last_activity
+      FROM session_metadata
+      ORDER BY last_activity DESC
+      LIMIT ?
+    `);
+
+    const rows = stmt.all(limit) as Array<{
       session_id: string;
       total: number;
       started_at: number;
