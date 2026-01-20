@@ -9,7 +9,6 @@
 #   reason: explanation shown to model when denied (helps it adapt)
 #
 # Constraints (for allowed commands):
-#   constraint: single constraint (string or object)
 #   constraints: array of constraints (all must pass)
 #
 # Constraint types:
@@ -22,13 +21,17 @@
 #   require_flag    - require specific flag to be present
 #                     options: flag: "--dry-run"
 
+default: deny
+default_reason: "Command not in allowlist - if you need this command, ask the user to run it or request it be added to permissions"
+
 rules:
   # ─────────────────────────────────────────────────────────────────────────────
   # Directory navigation - constrained to cwd
   # ─────────────────────────────────────────────────────────────────────────────
   - pattern: "cd *"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot cd outside working directory - stay within the project"
 
   - pattern: "cd"
@@ -345,7 +348,7 @@ rules:
   # ─────────────────────────────────────────────────────────────────────────────
   # Shell utilities - with path constraints
   # ─────────────────────────────────────────────────────────────────────────────
-  
+
   # File reading - constrained to cwd
   - patterns:
       - "cat*"
@@ -354,7 +357,8 @@ rules:
       - "tail*"
       - "tail"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot read files outside working directory"
 
   # Search commands - constrained to cwd
@@ -362,7 +366,8 @@ rules:
       - "grep*"
       - "rg*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot search outside working directory"
 
   # Find - constrained to cwd with depth limit
@@ -370,7 +375,9 @@ rules:
     decision: allow
     constraints:
       - type: cwd_only
-        exclude: ["node_modules", ".git"]
+        exclude:
+          - node_modules
+          - .git
       - type: max_depth
         value: 10
     reason: "find must stay within cwd, exclude heavy dirs, and specify -maxdepth"
@@ -381,14 +388,16 @@ rules:
       - "ls"
       - "tree*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot list directories outside working directory"
 
   # Disk usage - constrained to cwd
   - patterns:
       - "du*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot check disk usage outside working directory"
 
   # File info - constrained to cwd
@@ -396,7 +405,8 @@ rules:
       - "stat*"
       - "file*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot get file info outside working directory"
 
   # File creation - constrained to cwd
@@ -404,7 +414,8 @@ rules:
       - "mkdir*"
       - "touch*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot create files/directories outside working directory"
 
   # Copy and link - constrained to cwd, no recursive
@@ -568,7 +579,8 @@ rules:
       - "getfacl*"
       - "lsattr*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot get file info outside working directory"
 
   # Checksums - constrained to cwd
@@ -583,7 +595,8 @@ rules:
       - "cksum*"
       - "sum*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot compute checksums for files outside working directory"
 
   # Diff/compare - constrained to cwd
@@ -592,7 +605,8 @@ rules:
       - "cmp*"
       - "comm*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot compare files outside working directory"
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -670,11 +684,6 @@ rules:
   # ─────────────────────────────────────────────────────────────────────────────
   - patterns:
       - "tar tf*"
-      - "tar tvf*"
-      - "tar xf*"
-      - "tar xvf*"
-      - "tar xzf*"
-      - "tar xjf*"
       - "tar --list*"
       - "tar -tf*"
       - "tar -tvf*"
@@ -683,7 +692,8 @@ rules:
       - "tar -xzf*"
       - "tar -xjf*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot extract archives outside working directory"
 
   # Tar creation - deny
@@ -716,7 +726,8 @@ rules:
       - "7z e*"
       - "unrar*"
     decision: allow
-    constraint: cwd_only
+    constraints:
+      - cwd_only
     reason: "Cannot extract archives outside working directory"
 
   # Archive creation - deny
@@ -1041,7 +1052,3 @@ rules:
 
   - pattern: "chezmoi*"
     decision: allow
-
-# Default action when no pattern matches
-default: deny
-default_reason: "Command not in allowlist - if you need this command, ask the user to run it or request it be added to permissions"

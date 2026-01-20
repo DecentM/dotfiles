@@ -133,8 +133,7 @@ export interface PermissionPattern {
   pattern: string;
   decision: Decision;
   reason?: string;
-  constraint?: ConstraintConfig;      // Single constraint
-  constraints?: ConstraintConfig[];   // Multiple constraints
+  constraints?: ConstraintConfig[];
 }
 
 /**
@@ -244,12 +243,6 @@ const validateYamlRule = (rule: unknown, index: number): string | undefined => {
     return `Rule ${index}: 'reason' must be a string or null`;
   }
 
-  // Validate single constraint
-  if (r.constraint !== undefined) {
-    const err = validateConstraint(r.constraint, 0, index);
-    if (err) return err;
-  }
-
   // Validate constraints array
   if (r.constraints !== undefined) {
     if (!Array.isArray(r.constraints)) {
@@ -305,7 +298,6 @@ interface YamlRule {
   patterns?: string[];
   decision: string;
   reason?: string | null;
-  constraint?: ConstraintConfig;
   constraints?: ConstraintConfig[];
 }
 
@@ -365,7 +357,6 @@ const getPermissions = (() => {
         const patterns = rule.patterns ?? (rule.pattern ? [rule.pattern] : []);
         const decision = rule.decision as Decision;
         const reason = rule.reason ?? undefined;
-        const constraint = rule.constraint;
         const constraints = rule.constraints;
 
         for (const pattern of patterns) {
@@ -373,7 +364,6 @@ const getPermissions = (() => {
             pattern,
             decision,
             reason,
-            constraint,
             constraints,
             compiledRegex: patternToRegex(pattern),
           });
@@ -835,23 +825,13 @@ export const validateConstraints = (
   workdir: string,
   rule: PermissionPattern
 ): ConstraintResult => {
-  // Collect all constraints
-  const constraints: ConstraintConfig[] = [];
-
-  if (rule.constraint) {
-    constraints.push(rule.constraint);
-  }
-  if (rule.constraints) {
-    constraints.push(...rule.constraints);
-  }
-
   // If no constraints, allow
-  if (constraints.length === 0) {
+  if (!rule.constraints || rule.constraints.length === 0) {
     return { valid: true };
   }
 
   // Validate each constraint - ALL must pass
-  for (const c of constraints) {
+  for (const c of rule.constraints) {
     const type = typeof c === 'string' ? c : c.type;
     let result: ConstraintResult;
 

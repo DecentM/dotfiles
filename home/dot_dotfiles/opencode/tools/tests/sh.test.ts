@@ -848,7 +848,7 @@ describe("validateConstraints", () => {
       const rule: PermissionPattern = {
         pattern: "cat*",
         decision: "allow",
-        constraint: "cwd_only",
+        constraints: ["cwd_only"],
       };
 
       const allowed = validateConstraints("cat file.txt", workdir, rule);
@@ -862,7 +862,7 @@ describe("validateConstraints", () => {
       const rule: PermissionPattern = {
         pattern: "cp*",
         decision: "allow",
-        constraint: "no_recursive",
+        constraints: ["no_recursive"],
       };
 
       const allowed = validateConstraints("cp file.txt dest/", workdir, rule);
@@ -876,7 +876,7 @@ describe("validateConstraints", () => {
       const rule: PermissionPattern = {
         pattern: "rm*",
         decision: "allow",
-        constraint: "no_force",
+        constraints: ["no_force"],
       };
 
       const allowed = validateConstraints("rm file.txt", workdir, rule);
@@ -892,11 +892,11 @@ describe("validateConstraints", () => {
       const rule: PermissionPattern = {
         pattern: "cat*",
         decision: "allow",
-        constraint: {
+        constraints: [{
           type: "cwd_only",
           also_allow: ["/tmp"],
           exclude: [".git"],
-        },
+        }],
       };
 
       const allowedCwd = validateConstraints("cat file.txt", workdir, rule);
@@ -913,10 +913,10 @@ describe("validateConstraints", () => {
       const rule: PermissionPattern = {
         pattern: "find*",
         decision: "allow",
-        constraint: {
+        constraints: [{
           type: "max_depth",
           value: 5,
-        },
+        }],
       };
 
       const allowed = validateConstraints(
@@ -938,10 +938,10 @@ describe("validateConstraints", () => {
       const rule: PermissionPattern = {
         pattern: "rsync*",
         decision: "allow",
-        constraint: {
+        constraints: [{
           type: "require_flag",
           flag: "--dry-run",
-        },
+        }],
       };
 
       const allowed = validateConstraints(
@@ -1032,7 +1032,7 @@ describe("validateConstraints", () => {
       const rule: PermissionPattern = {
         pattern: "test*",
         decision: "allow",
-        constraint: "unknown_constraint" as any,
+        constraints: ["unknown_constraint" as any],
       };
       const result = validateConstraints("test cmd", workdir, rule);
       expect(result.valid).toBe(false);
@@ -1043,7 +1043,7 @@ describe("validateConstraints", () => {
       const rule: PermissionPattern = {
         pattern: "find*",
         decision: "allow",
-        constraint: "max_depth", // String shorthand doesn't work for max_depth
+        constraints: ["max_depth"], // String shorthand doesn't work for max_depth
       };
       const result = validateConstraints(
         'find . -maxdepth 5 -name "*.ts"',
@@ -1058,7 +1058,7 @@ describe("validateConstraints", () => {
       const rule: PermissionPattern = {
         pattern: "rsync*",
         decision: "allow",
-        constraint: "require_flag", // String shorthand doesn't work
+        constraints: ["require_flag"], // String shorthand doesn't work
       };
       const result = validateConstraints("rsync src/ dest/", workdir, rule);
       expect(result.valid).toBe(false);
