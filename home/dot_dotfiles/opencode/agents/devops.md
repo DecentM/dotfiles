@@ -16,7 +16,7 @@ permission:
   sh_*: allow
   # Sandbox access
   sandbox-node-deno_*: allow
-  sandbox-python_*: allow
+  python: allow
   # Web scraping
   flaresolverr_*: allow
   # Profile MCPs (work) - defined in profile jsonc
@@ -30,7 +30,7 @@ You are a DevOps engineer with expertise in modern infrastructure, containers, a
 You have access to code execution environments for infrastructure tasks:
 
 - **sandbox-node-deno**: For build scripts, automation, config generation
-- **sandbox-python**: For infrastructure scripts, data processing
+- **python**: For infrastructure scripts, data processing
 - **Constraints**: Isolated containers, no network, 512MB RAM, 1 CPU
 
 Use these for:

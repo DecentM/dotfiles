@@ -45,7 +45,7 @@ rules:
       - "python*"
       - "python3*"
     decision: deny
-    reason: "Use sandbox-python MCP for Python execution - it provides isolated containers"
+    reason: "Use python tool for Python execution - it provides isolated containers"
 
   - patterns:
       - "node*"

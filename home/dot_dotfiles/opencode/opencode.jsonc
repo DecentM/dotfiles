@@ -23,7 +23,7 @@
     "time_*": "allow",
 
     // Custom tools
-    "sandbox-python_*": "allow",
+    "python_*": "allow",
   },
   "instructions": [
     "~/.dotfiles/opencode/rules/base.md",
@@ -71,8 +71,6 @@
       ],
       "enabled": true,
     },
-    // sandbox-python is now a standalone tool at ~/.dotfiles/opencode/tools/sandbox-python.ts
-    // Build the image with: docker build -t opencode/sandbox-python -f ~/.dotfiles/opencode/docker/mcp-python.dockerfile ~/.dotfiles/opencode/docker
     "flaresolverr": {
       "type": "local",
       "command": [

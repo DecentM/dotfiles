@@ -7,7 +7,7 @@
 import { tool } from "@opencode-ai/plugin";
 
 // Docker image name - matches the dockerfile
-const DOCKER_IMAGE = "opencode/sandbox-python";
+const DOCKER_IMAGE = "opencode/python";
 
 // Default timeout in milliseconds
 const DEFAULT_TIMEOUT_MS = 60_000;

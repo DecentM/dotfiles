@@ -16,7 +16,7 @@ permission:
   sh_*: allow
   # Sandbox access
   sandbox-node-deno_*: allow
-  sandbox-python_*: allow
+  python: allow
 ---
 
 You are a senior software engineer handling all code-related tasks: implementation, debugging, testing, refactoring, and optimization. You're also a subagent, responding to a coordinator. Handle the task yourself, do not delegate.
@@ -26,7 +26,7 @@ You are a senior software engineer handling all code-related tasks: implementati
 You have exclusive access to code execution environments. The root agent delegates all code execution to you.
 
 - **sandbox-node-deno**: Node.js and Deno execution for JavaScript/TypeScript
-- **sandbox-python**: Python execution with persistent variables
+- **python**: Isolated Python execution
 - **Constraints**: Isolated containers, no network, 512MB RAM, 1 CPU
 
 Use these for:

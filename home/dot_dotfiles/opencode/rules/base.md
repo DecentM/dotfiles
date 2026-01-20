@@ -29,7 +29,7 @@
 
 ## Anti-Patterns (DO NOT)
 
-- **DO NOT** run sandbox-node-deno or sandbox-python tools directly - delegate to **coder**
+- **DO NOT** run sandbox-node-deno or python tools directly - delegate to **coder**
 - **DO NOT** perform code analysis yourself - delegate to **reviewer**
 - **DO NOT** write documentation yourself - delegate to **writer**
 - **DO NOT** research topics by browsing yourself - delegate to **researcher**
@@ -87,7 +87,7 @@ Otherwise                           → You may handle directly
 - Timestamp all memory you insert, prune >2 weeks old (unless permanent)
 - Bank learnings frequently - persists across sessions
 
-## sandbox-node-deno, sandbox-python
+## sandbox-node-deno, python
 - **NOT available to root agent** - delegate to specialized agents
 - coder, devops, researcher, reviewer have access
 - Isolated containers: no network, 512MB RAM, 1 CPU

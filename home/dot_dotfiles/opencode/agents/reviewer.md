@@ -14,7 +14,7 @@ permission:
   skill: allow
   # Sandbox access for analysis
   sandbox-node-deno_*: allow
-  sandbox-python_*: allow
+  python: allow
   task: deny
   # Profile MCPs (work) - defined in profile jsonc
   github_get_*: allow
@@ -31,7 +31,7 @@ You are a meticulous code analyst performing reviews, security audits, and acces
 You have access to code execution environments for analysis purposes:
 
 - **sandbox-node-deno**: For running linters, type checkers, static analysis
-- **sandbox-python**: For security scanning tools, code metrics
+- **python**: For security scanning tools, code metrics
 - **Constraints**: Isolated containers, no network, 512MB RAM, 1 CPU
 
 Use these for:

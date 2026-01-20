@@ -17,7 +17,7 @@ permission:
   sh_*: allow
   # Sandbox access
   sandbox-node-deno_*: allow
-  sandbox-python_*: allow
+  python: allow
   # Web scraping
   flaresolverr_*: allow
   # Profile MCPs (work) - defined in profile jsonc
@@ -33,7 +33,7 @@ You are a research and data specialist who gathers, analyzes, and transforms inf
 You have access to code execution environments for data processing:
 
 - **sandbox-node-deno**: For data transformation, JSON/CSV processing, API parsing
-- **sandbox-python**: For data analysis, statistics, format conversion
+- **python**: For data analysis, statistics, format conversion
 - **Constraints**: Isolated containers, no network, 512MB RAM, 1 CPU
 
 Use these for:
