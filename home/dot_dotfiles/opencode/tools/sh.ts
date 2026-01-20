@@ -75,8 +75,22 @@ const FALLBACK_CONFIG: PermissionsConfig = {
 };
 
 /**
+ * Raw rule format from YAML - supports both single pattern and multiple patterns.
+ */
+interface YamlRule {
+  pattern?: string;
+  patterns?: string[];
+  decision: string;
+  reason?: string | null;
+}
+
+/**
  * Load permissions from YAML file.
  * Uses a singleton pattern to load only once.
+ * 
+ * Supports two rule formats:
+ * 1. Single pattern:  { pattern: "rm*", decision: "deny", reason: "..." }
+ * 2. Multi-pattern:   { patterns: ["rm*", "rmdir*"], decision: "deny", reason: "..." }
  */
 const getPermissions = (() => {
   let config: PermissionsConfig | null = null;
@@ -89,7 +103,7 @@ const getPermissions = (() => {
     try {
       const yamlContent = readFileSync(yamlPath, "utf-8");
       const parsed = Bun.YAML.parse(yamlContent) as {
-        rules?: Array<{ pattern: string; decision: string; reason?: string | null }>;
+        rules?: YamlRule[];
         default?: string;
         default_reason?: string;
       };
@@ -100,12 +114,21 @@ const getPermissions = (() => {
         return config;
       }
       
+      // Expand multi-pattern rules into individual pattern rules
+      const expandedRules: PermissionPattern[] = [];
+      
+      for (const rule of parsed.rules) {
+        const patterns = rule.patterns ?? (rule.pattern ? [rule.pattern] : []);
+        const decision = rule.decision as Decision;
+        const reason = rule.reason ?? undefined;
+        
+        for (const pattern of patterns) {
+          expandedRules.push({ pattern, decision, reason });
+        }
+      }
+      
       config = {
-        rules: parsed.rules.map((rule) => ({
-          pattern: rule.pattern,
-          decision: rule.decision as Decision,
-          reason: rule.reason ?? undefined,
-        })),
+        rules: expandedRules,
         default: (parsed.default as Decision) ?? "deny",
         default_reason: parsed.default_reason ?? "Command not in allowlist",
       };

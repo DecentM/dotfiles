@@ -3,7 +3,8 @@
 # Default action if no pattern matches: deny
 #
 # Format:
-#   pattern: glob pattern (* matches any characters)
+#   pattern: glob pattern (* matches any characters) - for single patterns
+#   patterns: array of glob patterns - for multiple patterns with same decision/reason
 #   decision: allow | deny
 #   reason: explanation shown to model when denied (helps it adapt)
 
@@ -11,57 +12,44 @@ rules:
   # ─────────────────────────────────────────────────────────────────────────────
   # Explicit denies - dangerous or restricted commands
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "python*"
+  - patterns:
+      - "python*"
+      - "python3*"
     decision: deny
     reason: "Use sandbox-python MCP for Python execution - it provides isolated containers"
 
-  - pattern: "python3*"
+  - patterns:
+      - "node*"
+      - "deno*"
     decision: deny
-    reason: "Use sandbox-python MCP for Python execution - it provides isolated containers"
+    reason: "Use sandbox-node-deno MCP for Node.js/Deno execution - it provides isolated containers"
 
-  - pattern: "node*"
-    decision: deny
-    reason: "Use sandbox-node-deno MCP for Node.js execution - it provides isolated containers"
+  # Bun - specific allows before general deny
+  - patterns:
+      - "bun run*"
+      - "bun test*"
+      - "bun build*"
+      - "bun install*"
+      - "bun add*"
+      - "bun pm ls*"
+      - "bun pm cache*"
+      - "bun outdated*"
+      - "bun --version"
+      - "bun --help"
+    decision: allow
 
-  - pattern: "deno*"
-    decision: deny
-    reason: "Use sandbox-node-deno MCP for Deno execution - it provides isolated containers"
-
-  - pattern: "bun run*"
-    decision: allow
-  - pattern: "bun test*"
-    decision: allow
-  - pattern: "bun build*"
-    decision: allow
-  - pattern: "bun install*"
-    decision: allow
-  - pattern: "bun add*"
-    decision: allow
   - pattern: "bun remove*"
     decision: deny
     reason: "Removing packages requires user confirmation - ask the user to run this command"
-  - pattern: "bun pm ls*"
-    decision: allow
-  - pattern: "bun pm cache*"
-    decision: allow
-  - pattern: "bun outdated*"
-    decision: allow
-  - pattern: "bun --version"
-    decision: allow
-  - pattern: "bun --help"
-    decision: allow
 
   - pattern: "bun*"
     decision: deny
     reason: "Use sandbox-node-deno MCP for Bun execution - it provides isolated containers"
 
-  - pattern: "rm*"
+  - patterns:
+      - "rm*"
     decision: deny
-    reason: "File deletion is not permitted - ask the user to delete files manually"
-
-  - pattern: "rmdir*"
-    decision: deny
-    reason: "Directory deletion is not permitted - ask the user to delete directories manually"
+    reason: "File/directory deletion is not permitted - ask the user to delete manually"
 
   - pattern: "mv*"
     decision: deny
@@ -87,23 +75,16 @@ rules:
     decision: deny
     reason: "Interactive programs don't work - use 'top -bn1' for a snapshot instead"
 
-  - pattern: "vim*"
+  - patterns:
+      - "vim*"
+      - "nano*"
+      - "emacs*"
     decision: deny
     reason: "Interactive editors don't work - use the edit/write tools instead"
 
-  - pattern: "nano*"
-    decision: deny
-    reason: "Interactive editors don't work - use the edit/write tools instead"
-
-  - pattern: "emacs*"
-    decision: deny
-    reason: "Interactive editors don't work - use the edit/write tools instead"
-
-  - pattern: "less*"
-    decision: deny
-    reason: "Interactive pagers don't work - use cat, head, or tail instead"
-
-  - pattern: "more*"
+  - patterns:
+      - "less*"
+      - "more*"
     decision: deny
     reason: "Interactive pagers don't work - use cat, head, or tail instead"
 
@@ -112,17 +93,12 @@ rules:
     decision: deny
     reason: "Shell scripts need user review before execution - describe what the script does and ask the user to run it"
 
-  - pattern: "bash*"
+  - patterns:
+      - "bash*"
+      - "zsh*"
+      - "sh *"
     decision: deny
-    reason: "Use the sh tool directly - bash is not available"
-
-  - pattern: "zsh*"
-    decision: deny
-    reason: "Use the sh tool directly - zsh is not available"
-
-  - pattern: "sh *"
-    decision: deny
-    reason: "Nested shell invocation is not permitted - run commands directly"
+    reason: "Use the sh tool directly - nested shell invocation is not permitted"
 
   - pattern: "bin/*"
     decision: deny
@@ -145,148 +121,80 @@ rules:
     reason: "Sourcing scripts is not permitted - run commands directly"
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Containers - fallback deny, specific allows below
+  # Containers - Docker
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "docker rm*"
+  - patterns:
+      - "docker rm*"
+      - "docker rmi*"
+      - "docker stop*"
+      - "docker kill*"
+      - "docker system prune*"
+      - "docker volume rm*"
+      - "docker network rm*"
     decision: deny
-    reason: "Container deletion requires user confirmation - ask the user to run this command"
-
-  - pattern: "docker rmi*"
-    decision: deny
-    reason: "Image deletion requires user confirmation - ask the user to run this command"
-
-  - pattern: "docker stop*"
-    decision: deny
-    reason: "Stopping containers requires user confirmation - ask the user to run this command"
-
-  - pattern: "docker kill*"
-    decision: deny
-    reason: "Killing containers requires user confirmation - ask the user to run this command"
-
-  - pattern: "docker system prune*"
-    decision: deny
-    reason: "System cleanup requires user confirmation - ask the user to run this command"
-
-  - pattern: "docker volume rm*"
-    decision: deny
-    reason: "Volume deletion requires user confirmation - ask the user to run this command"
-
-  - pattern: "docker network rm*"
-    decision: deny
-    reason: "Network deletion requires user confirmation - ask the user to run this command"
+    reason: "Docker resource deletion/stopping requires user confirmation - ask the user to run this command"
 
   # Docker - read-only and safe commands
-  - pattern: "docker build*"
-    decision: allow
-  - pattern: "docker manifest inspect*"
-    decision: allow
-  - pattern: "docker search*"
-    decision: allow
-  - pattern: "docker pull*"
-    decision: allow
-  - pattern: "docker logs*"
-    decision: allow
-  - pattern: "docker images*"
-    decision: allow
-  - pattern: "docker run*"
-    decision: allow
-  - pattern: "docker ps*"
-    decision: allow
-  - pattern: "docker inspect*"
-    decision: allow
-  - pattern: "docker info*"
-    decision: allow
-  - pattern: "docker info"
-    decision: allow
-  - pattern: "docker version*"
-    decision: allow
-  - pattern: "docker version"
-    decision: allow
-  - pattern: "docker stats*"
-    decision: allow
-  - pattern: "docker top*"
-    decision: allow
-  - pattern: "docker port*"
-    decision: allow
-  - pattern: "docker diff*"
-    decision: allow
-  - pattern: "docker history*"
-    decision: allow
-  - pattern: "docker events*"
-    decision: allow
-  - pattern: "docker cp*"
-    decision: allow
-  - pattern: "docker tag*"
-    decision: allow
-  - pattern: "docker network ls*"
-    decision: allow
-  - pattern: "docker network inspect*"
-    decision: allow
-  - pattern: "docker volume ls*"
-    decision: allow
-  - pattern: "docker volume inspect*"
-    decision: allow
-  - pattern: "docker system df*"
-    decision: allow
-  - pattern: "docker system info*"
-    decision: allow
-  - pattern: "docker container ls*"
-    decision: allow
-  - pattern: "docker container logs*"
-    decision: allow
-  - pattern: "docker container inspect*"
-    decision: allow
-  - pattern: "docker image ls*"
-    decision: allow
-  - pattern: "docker image inspect*"
-    decision: allow
-  - pattern: "docker image history*"
-    decision: allow
-  - pattern: "docker buildx*"
-    decision: allow
-  - pattern: "docker context*"
-    decision: allow
-  - pattern: "docker help*"
-    decision: allow
-  - pattern: "docker --version"
-    decision: allow
-  - pattern: "docker --help"
+  - patterns:
+      - "docker build*"
+      - "docker manifest inspect*"
+      - "docker search*"
+      - "docker pull*"
+      - "docker logs*"
+      - "docker images*"
+      - "docker run*"
+      - "docker ps*"
+      - "docker inspect*"
+      - "docker info*"
+      - "docker info"
+      - "docker version*"
+      - "docker version"
+      - "docker stats*"
+      - "docker top*"
+      - "docker port*"
+      - "docker diff*"
+      - "docker history*"
+      - "docker events*"
+      - "docker cp*"
+      - "docker tag*"
+      - "docker network ls*"
+      - "docker network inspect*"
+      - "docker volume ls*"
+      - "docker volume inspect*"
+      - "docker system df*"
+      - "docker system info*"
+      - "docker container ls*"
+      - "docker container logs*"
+      - "docker container inspect*"
+      - "docker image ls*"
+      - "docker image inspect*"
+      - "docker image history*"
+      - "docker buildx*"
+      - "docker context*"
+      - "docker help*"
+      - "docker --version"
+      - "docker --help"
     decision: allow
 
   # Docker Compose
-  - pattern: "docker compose ps*"
-    decision: allow
-  - pattern: "docker compose logs*"
-    decision: allow
-  - pattern: "docker compose config*"
-    decision: allow
-  - pattern: "docker compose top*"
-    decision: allow
-  - pattern: "docker compose images*"
-    decision: allow
-  - pattern: "docker compose port*"
-    decision: allow
-  - pattern: "docker compose version*"
-    decision: allow
-  - pattern: "docker compose ls*"
-    decision: allow
-  - pattern: "docker compose --help"
-    decision: allow
-  - pattern: "docker-compose ps*"
-    decision: allow
-  - pattern: "docker-compose logs*"
-    decision: allow
-  - pattern: "docker-compose config*"
-    decision: allow
-  - pattern: "docker-compose top*"
-    decision: allow
-  - pattern: "docker-compose images*"
-    decision: allow
-  - pattern: "docker-compose port*"
-    decision: allow
-  - pattern: "docker-compose version*"
-    decision: allow
-  - pattern: "docker-compose --help"
+  - patterns:
+      - "docker compose ps*"
+      - "docker compose logs*"
+      - "docker compose config*"
+      - "docker compose top*"
+      - "docker compose images*"
+      - "docker compose port*"
+      - "docker compose version*"
+      - "docker compose ls*"
+      - "docker compose --help"
+      - "docker-compose ps*"
+      - "docker-compose logs*"
+      - "docker-compose config*"
+      - "docker-compose top*"
+      - "docker-compose images*"
+      - "docker-compose port*"
+      - "docker-compose version*"
+      - "docker-compose --help"
     decision: allow
 
   # Fallback deny for other docker commands
@@ -299,22 +207,17 @@ rules:
     reason: "This docker-compose command is not in the allowlist - ask the user if you need to run it"
 
   # Distrobox - read-only only
-  - pattern: "distrobox list*"
+  - patterns:
+      - "distrobox list*"
+      - "distrobox ls*"
+      - "distrobox version*"
+      - "distrobox --help"
+      - "distrobox-export --list-apps*"
+      - "distrobox-export --list-binaries*"
+      - "distrobox-export --help"
+      - "distrobox-export --version"
     decision: allow
-  - pattern: "distrobox ls*"
-    decision: allow
-  - pattern: "distrobox version*"
-    decision: allow
-  - pattern: "distrobox --help"
-    decision: allow
-  - pattern: "distrobox-export --list-apps*"
-    decision: allow
-  - pattern: "distrobox-export --list-binaries*"
-    decision: allow
-  - pattern: "distrobox-export --help"
-    decision: allow
-  - pattern: "distrobox-export --version"
-    decision: allow
+
   - pattern: "distrobox*"
     decision: deny
     reason: "Distrobox container management requires user confirmation - ask the user to run this command"
@@ -322,732 +225,442 @@ rules:
   # ─────────────────────────────────────────────────────────────────────────────
   # Infrastructure - kubectl
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "kubectl apply*"
+  - patterns:
+      - "kubectl apply*"
+      - "kubectl delete*"
+      - "kubectl create*"
+      - "kubectl patch*"
+      - "kubectl scale*"
+      - "kubectl rollout*"
     decision: deny
-    reason: "Applying Kubernetes resources requires user confirmation - ask the user to run this command"
-  - pattern: "kubectl delete*"
-    decision: deny
-    reason: "Deleting Kubernetes resources requires user confirmation - ask the user to run this command"
-  - pattern: "kubectl create*"
-    decision: deny
-    reason: "Creating Kubernetes resources requires user confirmation - ask the user to run this command"
-  - pattern: "kubectl patch*"
-    decision: deny
-    reason: "Patching Kubernetes resources requires user confirmation - ask the user to run this command"
-  - pattern: "kubectl scale*"
-    decision: deny
-    reason: "Scaling Kubernetes resources requires user confirmation - ask the user to run this command"
-  - pattern: "kubectl rollout*"
-    decision: deny
-    reason: "Rollout operations require user confirmation - ask the user to run this command"
+    reason: "Mutating Kubernetes resources requires user confirmation - ask the user to run this command"
+
   - pattern: "kubectl edit*"
     decision: deny
     reason: "Interactive editing doesn't work - use kubectl get -o yaml, modify, then ask user to apply"
 
-  - pattern: "kubectl describe*"
-    decision: allow
-  - pattern: "kubectl get*"
-    decision: allow
-  - pattern: "kubectl logs*"
-    decision: allow
-  - pattern: "kubectl run*"
-    decision: allow
-  - pattern: "kubectl exec*"
-    decision: allow
-  - pattern: "kubectl wait*"
-    decision: allow
-  - pattern: "kubectl create job*"
-    decision: allow
-  - pattern: "kubectl delete job*"
-    decision: allow
-  - pattern: "kubectl version*"
-    decision: allow
-  - pattern: "kubectl version"
-    decision: allow
-  - pattern: "kubectl config view*"
-    decision: allow
-  - pattern: "kubectl config get*"
-    decision: allow
-  - pattern: "kubectl config current-context*"
-    decision: allow
-  - pattern: "kubectl cluster-info*"
-    decision: allow
-  - pattern: "kubectl api-resources*"
-    decision: allow
-  - pattern: "kubectl api-versions*"
-    decision: allow
-  - pattern: "kubectl explain*"
-    decision: allow
-  - pattern: "kubectl top*"
-    decision: allow
-  - pattern: "kubectl auth can-i*"
-    decision: allow
-  - pattern: "kubectl diff*"
-    decision: allow
-  - pattern: "kubectl events*"
+  - patterns:
+      - "kubectl describe*"
+      - "kubectl get*"
+      - "kubectl logs*"
+      - "kubectl run*"
+      - "kubectl exec*"
+      - "kubectl wait*"
+      - "kubectl create job*"
+      - "kubectl delete job*"
+      - "kubectl version*"
+      - "kubectl version"
+      - "kubectl config view*"
+      - "kubectl config get*"
+      - "kubectl config current-context*"
+      - "kubectl cluster-info*"
+      - "kubectl api-resources*"
+      - "kubectl api-versions*"
+      - "kubectl explain*"
+      - "kubectl top*"
+      - "kubectl auth can-i*"
+      - "kubectl diff*"
+      - "kubectl events*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Infrastructure - helm
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "helm install*"
+  - patterns:
+      - "helm install*"
+      - "helm upgrade*"
+      - "helm uninstall*"
+      - "helm rollback*"
     decision: deny
-    reason: "Installing Helm releases requires user confirmation - ask the user to run this command"
-  - pattern: "helm upgrade*"
-    decision: deny
-    reason: "Upgrading Helm releases requires user confirmation - ask the user to run this command"
-  - pattern: "helm uninstall*"
-    decision: deny
-    reason: "Uninstalling Helm releases requires user confirmation - ask the user to run this command"
-  - pattern: "helm rollback*"
-    decision: deny
-    reason: "Rolling back Helm releases requires user confirmation - ask the user to run this command"
+    reason: "Mutating Helm releases requires user confirmation - ask the user to run this command"
 
-  - pattern: "helm list*"
-    decision: allow
-  - pattern: "helm status*"
-    decision: allow
-  - pattern: "helm get*"
-    decision: allow
-  - pattern: "helm show*"
-    decision: allow
-  - pattern: "helm search*"
-    decision: allow
-  - pattern: "helm repo list*"
-    decision: allow
-  - pattern: "helm history*"
-    decision: allow
-  - pattern: "helm template*"
-    decision: allow
-  - pattern: "helm lint*"
-    decision: allow
-  - pattern: "helm verify*"
-    decision: allow
-  - pattern: "helm version*"
-    decision: allow
-  - pattern: "helm env*"
-    decision: allow
-  - pattern: "helm dependency list*"
+  - patterns:
+      - "helm list*"
+      - "helm status*"
+      - "helm get*"
+      - "helm show*"
+      - "helm search*"
+      - "helm repo list*"
+      - "helm history*"
+      - "helm template*"
+      - "helm lint*"
+      - "helm verify*"
+      - "helm version*"
+      - "helm env*"
+      - "helm dependency list*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Infrastructure - terraform
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "terraform apply*"
+  - patterns:
+      - "terraform apply*"
+      - "terraform destroy*"
+      - "terraform import*"
+      - "terraform taint*"
+      - "terraform untaint*"
     decision: deny
-    reason: "Applying Terraform changes requires user confirmation - ask the user to run this command"
-  - pattern: "terraform destroy*"
-    decision: deny
-    reason: "Destroying Terraform resources requires user confirmation - ask the user to run this command"
-  - pattern: "terraform import*"
-    decision: deny
-    reason: "Importing Terraform resources requires user confirmation - ask the user to run this command"
-  - pattern: "terraform taint*"
-    decision: deny
-    reason: "Tainting Terraform resources requires user confirmation - ask the user to run this command"
-  - pattern: "terraform untaint*"
-    decision: deny
-    reason: "Untainting Terraform resources requires user confirmation - ask the user to run this command"
+    reason: "Mutating Terraform resources requires user confirmation - ask the user to run this command"
 
-  - pattern: "terraform init*"
-    decision: allow
-  - pattern: "terraform plan*"
-    decision: allow
-  - pattern: "terraform show*"
-    decision: allow
-  - pattern: "terraform validate*"
-    decision: allow
-  - pattern: "terraform fmt*"
-    decision: allow
-  - pattern: "terraform version*"
-    decision: allow
-  - pattern: "terraform output*"
-    decision: allow
-  - pattern: "terraform state list*"
-    decision: allow
-  - pattern: "terraform state show*"
-    decision: allow
-  - pattern: "terraform providers*"
-    decision: allow
-  - pattern: "terraform graph*"
+  - patterns:
+      - "terraform init*"
+      - "terraform plan*"
+      - "terraform show*"
+      - "terraform validate*"
+      - "terraform fmt*"
+      - "terraform version*"
+      - "terraform output*"
+      - "terraform state list*"
+      - "terraform state show*"
+      - "terraform providers*"
+      - "terraform graph*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Shell utilities
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "true"
-    decision: allow
-  - pattern: "false"
-    decision: allow
-  - pattern: "grep*"
-    decision: allow
-  - pattern: "sed*"
-    decision: allow
-  - pattern: "uniq*"
-    decision: allow
-  - pattern: "uniq"
-    decision: allow
-  - pattern: "tail*"
-    decision: allow
-  - pattern: "tail"
-    decision: allow
-  - pattern: "head*"
-    decision: allow
-  - pattern: "head"
-    decision: allow
-  - pattern: "sort*"
-    decision: allow
-  - pattern: "sort"
-    decision: allow
-  - pattern: "awk*"
-    decision: allow
-  - pattern: "cut*"
-    decision: allow
-  - pattern: "wc*"
-    decision: allow
-  - pattern: "wc"
-    decision: allow
-  - pattern: "ping*"
-    decision: allow
-  - pattern: "curl*"
-    decision: allow
-  - pattern: "echo*"
-    decision: allow
-  - pattern: "echo"
-    decision: allow
-  - pattern: "printf*"
-    decision: allow
-  - pattern: "printf"
-    decision: allow
-  - pattern: "ls*"
-    decision: allow
-  - pattern: "ls"
-    decision: allow
-  - pattern: "paste*"
-    decision: allow
-  - pattern: "column*"
-    decision: allow
-  - pattern: "xargs*"
-    decision: allow
-  - pattern: "find*"
-    decision: allow
-  - pattern: "cat*"
-    decision: allow
-  - pattern: "rg*"
-    decision: allow
-  - pattern: "basename*"
-    decision: allow
-  - pattern: "tree*"
-    decision: allow
-  - pattern: "wget*"
-    decision: allow
-  - pattern: "jq*"
-    decision: allow
-  - pattern: "jq"
-    decision: allow
-  - pattern: "yq*"
-    decision: allow
-  - pattern: "yq"
-    decision: allow
-  - pattern: "pwd"
-    decision: allow
-  - pattern: "which*"
-    decision: allow
-  - pattern: "sleep*"
-    decision: allow
-  - pattern: "mkdir*"
-    decision: allow
-  - pattern: "dirname*"
-    decision: allow
-  - pattern: "touch*"
-    decision: allow
-  - pattern: "cp*"
-    decision: allow
-  - pattern: "ln*"
+  - patterns:
+      - "true"
+      - "false"
+      - "grep*"
+      - "sed*"
+      - "uniq*"
+      - "uniq"
+      - "tail*"
+      - "tail"
+      - "head*"
+      - "head"
+      - "sort*"
+      - "sort"
+      - "awk*"
+      - "cut*"
+      - "wc*"
+      - "wc"
+      - "ping*"
+      - "curl*"
+      - "echo*"
+      - "echo"
+      - "printf*"
+      - "printf"
+      - "ls*"
+      - "ls"
+      - "paste*"
+      - "column*"
+      - "xargs*"
+      - "find*"
+      - "cat*"
+      - "rg*"
+      - "basename*"
+      - "tree*"
+      - "wget*"
+      - "jq*"
+      - "jq"
+      - "yq*"
+      - "yq"
+      - "pwd"
+      - "which*"
+      - "sleep*"
+      - "mkdir*"
+      - "dirname*"
+      - "touch*"
+      - "cp*"
+      - "ln*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # System info - read-only
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "uname*"
-    decision: allow
-  - pattern: "hostname"
-    decision: allow
-  - pattern: "hostname -f"
-    decision: allow
-  - pattern: "hostname -I"
-    decision: allow
-  - pattern: "whoami"
-    decision: allow
-  - pattern: "id"
-    decision: allow
-  - pattern: "id*"
-    decision: allow
-  - pattern: "groups"
-    decision: allow
-  - pattern: "groups*"
-    decision: allow
-  - pattern: "uptime*"
-    decision: allow
-  - pattern: "free*"
-    decision: allow
-  - pattern: "df*"
-    decision: allow
-  - pattern: "du*"
-    decision: allow
-  - pattern: "lsblk*"
-    decision: allow
-  - pattern: "lscpu*"
-    decision: allow
-  - pattern: "lsmem*"
-    decision: allow
-  - pattern: "lspci*"
-    decision: allow
-  - pattern: "lsusb*"
-    decision: allow
-  - pattern: "lsmod*"
-    decision: allow
-  - pattern: "lsns*"
-    decision: allow
-  - pattern: "lsof*"
-    decision: allow
-  - pattern: "lsipc*"
-    decision: allow
-  - pattern: "lslocks*"
-    decision: allow
-  - pattern: "nproc*"
-    decision: allow
-  - pattern: "getconf*"
-    decision: allow
-  - pattern: "arch"
-    decision: allow
-  - pattern: "w"
-    decision: allow
-  - pattern: "who"
-    decision: allow
-  - pattern: "who*"
-    decision: allow
-  - pattern: "last*"
-    decision: allow
-  - pattern: "lastlog*"
-    decision: allow
-  - pattern: "getent*"
-    decision: allow
-  - pattern: "locale*"
-    decision: allow
-  - pattern: "timedatectl"
-    decision: allow
-  - pattern: "timedatectl status"
-    decision: allow
-  - pattern: "timedatectl show"
-    decision: allow
-  - pattern: "hostnamectl"
-    decision: allow
-  - pattern: "hostnamectl status"
-    decision: allow
-  - pattern: "loginctl list*"
-    decision: allow
-  - pattern: "loginctl show*"
+  - patterns:
+      - "uname*"
+      - "hostname"
+      - "hostname -f"
+      - "hostname -I"
+      - "whoami"
+      - "id"
+      - "id*"
+      - "groups"
+      - "groups*"
+      - "uptime*"
+      - "free*"
+      - "df*"
+      - "du*"
+      - "lsblk*"
+      - "lscpu*"
+      - "lsmem*"
+      - "lspci*"
+      - "lsusb*"
+      - "lsmod*"
+      - "lsns*"
+      - "lsof*"
+      - "lsipc*"
+      - "lslocks*"
+      - "nproc*"
+      - "getconf*"
+      - "arch"
+      - "w"
+      - "who"
+      - "who*"
+      - "last*"
+      - "lastlog*"
+      - "getent*"
+      - "locale*"
+      - "timedatectl"
+      - "timedatectl status"
+      - "timedatectl show"
+      - "hostnamectl"
+      - "hostnamectl status"
+      - "loginctl list*"
+      - "loginctl show*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Process info - read-only
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "ps*"
-    decision: allow
-  - pattern: "ps"
-    decision: allow
-  - pattern: "pgrep*"
-    decision: allow
-  - pattern: "pidof*"
-    decision: allow
-  - pattern: "top -bn1*"
-    decision: allow
-  - pattern: "pstree*"
-    decision: allow
-  - pattern: "fuser*"
-    decision: allow
-  - pattern: "jobs"
-    decision: allow
-  - pattern: "wait*"
-    decision: allow
-  - pattern: "watch*"
+  - patterns:
+      - "ps*"
+      - "ps"
+      - "pgrep*"
+      - "pidof*"
+      - "top -bn1*"
+      - "pstree*"
+      - "fuser*"
+      - "jobs"
+      - "wait*"
+      - "watch*"
     decision: allow
 
   # Process control - deny
-  - pattern: "kill*"
-    decision: deny
-    reason: "Killing processes requires user confirmation - ask the user to run this command"
-  - pattern: "pkill*"
-    decision: deny
-    reason: "Killing processes requires user confirmation - ask the user to run this command"
-  - pattern: "killall*"
+  - patterns:
+      - "kill*"
+      - "pkill*"
+      - "killall*"
     decision: deny
     reason: "Killing processes requires user confirmation - ask the user to run this command"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Logs and debug - read-only
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "journalctl*"
-    decision: allow
-  - pattern: "dmesg*"
-    decision: allow
-  - pattern: "systemctl status*"
-    decision: allow
-  - pattern: "systemctl is-active*"
-    decision: allow
-  - pattern: "systemctl is-enabled*"
-    decision: allow
-  - pattern: "systemctl is-failed*"
-    decision: allow
-  - pattern: "systemctl list-units*"
-    decision: allow
-  - pattern: "systemctl list-unit-files*"
-    decision: allow
-  - pattern: "systemctl list-timers*"
-    decision: allow
-  - pattern: "systemctl list-sockets*"
-    decision: allow
-  - pattern: "systemctl list-jobs*"
-    decision: allow
-  - pattern: "systemctl list-dependencies*"
-    decision: allow
-  - pattern: "systemctl show*"
-    decision: allow
-  - pattern: "systemctl cat*"
-    decision: allow
-  - pattern: "systemctl help*"
-    decision: allow
-  - pattern: "systemctl --version"
+  - patterns:
+      - "journalctl*"
+      - "dmesg*"
+      - "systemctl status*"
+      - "systemctl is-active*"
+      - "systemctl is-enabled*"
+      - "systemctl is-failed*"
+      - "systemctl list-units*"
+      - "systemctl list-unit-files*"
+      - "systemctl list-timers*"
+      - "systemctl list-sockets*"
+      - "systemctl list-jobs*"
+      - "systemctl list-dependencies*"
+      - "systemctl show*"
+      - "systemctl cat*"
+      - "systemctl help*"
+      - "systemctl --version"
+      - "strace*"
+      - "ltrace*"
     decision: allow
 
   # Systemctl management - deny
-  - pattern: "systemctl start*"
+  - patterns:
+      - "systemctl start*"
+      - "systemctl stop*"
+      - "systemctl restart*"
+      - "systemctl enable*"
+      - "systemctl disable*"
+      - "systemctl mask*"
+      - "systemctl unmask*"
+      - "systemctl daemon-reload*"
     decision: deny
-    reason: "Starting services requires user confirmation - ask the user to run this command"
-  - pattern: "systemctl stop*"
-    decision: deny
-    reason: "Stopping services requires user confirmation - ask the user to run this command"
-  - pattern: "systemctl restart*"
-    decision: deny
-    reason: "Restarting services requires user confirmation - ask the user to run this command"
-  - pattern: "systemctl enable*"
-    decision: deny
-    reason: "Enabling services requires user confirmation - ask the user to run this command"
-  - pattern: "systemctl disable*"
-    decision: deny
-    reason: "Disabling services requires user confirmation - ask the user to run this command"
-  - pattern: "systemctl mask*"
-    decision: deny
-    reason: "Masking services requires user confirmation - ask the user to run this command"
-  - pattern: "systemctl unmask*"
-    decision: deny
-    reason: "Unmasking services requires user confirmation - ask the user to run this command"
-  - pattern: "systemctl daemon-reload*"
-    decision: deny
-    reason: "Reloading systemd requires user confirmation - ask the user to run this command"
-
-  - pattern: "strace*"
-    decision: allow
-  - pattern: "ltrace*"
-    decision: allow
+    reason: "Managing services requires user confirmation - ask the user to run this command"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # File info and checksums - read-only
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "stat*"
-    decision: allow
-  - pattern: "file*"
-    decision: allow
-  - pattern: "readlink*"
-    decision: allow
-  - pattern: "realpath*"
-    decision: allow
-  - pattern: "namei*"
-    decision: allow
-  - pattern: "getfacl*"
-    decision: allow
-  - pattern: "lsattr*"
-    decision: allow
-  - pattern: "md5sum*"
-    decision: allow
-  - pattern: "sha1sum*"
-    decision: allow
-  - pattern: "sha256sum*"
-    decision: allow
-  - pattern: "sha512sum*"
-    decision: allow
-  - pattern: "sha224sum*"
-    decision: allow
-  - pattern: "sha384sum*"
-    decision: allow
-  - pattern: "b2sum*"
-    decision: allow
-  - pattern: "cksum*"
-    decision: allow
-  - pattern: "sum*"
-    decision: allow
-  - pattern: "diff*"
-    decision: allow
-  - pattern: "cmp*"
-    decision: allow
-  - pattern: "comm*"
+  - patterns:
+      - "stat*"
+      - "file*"
+      - "readlink*"
+      - "realpath*"
+      - "namei*"
+      - "getfacl*"
+      - "lsattr*"
+      - "md5sum*"
+      - "sha1sum*"
+      - "sha256sum*"
+      - "sha512sum*"
+      - "sha224sum*"
+      - "sha384sum*"
+      - "b2sum*"
+      - "cksum*"
+      - "sum*"
+      - "diff*"
+      - "cmp*"
+      - "comm*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Text processing
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "tr*"
-    decision: allow
-  - pattern: "tee*"
-    decision: allow
-  - pattern: "rev*"
-    decision: allow
-  - pattern: "nl*"
-    decision: allow
-  - pattern: "expand*"
-    decision: allow
-  - pattern: "unexpand*"
-    decision: allow
-  - pattern: "fold*"
-    decision: allow
-  - pattern: "fmt*"
-    decision: allow
-  - pattern: "join*"
-    decision: allow
-  - pattern: "split*"
-    decision: allow
-  - pattern: "csplit*"
-    decision: allow
-  - pattern: "colrm*"
-    decision: allow
-  - pattern: "pr*"
-    decision: allow
-  - pattern: "tsort*"
-    decision: allow
-  - pattern: "numfmt*"
-    decision: allow
-  - pattern: "base64*"
-    decision: allow
-  - pattern: "base32*"
-    decision: allow
-  - pattern: "od*"
-    decision: allow
-  - pattern: "xxd*"
-    decision: allow
-  - pattern: "hexdump*"
-    decision: allow
-  - pattern: "strings*"
-    decision: allow
-  - pattern: "iconv*"
+  - patterns:
+      - "tr*"
+      - "tee*"
+      - "rev*"
+      - "nl*"
+      - "expand*"
+      - "unexpand*"
+      - "fold*"
+      - "fmt*"
+      - "join*"
+      - "split*"
+      - "csplit*"
+      - "colrm*"
+      - "pr*"
+      - "tsort*"
+      - "numfmt*"
+      - "base64*"
+      - "base32*"
+      - "od*"
+      - "xxd*"
+      - "hexdump*"
+      - "strings*"
+      - "iconv*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Network diagnostics - read-only
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "ip addr*"
-    decision: allow
-  - pattern: "ip link show*"
-    decision: allow
-  - pattern: "ip route show*"
-    decision: allow
-  - pattern: "ip route get*"
-    decision: allow
-  - pattern: "ip neigh*"
-    decision: allow
-  - pattern: "ip -s*"
-    decision: allow
-  - pattern: "ip a*"
-    decision: allow
-  - pattern: "ip r*"
+  - patterns:
+      - "ip addr*"
+      - "ip link show*"
+      - "ip route show*"
+      - "ip route get*"
+      - "ip neigh*"
+      - "ip -s*"
+      - "ip a*"
+      - "ip r*"
     decision: allow
 
   # IP management - deny
-  - pattern: "ip link set*"
+  - patterns:
+      - "ip link set*"
+      - "ip route add*"
+      - "ip route del*"
     decision: deny
-    reason: "Network interface changes require user confirmation - ask the user to run this command"
-  - pattern: "ip route add*"
-    decision: deny
-    reason: "Adding routes requires user confirmation - ask the user to run this command"
-  - pattern: "ip route del*"
-    decision: deny
-    reason: "Deleting routes requires user confirmation - ask the user to run this command"
+    reason: "Network interface/route changes require user confirmation - ask the user to run this command"
 
-  - pattern: "ss*"
-    decision: allow
-  - pattern: "netstat*"
-    decision: allow
-  - pattern: "ifconfig*"
-    decision: allow
-  - pattern: "route*"
-    decision: allow
-  - pattern: "dig*"
-    decision: allow
-  - pattern: "nslookup*"
-    decision: allow
-  - pattern: "host*"
-    decision: allow
-  - pattern: "traceroute*"
-    decision: allow
-  - pattern: "tracepath*"
-    decision: allow
-  - pattern: "mtr*"
-    decision: allow
-  - pattern: "whois*"
-    decision: allow
-  - pattern: "arp*"
-    decision: allow
-  - pattern: "ethtool*"
-    decision: allow
-  - pattern: "iwconfig*"
-    decision: allow
-  - pattern: "iw*"
-    decision: allow
-  - pattern: "nmcli*"
-    decision: allow
-  - pattern: "resolvectl*"
+  - patterns:
+      - "ss*"
+      - "netstat*"
+      - "ifconfig*"
+      - "route*"
+      - "dig*"
+      - "nslookup*"
+      - "host*"
+      - "traceroute*"
+      - "tracepath*"
+      - "mtr*"
+      - "whois*"
+      - "arp*"
+      - "ethtool*"
+      - "iwconfig*"
+      - "iw*"
+      - "nmcli*"
+      - "resolvectl*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Archive operations - read/extract only
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "tar tf*"
-    decision: allow
-  - pattern: "tar tvf*"
-    decision: allow
-  - pattern: "tar xf*"
-    decision: allow
-  - pattern: "tar xvf*"
-    decision: allow
-  - pattern: "tar xzf*"
-    decision: allow
-  - pattern: "tar xjf*"
-    decision: allow
-  - pattern: "tar --list*"
-    decision: allow
-  - pattern: "tar -tf*"
-    decision: allow
-  - pattern: "tar -tvf*"
-    decision: allow
-  - pattern: "tar -xf*"
-    decision: allow
-  - pattern: "tar -xvf*"
-    decision: allow
-  - pattern: "tar -xzf*"
-    decision: allow
-  - pattern: "tar -xjf*"
+  - patterns:
+      - "tar tf*"
+      - "tar tvf*"
+      - "tar xf*"
+      - "tar xvf*"
+      - "tar xzf*"
+      - "tar xjf*"
+      - "tar --list*"
+      - "tar -tf*"
+      - "tar -tvf*"
+      - "tar -xf*"
+      - "tar -xvf*"
+      - "tar -xzf*"
+      - "tar -xjf*"
     decision: allow
 
   # Tar creation - deny
-  - pattern: "tar cf*"
-    decision: deny
-    reason: "Creating archives requires user confirmation - ask the user to run this command"
-  - pattern: "tar czf*"
-    decision: deny
-    reason: "Creating archives requires user confirmation - ask the user to run this command"
-  - pattern: "tar cjf*"
+  - patterns:
+      - "tar cf*"
+      - "tar czf*"
+      - "tar cjf*"
     decision: deny
     reason: "Creating archives requires user confirmation - ask the user to run this command"
 
-  - pattern: "unzip*"
-    decision: allow
-  - pattern: "zipinfo*"
-    decision: allow
-  - pattern: "zcat*"
-    decision: allow
-  - pattern: "zless*"
-    decision: allow
-  - pattern: "zmore*"
-    decision: allow
-  - pattern: "zgrep*"
-    decision: allow
-  - pattern: "gunzip*"
-    decision: allow
-  - pattern: "gzip -l*"
-    decision: allow
-  - pattern: "gzip -t*"
-    decision: allow
-  - pattern: "xz -l*"
-    decision: allow
-  - pattern: "xz -t*"
-    decision: allow
-  - pattern: "xzcat*"
-    decision: allow
-  - pattern: "unxz*"
-    decision: allow
-  - pattern: "bzip2 -d*"
-    decision: allow
-  - pattern: "bunzip2*"
-    decision: allow
-  - pattern: "bzcat*"
-    decision: allow
-  - pattern: "7z l*"
-    decision: allow
-  - pattern: "7z x*"
-    decision: allow
-  - pattern: "7z e*"
-    decision: allow
-  - pattern: "unrar*"
+  - patterns:
+      - "unzip*"
+      - "zipinfo*"
+      - "zcat*"
+      - "zless*"
+      - "zmore*"
+      - "zgrep*"
+      - "gunzip*"
+      - "gzip -l*"
+      - "gzip -t*"
+      - "xz -l*"
+      - "xz -t*"
+      - "xzcat*"
+      - "unxz*"
+      - "bzip2 -d*"
+      - "bunzip2*"
+      - "bzcat*"
+      - "7z l*"
+      - "7z x*"
+      - "7z e*"
+      - "unrar*"
     decision: allow
 
   # Archive creation - deny
-  - pattern: "zip*"
+  - patterns:
+      - "zip*"
+      - "gzip*"
+      - "bzip2*"
+      - "xz*"
     decision: deny
-    reason: "Creating archives requires user confirmation - ask the user to run this command"
-  - pattern: "gzip*"
-    decision: deny
-    reason: "Compressing files requires user confirmation - ask the user to run this command"
-  - pattern: "bzip2*"
-    decision: deny
-    reason: "Compressing files requires user confirmation - ask the user to run this command"
-  - pattern: "xz*"
-    decision: deny
-    reason: "Compressing files requires user confirmation - ask the user to run this command"
+    reason: "Creating/compressing archives requires user confirmation - ask the user to run this command"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Date, time, math utilities
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "date*"
-    decision: allow
-  - pattern: "cal*"
-    decision: allow
-  - pattern: "ncal*"
-    decision: allow
-  - pattern: "bc*"
-    decision: allow
-  - pattern: "dc*"
-    decision: allow
-  - pattern: "expr*"
-    decision: allow
-  - pattern: "seq*"
-    decision: allow
-  - pattern: "shuf*"
-    decision: allow
-  - pattern: "factor*"
+  - patterns:
+      - "date*"
+      - "cal*"
+      - "ncal*"
+      - "bc*"
+      - "dc*"
+      - "expr*"
+      - "seq*"
+      - "shuf*"
+      - "factor*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Environment inspection
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "env"
-    decision: allow
-  - pattern: "printenv*"
-    decision: allow
-  - pattern: "set"
-    decision: allow
-  - pattern: "declare -p*"
-    decision: allow
-  - pattern: "type*"
-    decision: allow
-  - pattern: "command -v*"
-    decision: allow
-  - pattern: "hash*"
+  - patterns:
+      - "env"
+      - "printenv*"
+      - "set"
+      - "declare -p*"
+      - "type*"
+      - "command -v*"
+      - "hash*"
     decision: allow
 
   # Environment modification - deny
   - pattern: "export*"
     decision: deny
     reason: "Environment modification doesn't persist - set variables inline with commands instead"
+
   - pattern: "unset*"
     decision: deny
     reason: "Environment modification doesn't persist across commands"
@@ -1055,415 +668,261 @@ rules:
   # ─────────────────────────────────────────────────────────────────────────────
   # Man pages and help
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "man*"
-    decision: allow
-  - pattern: "info*"
-    decision: allow
-  - pattern: "apropos*"
-    decision: allow
-  - pattern: "whatis*"
-    decision: allow
-  - pattern: "tldr*"
-    decision: allow
-  - pattern: "help*"
+  - patterns:
+      - "man*"
+      - "info*"
+      - "apropos*"
+      - "whatis*"
+      - "tldr*"
+      - "help*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Build tools
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "make*"
-    decision: allow
-  - pattern: "cmake*"
-    decision: allow
-  - pattern: "ninja*"
-    decision: allow
-  - pattern: "meson*"
-    decision: allow
-  - pattern: "autoconf*"
-    decision: allow
-  - pattern: "automake*"
-    decision: allow
-  - pattern: "configure*"
-    decision: allow
-  - pattern: "gcc*"
-    decision: allow
-  - pattern: "g++*"
-    decision: allow
-  - pattern: "clang*"
-    decision: allow
-  - pattern: "clang++*"
-    decision: allow
-  - pattern: "cc*"
-    decision: allow
-  - pattern: "c++*"
-    decision: allow
-  - pattern: "ld*"
-    decision: allow
-  - pattern: "ar*"
-    decision: allow
-  - pattern: "nm*"
-    decision: allow
-  - pattern: "objdump*"
-    decision: allow
-  - pattern: "readelf*"
-    decision: allow
-  - pattern: "size*"
+  - patterns:
+      - "make*"
+      - "cmake*"
+      - "ninja*"
+      - "meson*"
+      - "autoconf*"
+      - "automake*"
+      - "configure*"
+      - "gcc*"
+      - "g++*"
+      - "clang*"
+      - "clang++*"
+      - "cc*"
+      - "c++*"
+      - "ld*"
+      - "ar*"
+      - "nm*"
+      - "objdump*"
+      - "readelf*"
+      - "size*"
     decision: allow
 
   # Go
-  - pattern: "go build*"
-    decision: allow
-  - pattern: "go test*"
-    decision: allow
-  - pattern: "go run*"
-    decision: allow
-  - pattern: "go mod*"
-    decision: allow
-  - pattern: "go fmt*"
-    decision: allow
-  - pattern: "go vet*"
-    decision: allow
-  - pattern: "go doc*"
-    decision: allow
-  - pattern: "go list*"
-    decision: allow
-  - pattern: "go env*"
-    decision: allow
-  - pattern: "go version*"
-    decision: allow
-  - pattern: "go generate*"
-    decision: allow
-  - pattern: "go clean*"
+  - patterns:
+      - "go build*"
+      - "go test*"
+      - "go run*"
+      - "go mod*"
+      - "go fmt*"
+      - "go vet*"
+      - "go doc*"
+      - "go list*"
+      - "go env*"
+      - "go version*"
+      - "go generate*"
+      - "go clean*"
     decision: allow
 
   # Rust
-  - pattern: "rustc*"
-    decision: allow
-  - pattern: "rustup show*"
-    decision: allow
-  - pattern: "rustup which*"
-    decision: allow
-  - pattern: "rustup doc*"
-    decision: allow
-  - pattern: "rustup --version"
-    decision: allow
-  - pattern: "rustfmt*"
-    decision: allow
-  - pattern: "rust-analyzer*"
+  - patterns:
+      - "rustc*"
+      - "rustup show*"
+      - "rustup which*"
+      - "rustup doc*"
+      - "rustup --version"
+      - "rustfmt*"
+      - "rust-analyzer*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Package management - npm
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "npm install*"
+  - patterns:
+      - "npm install*"
+      - "npm i *"
+      - "npm uninstall*"
+      - "npm update*"
+      - "npm publish*"
     decision: deny
-    reason: "Installing packages requires user confirmation - ask the user to run 'npm install'"
-  - pattern: "npm i *"
-    decision: deny
-    reason: "Installing packages requires user confirmation - ask the user to run 'npm install'"
-  - pattern: "npm uninstall*"
-    decision: deny
-    reason: "Removing packages requires user confirmation - ask the user to run this command"
-  - pattern: "npm update*"
-    decision: deny
-    reason: "Updating packages requires user confirmation - ask the user to run this command"
-  - pattern: "npm publish*"
-    decision: deny
-    reason: "Publishing packages requires user confirmation - ask the user to run this command"
+    reason: "Package installation/mutation requires user confirmation - ask the user to run this command"
 
-  - pattern: "npm info*"
-    decision: allow
-  - pattern: "npm run*"
-    decision: allow
-  - pattern: "npm audit*"
-    decision: allow
-  - pattern: "npm search*"
-    decision: allow
-  - pattern: "npm view*"
-    decision: allow
-  - pattern: "npm list*"
-    decision: allow
-  - pattern: "npm ls*"
-    decision: allow
-  - pattern: "npm outdated*"
-    decision: allow
-  - pattern: "npm explain*"
-    decision: allow
-  - pattern: "npm why*"
-    decision: allow
-  - pattern: "npm fund*"
-    decision: allow
-  - pattern: "npm doctor*"
-    decision: allow
-  - pattern: "npm prefix*"
-    decision: allow
-  - pattern: "npm root*"
-    decision: allow
-  - pattern: "npm bin*"
-    decision: allow
-  - pattern: "npm config list*"
-    decision: allow
-  - pattern: "npm config get*"
-    decision: allow
-  - pattern: "npm pack*"
-    decision: allow
-  - pattern: "npm version"
-    decision: allow
-  - pattern: "npm help*"
-    decision: allow
-  - pattern: "npm exec*"
-    decision: allow
-  - pattern: "npm test*"
-    decision: allow
-  - pattern: "npm start*"
-    decision: allow
-  - pattern: "npm rebuild*"
-    decision: allow
-  - pattern: "npm dedupe*"
-    decision: allow
-  - pattern: "npm prune*"
+  - patterns:
+      - "npm info*"
+      - "npm run*"
+      - "npm audit*"
+      - "npm search*"
+      - "npm view*"
+      - "npm list*"
+      - "npm ls*"
+      - "npm outdated*"
+      - "npm explain*"
+      - "npm why*"
+      - "npm fund*"
+      - "npm doctor*"
+      - "npm prefix*"
+      - "npm root*"
+      - "npm bin*"
+      - "npm config list*"
+      - "npm config get*"
+      - "npm pack*"
+      - "npm version"
+      - "npm help*"
+      - "npm exec*"
+      - "npm test*"
+      - "npm start*"
+      - "npm rebuild*"
+      - "npm dedupe*"
+      - "npm prune*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Package management - yarn
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "yarn add*"
+  - patterns:
+      - "yarn add*"
+      - "yarn remove*"
+      - "yarn upgrade*"
+      - "yarn publish*"
     decision: deny
-    reason: "Installing packages requires user confirmation - ask the user to run 'yarn add'"
-  - pattern: "yarn remove*"
-    decision: deny
-    reason: "Removing packages requires user confirmation - ask the user to run this command"
-  - pattern: "yarn upgrade*"
-    decision: deny
-    reason: "Upgrading packages requires user confirmation - ask the user to run this command"
-  - pattern: "yarn publish*"
-    decision: deny
-    reason: "Publishing packages requires user confirmation - ask the user to run this command"
+    reason: "Package installation/mutation requires user confirmation - ask the user to run this command"
 
-  - pattern: "yarn audit*"
-    decision: allow
-  - pattern: "yarn info*"
-    decision: allow
-  - pattern: "yarn list*"
-    decision: allow
-  - pattern: "yarn why*"
-    decision: allow
-  - pattern: "yarn outdated*"
-    decision: allow
-  - pattern: "yarn config list*"
-    decision: allow
-  - pattern: "yarn config get*"
-    decision: allow
-  - pattern: "yarn version"
-    decision: allow
-  - pattern: "yarn versions"
-    decision: allow
-  - pattern: "yarn cache list*"
-    decision: allow
-  - pattern: "yarn workspaces list*"
-    decision: allow
-  - pattern: "yarn licenses list*"
-    decision: allow
-  - pattern: "yarn run*"
-    decision: allow
-  - pattern: "yarn build*"
-    decision: allow
-  - pattern: "yarn test*"
-    decision: allow
-  - pattern: "yarn lint*"
-    decision: allow
-  - pattern: "yarn start*"
-    decision: allow
-  - pattern: "yarn dedupe*"
-    decision: allow
-  - pattern: "yarn explain*"
-    decision: allow
-  - pattern: "yarn pack*"
-    decision: allow
-  - pattern: "yarn help*"
+  - patterns:
+      - "yarn audit*"
+      - "yarn info*"
+      - "yarn list*"
+      - "yarn why*"
+      - "yarn outdated*"
+      - "yarn config list*"
+      - "yarn config get*"
+      - "yarn version"
+      - "yarn versions"
+      - "yarn cache list*"
+      - "yarn workspaces list*"
+      - "yarn licenses list*"
+      - "yarn run*"
+      - "yarn build*"
+      - "yarn test*"
+      - "yarn lint*"
+      - "yarn start*"
+      - "yarn dedupe*"
+      - "yarn explain*"
+      - "yarn pack*"
+      - "yarn help*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Package management - pnpm
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "pnpm add*"
+  - patterns:
+      - "pnpm add*"
+      - "pnpm install*"
+      - "pnpm remove*"
+      - "pnpm update*"
+      - "pnpm publish*"
     decision: deny
-    reason: "Installing packages requires user confirmation - ask the user to run 'pnpm add'"
-  - pattern: "pnpm install*"
-    decision: deny
-    reason: "Installing packages requires user confirmation - ask the user to run 'pnpm install'"
-  - pattern: "pnpm remove*"
-    decision: deny
-    reason: "Removing packages requires user confirmation - ask the user to run this command"
-  - pattern: "pnpm update*"
-    decision: deny
-    reason: "Updating packages requires user confirmation - ask the user to run this command"
-  - pattern: "pnpm publish*"
-    decision: deny
-    reason: "Publishing packages requires user confirmation - ask the user to run this command"
+    reason: "Package installation/mutation requires user confirmation - ask the user to run this command"
 
-  - pattern: "pnpm audit*"
-    decision: allow
-  - pattern: "pnpm list*"
-    decision: allow
-  - pattern: "pnpm ls*"
-    decision: allow
-  - pattern: "pnpm outdated*"
-    decision: allow
-  - pattern: "pnpm why*"
-    decision: allow
-  - pattern: "pnpm licenses list*"
-    decision: allow
-  - pattern: "pnpm run*"
-    decision: allow
-  - pattern: "pnpm exec*"
-    decision: allow
-  - pattern: "pnpm env list*"
-    decision: allow
-  - pattern: "pnpm root*"
-    decision: allow
-  - pattern: "pnpm bin*"
-    decision: allow
-  - pattern: "pnpm prefix*"
-    decision: allow
-  - pattern: "pnpm store status*"
-    decision: allow
-  - pattern: "pnpm config list*"
-    decision: allow
-  - pattern: "pnpm config get*"
-    decision: allow
-  - pattern: "pnpm build"
-    decision: allow
-  - pattern: "pnpm test"
-    decision: allow
-  - pattern: "pnpm start"
-    decision: allow
-  - pattern: "pnpm moon"
-    decision: allow
-  - pattern: "pnpm dedupe*"
-    decision: allow
-  - pattern: "pnpm rebuild*"
-    decision: allow
-  - pattern: "pnpm prune*"
-    decision: allow
-  - pattern: "pnpm pack*"
-    decision: allow
-  - pattern: "pnpm help*"
+  - patterns:
+      - "pnpm audit*"
+      - "pnpm list*"
+      - "pnpm ls*"
+      - "pnpm outdated*"
+      - "pnpm why*"
+      - "pnpm licenses list*"
+      - "pnpm run*"
+      - "pnpm exec*"
+      - "pnpm env list*"
+      - "pnpm root*"
+      - "pnpm bin*"
+      - "pnpm prefix*"
+      - "pnpm store status*"
+      - "pnpm config list*"
+      - "pnpm config get*"
+      - "pnpm build"
+      - "pnpm test"
+      - "pnpm start"
+      - "pnpm moon"
+      - "pnpm dedupe*"
+      - "pnpm rebuild*"
+      - "pnpm prune*"
+      - "pnpm pack*"
+      - "pnpm help*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Package management - cargo
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "cargo install*"
+  - patterns:
+      - "cargo install*"
+      - "cargo uninstall*"
+      - "cargo publish*"
     decision: deny
-    reason: "Installing crates globally requires user confirmation - ask the user to run this command"
-  - pattern: "cargo uninstall*"
-    decision: deny
-    reason: "Uninstalling crates requires user confirmation - ask the user to run this command"
-  - pattern: "cargo publish*"
-    decision: deny
-    reason: "Publishing crates requires user confirmation - ask the user to run this command"
+    reason: "Global crate installation/publishing requires user confirmation - ask the user to run this command"
 
-  - pattern: "cargo add*"
-    decision: allow
-  - pattern: "cargo check*"
-    decision: allow
-  - pattern: "cargo build*"
-    decision: allow
-  - pattern: "cargo test*"
-    decision: allow
-  - pattern: "cargo run*"
-    decision: allow
-  - pattern: "cargo doc*"
-    decision: allow
-  - pattern: "cargo bench*"
-    decision: allow
-  - pattern: "cargo tree*"
-    decision: allow
-  - pattern: "cargo metadata*"
-    decision: allow
-  - pattern: "cargo search*"
-    decision: allow
-  - pattern: "cargo info*"
-    decision: allow
-  - pattern: "cargo fetch*"
-    decision: allow
-  - pattern: "cargo verify-project*"
-    decision: allow
-  - pattern: "cargo locate-project*"
-    decision: allow
-  - pattern: "cargo read-manifest*"
-    decision: allow
-  - pattern: "cargo pkgid*"
-    decision: allow
-  - pattern: "cargo generate-lockfile*"
-    decision: allow
-  - pattern: "cargo clippy*"
-    decision: allow
-  - pattern: "cargo fmt*"
-    decision: allow
-  - pattern: "cargo audit*"
-    decision: allow
-  - pattern: "cargo fix*"
-    decision: allow
-  - pattern: "cargo clean*"
-    decision: allow
-  - pattern: "cargo vendor*"
-    decision: allow
-  - pattern: "cargo version*"
-    decision: allow
-  - pattern: "cargo --version"
-    decision: allow
-  - pattern: "cargo help*"
+  - patterns:
+      - "cargo add*"
+      - "cargo check*"
+      - "cargo build*"
+      - "cargo test*"
+      - "cargo run*"
+      - "cargo doc*"
+      - "cargo bench*"
+      - "cargo tree*"
+      - "cargo metadata*"
+      - "cargo search*"
+      - "cargo info*"
+      - "cargo fetch*"
+      - "cargo verify-project*"
+      - "cargo locate-project*"
+      - "cargo read-manifest*"
+      - "cargo pkgid*"
+      - "cargo generate-lockfile*"
+      - "cargo clippy*"
+      - "cargo fmt*"
+      - "cargo audit*"
+      - "cargo fix*"
+      - "cargo clean*"
+      - "cargo vendor*"
+      - "cargo version*"
+      - "cargo --version"
+      - "cargo help*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Build and test tools
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "tsc*"
-    decision: allow
-  - pattern: "eslint*"
-    decision: allow
-  - pattern: "prettier*"
-    decision: allow
-  - pattern: "jest*"
-    decision: allow
-  - pattern: "vitest*"
-    decision: allow
-  - pattern: "pytest*"
-    decision: allow
-  - pattern: "time*"
-    decision: allow
-  - pattern: "hyperfine*"
-    decision: allow
-  - pattern: "perf*"
+  - patterns:
+      - "tsc*"
+      - "eslint*"
+      - "prettier*"
+      - "jest*"
+      - "vitest*"
+      - "pytest*"
+      - "time*"
+      - "hyperfine*"
+      - "perf*"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Version control - git
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "git push*"
+  - patterns:
+      - "git push*"
+      - "git push"
     decision: deny
     reason: "Pushing to remote requires user confirmation - ask the user to push when ready"
-  - pattern: "git push"
-    decision: deny
-    reason: "Pushing to remote requires user confirmation - ask the user to push when ready"
+
   - pattern: "git reset --hard*"
     decision: deny
     reason: "Hard reset can lose work - ask the user to run this command if they're sure"
+
   - pattern: "git clean -f*"
     decision: deny
     reason: "Cleaning untracked files can lose work - ask the user to run this command"
+
   - pattern: "git rebase*"
     decision: deny
     reason: "Rebasing can rewrite history - ask the user to run this command"
-  - pattern: "git force*"
-    decision: deny
-    reason: "Force operations can lose work - ask the user to run this command"
-  - pattern: "git*--force*"
-    decision: deny
-    reason: "Force operations can lose work - ask the user to run this command"
-  - pattern: "git*-f *"
+
+  - patterns:
+      - "git force*"
+      - "git*--force*"
+      - "git*-f *"
     decision: deny
     reason: "Force operations can lose work - ask the user to run this command"
 
@@ -1473,15 +932,12 @@ rules:
   # ─────────────────────────────────────────────────────────────────────────────
   # Chezmoi - dotfiles management
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "chezmoi apply*"
+  - patterns:
+      - "chezmoi apply*"
+      - "chezmoi update*"
+      - "chezmoi init*"
     decision: deny
-    reason: "Applying dotfiles changes requires user confirmation - ask the user to run 'chezmoi apply'"
-  - pattern: "chezmoi update*"
-    decision: deny
-    reason: "Updating dotfiles requires user confirmation - ask the user to run this command"
-  - pattern: "chezmoi init*"
-    decision: deny
-    reason: "Initializing chezmoi requires user confirmation - ask the user to run this command"
+    reason: "Applying/updating dotfiles requires user confirmation - ask the user to run this command"
 
   - pattern: "chezmoi*"
     decision: allow
