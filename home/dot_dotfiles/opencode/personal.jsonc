@@ -9,7 +9,7 @@
   "agent": {
     // Global agents: only homeassistant (home automation isn't code-specific)
     "build": {
-      "model": "openrouter/minimax/minimax-m1",
+      "model": "openrouter/minimax/minimax-m2.1",
       "permission": {
         "homeassistant_*": "allow",
       },
