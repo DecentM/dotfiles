@@ -1,0 +1,94 @@
+{
+  "$schema": "https://opencode.ai/theme.json",
+  "defs": {
+    "bg-primary": "#312e2b",
+    "bg-secondary": "#262421",
+    "bg-tertiary": "#272522",
+    "bg-element": "#3d3a37",
+    "bg-selection": "#4a4745",
+
+    "fg-primary": "#f0f0f0",
+    "fg-secondary": "#e8e7e6",
+    "fg-muted": "#c7c6c5",
+    "fg-dark": "#464341",
+
+    "brand-green": "#5d9948",
+    "board-light": "#ebecd0",
+    "board-dark": "#739552",
+    "move-highlight": "#ffff33",
+
+    "green-light": "#81b64c",
+    "green-dark": "#4e7837",
+    "blue": "#5c9ac4",
+    "blue-dark": "#4a7fa8",
+    "red": "#c94f4f",
+    "red-light": "#e06666",
+    "orange": "#e89f4c",
+    "orange-dark": "#c68a3c",
+    "gold": "#d4a843",
+    "purple": "#9370db",
+
+    "border-default": "#4a4745",
+    "border-subtle": "#3d3a37"
+  },
+  "theme": {
+    "primary": "brand-green",
+    "secondary": "board-dark",
+    "accent": "move-highlight",
+
+    "error": "red",
+    "warning": "orange",
+    "success": "green-light",
+    "info": "blue",
+
+    "text": "fg-primary",
+    "textMuted": "fg-muted",
+
+    "background": "bg-primary",
+    "backgroundPanel": "bg-secondary",
+    "backgroundElement": "bg-element",
+    "backgroundMenu": "bg-tertiary",
+
+    "border": "border-default",
+    "borderActive": "brand-green",
+    "borderSubtle": "border-subtle",
+
+    "diffAdded": "green-light",
+    "diffRemoved": "red",
+    "diffContext": "fg-muted",
+    "diffHunkHeader": "brand-green",
+    "diffHighlightAdded": "board-light",
+    "diffHighlightRemoved": "red-light",
+    "diffAddedBg": "#81b64c18",
+    "diffRemovedBg": "#c94f4f18",
+    "diffContextBg": "bg-primary",
+    "diffLineNumber": "fg-muted",
+    "diffAddedLineNumberBg": "#81b64c25",
+    "diffRemovedLineNumberBg": "#c94f4f25",
+
+    "markdownText": "fg-primary",
+    "markdownHeading": "board-light",
+    "markdownLink": "blue",
+    "markdownLinkText": "brand-green",
+    "markdownCode": "board-light",
+    "markdownBlockQuote": "fg-muted",
+    "markdownEmph": "gold",
+    "markdownStrong": "fg-secondary",
+    "markdownHorizontalRule": "border-default",
+    "markdownListItem": "brand-green",
+    "markdownListEnumeration": "brand-green",
+    "markdownImage": "blue",
+    "markdownImageText": "brand-green",
+    "markdownCodeBlock": "fg-secondary",
+
+    "syntaxComment": "fg-muted",
+    "syntaxKeyword": "brand-green",
+    "syntaxFunction": "blue",
+    "syntaxVariable": "board-light",
+    "syntaxString": "green-light",
+    "syntaxNumber": "orange",
+    "syntaxType": "gold",
+    "syntaxOperator": "fg-secondary",
+    "syntaxPunctuation": "fg-muted"
+  }
+}

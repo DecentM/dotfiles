@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "theme": "ariake-dark",
   "instructions": ["~/.dotfiles/opencode/rules/personal.md"],
 
   // Personal-specific MCP permissions - denied at profile level

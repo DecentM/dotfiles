@@ -1,6 +1,7 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "share": "disabled",
+  "theme": "chess-com",
   "instructions": ["~/.dotfiles/opencode/rules/work.md"],
 
   // Work-specific MCP permissions - denied at profile level, agents get selective access

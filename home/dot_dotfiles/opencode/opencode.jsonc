@@ -1,7 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "share": "manual",
-  "theme": "mercury",
   "permission": {
     "*": "deny",
     "bash": {
@@ -77,6 +76,7 @@
       "pwd": "allow",
       "which*": "allow",
       "sleep*": "allow",
+      "mkdir*": "allow",
       // End shell utils
 
       // Package management

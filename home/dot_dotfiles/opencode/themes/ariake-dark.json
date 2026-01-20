@@ -1,0 +1,94 @@
+{
+  "$schema": "https://opencode.ai/theme.json",
+  "defs": {
+    "bg-primary": "#2a2d37",
+    "bg-secondary": "#1c1f26",
+    "bg-tertiary": "#1f212a",
+    "bg-widget": "#232830",
+    "bg-selection": "#4f5b66",
+    "bg-inactive": "#343d46",
+
+    "fg-primary": "#c0c5ce",
+    "fg-secondary": "#b9bed5",
+    "fg-muted": "#4f5b66",
+    "fg-inactive": "#65737f",
+    "fg-comment": "#555c77",
+    "fg-bright": "#f5faff",
+
+    "purple": "#a571f4",
+    "blue": "#85b1e0",
+    "light-blue": "#93ddfb",
+    "cyan": "#9aefea",
+    "lavender": "#7e7edd",
+    "pink": "#dda2f6",
+    "sky-blue": "#4d8acb",
+
+    "red": "#e05252",
+    "green": "#43d08a",
+    "yellow": "#e0c285",
+
+    "border-default": "#343d46",
+    "border-subtle": "#2d303a",
+    "indent-guide": "#3b5364"
+  },
+  "theme": {
+    "primary": "purple",
+    "secondary": "lavender",
+    "accent": "cyan",
+
+    "error": "red",
+    "warning": "yellow",
+    "success": "green",
+    "info": "light-blue",
+
+    "text": "fg-primary",
+    "textMuted": "fg-muted",
+
+    "background": "bg-primary",
+    "backgroundPanel": "bg-secondary",
+    "backgroundElement": "bg-widget",
+    "backgroundMenu": "bg-tertiary",
+
+    "border": "border-default",
+    "borderActive": "purple",
+    "borderSubtle": "border-subtle",
+
+    "diffAdded": "green",
+    "diffRemoved": "red",
+    "diffContext": "fg-muted",
+    "diffHunkHeader": "lavender",
+    "diffHighlightAdded": "cyan",
+    "diffHighlightRemoved": "pink",
+    "diffAddedBg": "#43d08a15",
+    "diffRemovedBg": "#e0525215",
+    "diffContextBg": "bg-primary",
+    "diffLineNumber": "fg-muted",
+    "diffAddedLineNumberBg": "#43d08a20",
+    "diffRemovedLineNumberBg": "#e0525220",
+
+    "markdownText": "fg-primary",
+    "markdownHeading": "fg-bright",
+    "markdownLink": "light-blue",
+    "markdownLinkText": "blue",
+    "markdownCode": "cyan",
+    "markdownBlockQuote": "fg-comment",
+    "markdownEmph": "pink",
+    "markdownStrong": "fg-bright",
+    "markdownHorizontalRule": "border-default",
+    "markdownListItem": "lavender",
+    "markdownListEnumeration": "lavender",
+    "markdownImage": "light-blue",
+    "markdownImageText": "blue",
+    "markdownCodeBlock": "fg-secondary",
+
+    "syntaxComment": "fg-comment",
+    "syntaxKeyword": "lavender",
+    "syntaxFunction": "light-blue",
+    "syntaxVariable": "blue",
+    "syntaxString": "cyan",
+    "syntaxNumber": "pink",
+    "syntaxType": "purple",
+    "syntaxOperator": "fg-primary",
+    "syntaxPunctuation": "fg-muted"
+  }
+}
