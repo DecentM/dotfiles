@@ -9,6 +9,11 @@ FROM python:3.12-slim-bookworm
 # Install uv for fast Python package management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
+# Install system dependencies for ML libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install common Python packages
 # Note: mcp-python removed since we run Python directly now
 RUN uv pip install --system \
