@@ -76,10 +76,6 @@ Otherwise                           → You may handle directly
 - Timestamp all memory you insert, prune >2 weeks old (unless permanent)
 - Bank learnings frequently - persists across sessions
 
-## playwright
-- webfetch and websearch denied, use playwright to browse/search
-- Also useful for e2e test debugging
-
 ## sandbox-node-deno, sandbox-python
 - **NOT available to root agent** - delegate to specialized agents
 - coder, devops, researcher, reviewer have access

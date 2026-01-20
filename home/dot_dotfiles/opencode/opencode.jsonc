@@ -154,7 +154,6 @@
     "sequentialthinking_*": "allow",
     "memory_*": "allow",
     "time_*": "allow",
-    "playwright_*": "allow",
 
     // Sandbox MCPs - delegate to specialized agents (coder, devops, researcher, reviewer)
     "sandbox-node-deno_*": "deny",
@@ -194,20 +193,7 @@
       ],
       "enabled": true,
     },
-    "playwright": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "--rm",
-        "-i",
-        "--init",
-        "--memory=2048m",
-        "--cpus=2",
-        "mcr.microsoft.com/playwright/mcp",
-      ],
-      "enabled": true,
-    },
+
     // Sandbox MCP servers for safe code execution (builds inline on first run)
     "sandbox-node-deno": {
       "type": "local",

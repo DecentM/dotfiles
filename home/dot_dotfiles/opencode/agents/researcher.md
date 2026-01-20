@@ -78,16 +78,13 @@ Use these for:
 
 1. Analyze target page structure
 2. Identify data locations and patterns
-3. Choose tool (playwright for JS-heavy, webfetch for static)
-4. Extract data with robust selectors
+3. Use webfetch to retrieve content
+4. Extract data with text parsing or regex
 5. Clean and structure output
 6. Validate completeness
 
 ### Scraping ethics
 - Check robots.txt and respect it
-- Implement delays between requests
-- Use appropriate User-Agent headers
-- Handle errors gracefully
 - Only scrape publicly available data
 - Don't bypass authentication
 
