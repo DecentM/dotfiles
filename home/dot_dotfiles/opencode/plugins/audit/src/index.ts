@@ -22,8 +22,10 @@ import type { AuditEntry, ExportFilters } from "./types";
 
 /**
  * In-memory cache for correlating permission asks with responses
+ * Also tracks which permissions we've already logged to avoid duplicates
  */
 const pendingPermissions = new Map<string, AuditEntry>();
+const loggedPermissions = new Set<string>();
 
 /**
  * Counter for batching hierarchy rebuilds
@@ -45,14 +47,41 @@ export const AuditPlugin: Plugin = async ({
 
   console.log(`[audit-plugin] Initialized with database at ${dbPath}`);
 
+  /**
+   * Helper to insert a permission entry
+   */
+  const insertPermissionEntry = (entry: AuditEntry): boolean => {
+    if (loggedPermissions.has(entry.id)) {
+      return false; // Already logged
+    }
+
+    try {
+      db.insertPermission(entry);
+      loggedPermissions.add(entry.id);
+      permissionsSinceRebuild++;
+      console.log(
+        `[audit-plugin] Logged: type=${entry.type}, pattern=${entry.pattern}, status=${entry.initialStatus}`
+      );
+      return true;
+    } catch (error) {
+      console.error("[audit-plugin] Failed to insert permission:", error);
+      return false;
+    }
+  };
+
   return {
     /**
-     * Intercept permission requests before they're shown to user
+     * Intercept permission requests - this hook fires for ALL permission checks
+     * with the resolved status (allow/deny/ask)
      */
     "permission.ask": async (
       input: Permission,
       output: { status: "ask" | "deny" | "allow" }
     ) => {
+      console.log(
+        `[audit-plugin] permission.ask: type=${input.type}, pattern=${input.pattern}, status=${output.status}`
+      );
+
       const entry: AuditEntry = {
         id: input.id,
         sessionId: input.sessionID,
@@ -66,24 +95,57 @@ export const AuditPlugin: Plugin = async ({
         createdAt: input.time.created,
       };
 
-      // Store in memory for later correlation with response
-      pendingPermissions.set(input.id, entry);
-
-      // Log initial request to database
-      try {
-        db.insertPermission(entry);
-        permissionsSinceRebuild++;
-      } catch (error) {
-        console.error("[audit-plugin] Failed to insert permission:", error);
+      // Store in memory for later correlation with response (for "ask" status)
+      if (output.status === "ask") {
+        pendingPermissions.set(input.id, entry);
       }
+
+      // Log to database
+      insertPermissionEntry(entry);
     },
 
     /**
-     * Subscribe to events to catch permission responses
+     * Subscribe to events to catch:
+     * 1. permission.updated - fires for all permission checks (fallback if hook doesn't fire)
+     * 2. permission.replied - captures user responses to "ask" prompts
      */
     event: async ({ event }: { event: Event }) => {
+      // Handle permission.updated events as fallback
+      // This should fire for ALL permission checks
+      if (event.type === "permission.updated") {
+        const permission = event.properties;
+        console.log(
+          `[audit-plugin] permission.updated: type=${permission.type}, pattern=${permission.pattern}`
+        );
+
+        // Only log if not already logged via permission.ask hook
+        if (!loggedPermissions.has(permission.id)) {
+          const entry: AuditEntry = {
+            id: permission.id,
+            sessionId: permission.sessionID,
+            messageId: permission.messageID,
+            callId: permission.callID,
+            type: permission.type,
+            pattern: permission.pattern,
+            title: permission.title,
+            metadata: permission.metadata as Record<string, unknown>,
+            // permission.updated doesn't include status, so we mark as "ask"
+            // and rely on permission.replied to update it
+            initialStatus: "ask",
+            createdAt: permission.time.created,
+          };
+
+          pendingPermissions.set(permission.id, entry);
+          insertPermissionEntry(entry);
+        }
+      }
+
+      // Handle permission.replied events - user responded to a prompt
       if (event.type === "permission.replied") {
         const { sessionID, permissionID, response } = event.properties;
+        console.log(
+          `[audit-plugin] permission.replied: id=${permissionID}, response=${response}`
+        );
 
         const pendingEntry = pendingPermissions.get(permissionID);
 
@@ -94,6 +156,9 @@ export const AuditPlugin: Plugin = async ({
               permissionID,
               response as "once" | "always" | "reject",
               Date.now()
+            );
+            console.log(
+              `[audit-plugin] Updated response for ${permissionID}: ${response}`
             );
           } catch (error) {
             console.error(
