@@ -3,13 +3,19 @@ description: Version control specialist for complex git operations, history mana
 mode: subagent
 temperature: 0.1
 permission:
-  edit: deny
-  write: deny
-  task: deny
+  # Base tools
+  read:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
+  skill: allow
+  # Profile MCPs (work) - defined in profile jsonc
   github_get_*: allow
   github_list_*: allow
   github_pull_request_read: allow
   github_search_*: allow
+  # Git commands - careful restrictions
   sh:
     git*: ask
     "git commit*": deny

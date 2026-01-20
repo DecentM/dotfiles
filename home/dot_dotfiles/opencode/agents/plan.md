@@ -5,6 +5,13 @@ temperature: 0.1
 permission:
   edit: deny
   write: deny
+  # Deny tools to force delegation to specialized subagents
+  webfetch: deny
+  websearch: deny
+  grep: deny
+  lsp: deny
+  codesearch: deny
+  skill: deny
   task:
     "*": allow
     plan: deny

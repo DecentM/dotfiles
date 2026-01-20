@@ -3,13 +3,23 @@ description: System designer for architecture decisions, API design, scalability
 mode: subagent
 temperature: 0.3
 permission:
-  bash: deny
-  sh: deny
-  edit: deny
+  # Base tools
+  read:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
+  webfetch: allow
+  websearch: allow
+  lsp: allow
+  codesearch: allow
+  skill: allow
+  # Web scraping
   flaresolverr_*: allow
   task: 
     "*": allow
     architect: deny
+  # Profile MCPs (work) - defined in profile jsonc
   github_get_*: allow
   github_list_*: allow
   github_search_*: allow

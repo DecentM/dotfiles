@@ -3,13 +3,22 @@ description: Code analyst for reviewing quality, security vulnerabilities, and a
 mode: subagent
 temperature: 0.1
 permission:
-  edit: deny
-  write: deny
+  # Base tools
+  read:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
+  lsp: allow
+  codesearch: allow
+  skill: allow
+  # Sandbox access for analysis
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
   task: 
     "*": allow
     reviewer: deny
+  # Profile MCPs (work) - defined in profile jsonc
   github_get_*: allow
   github_list_*: allow
   github_pull_request_read: allow

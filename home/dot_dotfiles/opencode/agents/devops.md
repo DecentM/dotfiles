@@ -3,10 +3,24 @@ description: DevOps and infrastructure specialist for containers, CI/CD, cloud r
 mode: subagent
 temperature: 0.2
 permission:
+  # Base tools
+  read:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
+  lsp: allow
+  codesearch: allow
+  skill: allow
+  sh: allow
+  sh_*: allow
+  # Sandbox access
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
+  # Web scraping
   flaresolverr_*: allow
   task: deny
+  # Profile MCPs (work) - defined in profile jsonc
   github_*: allow
 ---
 

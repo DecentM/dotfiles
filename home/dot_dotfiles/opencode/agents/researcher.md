@@ -3,12 +3,27 @@ description: Information specialist for web research, data scraping, analysis, a
 mode: subagent
 temperature: 0.3
 permission:
+  # Base tools
+  read:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
+  webfetch: allow
+  websearch: allow
+  codesearch: allow
+  skill: allow
+  sh: allow
+  sh_*: allow
+  # Sandbox access
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
+  # Web scraping
   flaresolverr_*: allow
   task: 
     "*": allow
     researcher: deny
+  # Profile MCPs (work) - defined in profile jsonc
   github_get_*: allow
   github_list_*: allow
   github_search_*: allow

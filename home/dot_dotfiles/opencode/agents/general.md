@@ -3,6 +3,20 @@ description: General-purpose agent for researching complex questions and executi
 mode: subagent
 temperature: 0.3
 permission:
+  # Base tools
+  read:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
+  webfetch: allow
+  websearch: allow
+  lsp: allow
+  codesearch: allow
+  skill: allow
+  sh: allow
+  sh_*: allow
+  # Subagent restrictions
   todowrite: deny
   task: deny
 ---

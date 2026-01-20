@@ -3,9 +3,15 @@ description: Creative partner for brainstorming, storytelling, analogies, and ad
 mode: subagent
 temperature: 0.85
 permission:
-  bash: deny
-  sh: deny
-  task: deny
+  # Base tools
+  read:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
+  webfetch: allow
+  websearch: allow
+  # Web scraping
   flaresolverr_*: allow
 ---
 

@@ -3,12 +3,16 @@ description: Fast, read-only agent for exploring codebases and answering questio
 mode: subagent
 temperature: 0.2
 permission:
-  edit: deny
-  write: deny
-  bash: deny
-  sh: deny
-  task: deny
-  todowrite: deny
+  # Base tools
+  read:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
+  lsp: allow
+  codesearch: allow
+  skill: allow
+  # Web scraping for external docs
   flaresolverr_*: allow
 ---
 

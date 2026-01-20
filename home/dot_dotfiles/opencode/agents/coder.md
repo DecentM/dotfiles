@@ -3,6 +3,18 @@ description: Full-stack developer for implementing features, debugging, testing,
 mode: subagent
 temperature: 0.2
 permission:
+  # Base tools
+  read:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
+  lsp: allow
+  codesearch: allow
+  skill: allow
+  sh: allow
+  sh_*: allow
+  # Sandbox access
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
   task: deny

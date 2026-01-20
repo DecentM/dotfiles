@@ -37,7 +37,7 @@
       "model": "openrouter/deepseek/deepseek-v3.2",
     },
 
-    // Custom subagents - model and personal-specific permissions
+    // Custom subagents - model and personal-specific MCP permissions
     "coder": {
       "model": "openrouter/minimax/minimax-m2.1",
     },

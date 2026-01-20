@@ -10,7 +10,6 @@
     "jira_*": "deny",
     "notion_*": "deny",
     "slack_*": "deny",
-    "{env:WORK_MCP_NAME}_*": "deny",
   },
 
   // Model selection and profile-specific permission overrides
@@ -35,19 +34,13 @@
       "model": "github-copilot/claude-haiku-4.5",
     },
 
-    // Custom subagents - model and work-specific permissions
+    // Custom subagents - model and work-specific MCP permissions
     "coder": {
       "model": "github-copilot/claude-opus-4.5",
     },
     "reviewer": {
       "model": "github-copilot/claude-sonnet-4",
       "permission": {
-        "github_get_*": "allow",
-        "github_list_*": "allow",
-        "github_pull_request_read": "allow",
-        "github_issue_read": "allow",
-        "github_search_*": "allow",
-
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
@@ -61,10 +54,6 @@
     "architect": {
       "model": "github-copilot/claude-sonnet-4.5",
       "permission": {
-        "github_get_*": "allow",
-        "github_list_*": "allow",
-        "github_search_*": "allow",
-
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
@@ -104,10 +93,6 @@
     "researcher": {
       "model": "github-copilot/claude-sonnet-4.5",
       "permission": {
-        "github_get_*": "allow",
-        "github_list_*": "allow",
-        "github_search_*": "allow",
-
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",

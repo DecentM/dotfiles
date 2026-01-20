@@ -3,10 +3,6 @@
   "share": "manual",
   "permission": {
     "*": "deny",
-    // Custom shell tool with permission enforcement and auditing
-    // See ~/.config/opencode/tools/sh.ts for implementation
-    "sh": "allow",
-    "sh_*": "allow",
     "edit": {
       "*": "allow",
       ".key": "deny",
@@ -17,33 +13,18 @@
     "glob": {
       "*": "allow",
     },
-    "webfetch": "allow",
-    "websearch": "allow",
     "grep": "allow",
     "list": "allow",
-    "lsp": "allow",
     "task": "allow",
     "todoread": "allow",
     "todowrite": "allow",
     "question": "allow",
-    "read": {
-      "*": "allow",
-      ".env": "deny",
-      ".env.*": "deny",
-      ".env.example": "allow",
-    },
-    "codesearch": "allow",
-    "skill": "allow",
 
     // MCPs
     "sequentialthinking_*": "allow",
     "memory_*": "allow",
     "time_*": "allow",
     "flaresolverr_*": "deny",
-
-    // Sandbox MCPs - delegate to specialized agents
-    "sandbox-node-deno_*": "deny",
-    "sandbox-python_*": "deny",
   },
   "instructions": [
     "~/.dotfiles/opencode/rules/base.md",
