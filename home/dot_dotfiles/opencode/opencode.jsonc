@@ -110,10 +110,6 @@
       "touch*": "allow",
       "cp*": "allow",
       "cp -*": "allow",
-      "mv*": "allow",
-      "mv -*": "allow",
-      "ln*": "allow",
-      "ln -*": "allow",
       // End shell utils
 
       // System info - read-only
@@ -150,13 +146,11 @@
       "lastlog*": "allow",
       "getent*": "allow",
       "locale*": "allow",
-      "localectl*": "allow",
       "timedatectl": "allow",
       "timedatectl status": "allow",
       "timedatectl show": "allow",
       "hostnamectl": "allow",
       "hostnamectl status": "allow",
-      "loginctl": "allow",
       "loginctl list*": "allow",
       "loginctl show*": "allow",
       // End system info

@@ -3,9 +3,8 @@ description: Read-only planning agent for analyzing code and suggesting changes 
 mode: primary
 temperature: 0.1
 permission:
-  edit: ask
+  edit: deny
   write: deny
-  bash: ask
   task:
     "*": allow
     plan: deny
