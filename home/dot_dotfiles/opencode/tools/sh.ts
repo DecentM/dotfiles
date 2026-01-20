@@ -10,7 +10,7 @@ import { tool } from "@opencode-ai/plugin";
 import { Database } from "bun:sqlite";
 import { mkdirSync, existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, resolve, basename } from "node:path";
 
 // =============================================================================
 // Database Setup
@@ -55,10 +55,55 @@ const getDb = (() => {
 
 type Decision = "allow" | "deny";
 
+// =============================================================================
+// Constraint Types
+// =============================================================================
+
+type ConstraintType = 'cwd_only' | 'no_recursive' | 'no_force' | 'max_depth' | 'require_flag';
+
+interface CwdOnlyConstraint {
+  type: 'cwd_only';
+  also_allow?: string[];
+  exclude?: string[];
+}
+
+interface MaxDepthConstraint {
+  type: 'max_depth';
+  value: number;
+}
+
+interface RequireFlagConstraint {
+  type: 'require_flag';
+  flag: string;
+}
+
+interface NoRecursiveConstraint {
+  type: 'no_recursive';
+}
+
+interface NoForceConstraint {
+  type: 'no_force';
+}
+
+type ConstraintConfig =
+  | ConstraintType                    // String shorthand: "cwd_only"
+  | CwdOnlyConstraint
+  | MaxDepthConstraint
+  | RequireFlagConstraint
+  | NoRecursiveConstraint
+  | NoForceConstraint;
+
+interface ConstraintResult {
+  valid: boolean;
+  violation?: string;  // Human-readable reason for denial
+}
+
 interface PermissionPattern {
   pattern: string;
   decision: Decision;
   reason?: string;
+  constraint?: ConstraintConfig;      // Single constraint
+  constraints?: ConstraintConfig[];   // Multiple constraints
 }
 
 interface PermissionsConfig {
@@ -82,24 +127,26 @@ interface YamlRule {
   patterns?: string[];
   decision: string;
   reason?: string | null;
+  constraint?: ConstraintConfig;
+  constraints?: ConstraintConfig[];
 }
 
 /**
  * Load permissions from YAML file.
  * Uses a singleton pattern to load only once.
- * 
+ *
  * Supports two rule formats:
  * 1. Single pattern:  { pattern: "rm*", decision: "deny", reason: "..." }
  * 2. Multi-pattern:   { patterns: ["rm*", "rmdir*"], decision: "deny", reason: "..." }
  */
 const getPermissions = (() => {
   let config: PermissionsConfig | null = null;
-  
+
   return (): PermissionsConfig => {
     if (config) return config;
-    
+
     const yamlPath = join(import.meta.dir, "sh-permissions.yaml");
-    
+
     try {
       const yamlContent = readFileSync(yamlPath, "utf-8");
       const parsed = Bun.YAML.parse(yamlContent) as {
@@ -107,32 +154,34 @@ const getPermissions = (() => {
         default?: string;
         default_reason?: string;
       };
-      
+
       if (!parsed || !Array.isArray(parsed.rules)) {
         console.error("[sh] Invalid permissions YAML structure - missing rules array");
         config = FALLBACK_CONFIG;
         return config;
       }
-      
+
       // Expand multi-pattern rules into individual pattern rules
       const expandedRules: PermissionPattern[] = [];
-      
+
       for (const rule of parsed.rules) {
         const patterns = rule.patterns ?? (rule.pattern ? [rule.pattern] : []);
         const decision = rule.decision as Decision;
         const reason = rule.reason ?? undefined;
-        
+        const constraint = rule.constraint;
+        const constraints = rule.constraints;
+
         for (const pattern of patterns) {
-          expandedRules.push({ pattern, decision, reason });
+          expandedRules.push({ pattern, decision, reason, constraint, constraints });
         }
       }
-      
+
       config = {
         rules: expandedRules,
         default: (parsed.default as Decision) ?? "deny",
         default_reason: parsed.default_reason ?? "Command not in allowlist",
       };
-      
+
       return config;
     } catch (error) {
       console.error(`[sh] Failed to load permissions from ${yamlPath}:`, error);
@@ -162,6 +211,7 @@ interface MatchResult {
   pattern: string | null;
   reason?: string;
   isDefault?: boolean;
+  rule?: PermissionPattern;  // Full rule for constraint checking
 }
 
 /**
@@ -170,7 +220,7 @@ interface MatchResult {
 const matchCommand = (command: string): MatchResult => {
   const trimmed = command.trim();
   const config = getPermissions();
-  
+
   for (const perm of config.rules) {
     const regex = patternToRegex(perm.pattern);
     if (regex.test(trimmed)) {
@@ -178,10 +228,11 @@ const matchCommand = (command: string): MatchResult => {
         decision: perm.decision,
         pattern: perm.pattern,
         reason: perm.reason,
+        rule: perm,
       };
     }
   }
-  
+
   // Default: use config default (typically deny) if no pattern matches
   return {
     decision: config.default,
@@ -189,6 +240,441 @@ const matchCommand = (command: string): MatchResult => {
     reason: config.default_reason,
     isDefault: true,
   };
+};
+
+// =============================================================================
+// Command Parsing & Path Extraction
+// =============================================================================
+
+/**
+ * Parse a command into tokens, respecting quoted strings.
+ * Handles both single and double quotes.
+ */
+const parseCommandTokens = (command: string): string[] => {
+  const tokens: string[] = [];
+  let current = '';
+  let inQuote: string | null = null;
+  let escapeNext = false;
+
+  for (let i = 0; i < command.length; i++) {
+    const char = command[i];
+
+    if (escapeNext) {
+      current += char;
+      escapeNext = false;
+      continue;
+    }
+
+    if (char === '\\' && !inQuote) {
+      escapeNext = true;
+      continue;
+    }
+
+    if (inQuote) {
+      if (char === inQuote) {
+        inQuote = null;
+      } else {
+        current += char;
+      }
+    } else if (char === '"' || char === "'") {
+      inQuote = char;
+    } else if (char === ' ' || char === '\t') {
+      if (current) {
+        tokens.push(current);
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+
+  if (current) tokens.push(current);
+  return tokens;
+};
+
+/**
+ * Extract arguments that don't start with '-' (non-flag args).
+ */
+const extractNonFlagArgs = (args: string[]): string[] => {
+  return args.filter(arg => !arg.startsWith('-'));
+};
+
+/**
+ * Skip the first non-flag arg (e.g., pattern for grep), return rest.
+ */
+const extractNonFlagArgsAfterFirst = (args: string[]): string[] => {
+  const nonFlags = extractNonFlagArgs(args);
+  return nonFlags.slice(1);
+};
+
+/**
+ * Command-specific path extractors.
+ * Maps command name to a function that extracts path arguments.
+ */
+const PATH_EXTRACTORS: Record<string, (args: string[]) => string[]> = {
+  'cd': (args) => {
+    // cd with no args goes to ~
+    if (args.length === 0) return ['~'];
+    const filtered = extractNonFlagArgs(args);
+    if (filtered.length === 0) return ['~'];
+    // cd - goes to previous dir
+    if (filtered[0] === '-') return ['-'];
+    return [filtered[0]];
+  },
+  'ls': (args) => {
+    const paths = extractNonFlagArgs(args);
+    return paths.length > 0 ? paths : ['.'];
+  },
+  'cat': (args) => extractNonFlagArgs(args),
+  'head': (args) => extractNonFlagArgs(args),
+  'tail': (args) => extractNonFlagArgs(args),
+  'find': (args) => {
+    // find takes paths before the first flag (-name, -type, etc.)
+    const paths: string[] = [];
+    for (const arg of args) {
+      if (arg.startsWith('-')) break;
+      paths.push(arg);
+    }
+    return paths.length > 0 ? paths : ['.'];
+  },
+  'grep': (args) => {
+    // grep [options] pattern [files...]
+    // Skip options and pattern, get files
+    return extractNonFlagArgsAfterFirst(args);
+  },
+  'rg': (args) => {
+    // ripgrep: rg [options] pattern [paths...]
+    return extractNonFlagArgsAfterFirst(args);
+  },
+  'tree': (args) => {
+    const paths = extractNonFlagArgs(args);
+    return paths.length > 0 ? paths : ['.'];
+  },
+  'du': (args) => {
+    const paths = extractNonFlagArgs(args);
+    return paths.length > 0 ? paths : ['.'];
+  },
+  'cp': (args) => extractNonFlagArgs(args),
+  'mv': (args) => extractNonFlagArgs(args),
+  'rm': (args) => extractNonFlagArgs(args),
+  'stat': (args) => extractNonFlagArgs(args),
+  'file': (args) => extractNonFlagArgs(args),
+  'touch': (args) => extractNonFlagArgs(args),
+  'mkdir': (args) => extractNonFlagArgs(args),
+  'rmdir': (args) => extractNonFlagArgs(args),
+  'ln': (args) => extractNonFlagArgs(args),
+  'readlink': (args) => extractNonFlagArgs(args),
+  'realpath': (args) => extractNonFlagArgs(args),
+};
+
+/**
+ * Extract path arguments from a command using command-specific logic.
+ */
+const extractPaths = (command: string): string[] => {
+  const tokens = parseCommandTokens(command);
+  if (tokens.length === 0) return [];
+
+  const cmdName = tokens[0];
+  const args = tokens.slice(1);
+
+  const extractor = PATH_EXTRACTORS[cmdName] ?? extractNonFlagArgs;
+  return extractor(args);
+};
+
+/**
+ * Match a path or filename against a glob-like pattern.
+ * Supports * as wildcard.
+ */
+const matchPattern = (value: string, pattern: string): boolean => {
+  const escaped = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*/g, '.*');
+  const regex = new RegExp(`^${escaped}$`);
+  return regex.test(value);
+};
+
+// =============================================================================
+// Constraint Validators
+// =============================================================================
+
+/**
+ * Validate that all path arguments are within the working directory.
+ */
+const validateCwdOnly = (
+  command: string,
+  workdir: string,
+  options?: { also_allow?: string[]; exclude?: string[] }
+): ConstraintResult => {
+  const paths = extractPaths(command);
+
+  // Commands with no path arguments implicitly use cwd - allow
+  if (paths.length === 0) {
+    return { valid: true };
+  }
+
+  for (const p of paths) {
+    // Special case: cd - (previous directory)
+    if (p === '-') {
+      return { valid: false, violation: `'cd -' not allowed (unknown destination)` };
+    }
+
+    // Special case: home directory
+    if (p === '~' || p.startsWith('~/')) {
+      // Check if ~ is in also_allow
+      if (options?.also_allow?.includes('~')) continue;
+      return { valid: false, violation: `Home directory (~) not allowed` };
+    }
+
+    // Resolve to absolute path
+    const resolved = resolve(workdir, p);
+
+    // Check exclude patterns first
+    if (options?.exclude) {
+      for (const pattern of options.exclude) {
+        // Check against basename
+        if (matchPattern(basename(resolved), pattern)) {
+          return {
+            valid: false,
+            violation: `Path '${p}' matches excluded pattern '${pattern}'`
+          };
+        }
+        // Check if any path segment matches
+        const segments = resolved.split('/');
+        for (const segment of segments) {
+          if (segment && matchPattern(segment, pattern)) {
+            return {
+              valid: false,
+              violation: `Path '${p}' contains segment matching excluded pattern '${pattern}'`
+            };
+          }
+        }
+      }
+    }
+
+    // Check if within cwd
+    const normalizedCwd = workdir.endsWith('/') ? workdir.slice(0, -1) : workdir;
+    const isWithinCwd = resolved === normalizedCwd || resolved.startsWith(normalizedCwd + '/');
+
+    if (!isWithinCwd) {
+      // Check also_allow list
+      if (options?.also_allow) {
+        let isAllowed = false;
+        for (const allowed of options.also_allow) {
+          if (allowed === '~') continue; // Already handled above
+          const normalizedAllowed = allowed.endsWith('/') ? allowed.slice(0, -1) : allowed;
+          if (resolved === normalizedAllowed || resolved.startsWith(normalizedAllowed + '/')) {
+            isAllowed = true;
+            break;
+          }
+        }
+        if (isAllowed) continue;
+      }
+
+      return {
+        valid: false,
+        violation: `Path '${p}' resolves to '${resolved}' which is outside working directory '${workdir}'`
+      };
+    }
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Check if a token contains a specific short flag.
+ * Handles combined flags like -rf, -Rf, etc.
+ */
+const hasShortFlag = (token: string, flag: string): boolean => {
+  // Single character flag without the dash
+  const flagChar = flag.replace(/^-/, '');
+  if (flagChar.length !== 1) return false;
+
+  // Check for exact match
+  if (token === `-${flagChar}`) return true;
+
+  // Check for combined flags (e.g., -rf, -Rf)
+  // Must start with single dash, not be a long option
+  if (token.startsWith('-') && !token.startsWith('--') && token.length > 2) {
+    return token.includes(flagChar);
+  }
+
+  return false;
+};
+
+/**
+ * Validate that the command doesn't contain recursive flags.
+ */
+const validateNoRecursive = (command: string): ConstraintResult => {
+  const tokens = parseCommandTokens(command);
+
+  for (const token of tokens) {
+    // Check for long flag
+    if (token === '--recursive') {
+      return { valid: false, violation: `Recursive flag not allowed: ${token}` };
+    }
+
+    // Check for short flags -r and -R (including combined like -rf)
+    if (hasShortFlag(token, '-r') || hasShortFlag(token, '-R')) {
+      return { valid: false, violation: `Recursive flag not allowed: ${token}` };
+    }
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Validate that the command doesn't contain force flags.
+ */
+const validateNoForce = (command: string): ConstraintResult => {
+  const tokens = parseCommandTokens(command);
+
+  for (const token of tokens) {
+    // Check for long flag
+    if (token === '--force') {
+      return { valid: false, violation: `Force flag not allowed: ${token}` };
+    }
+
+    // Check for short flag -f (including combined like -rf)
+    if (hasShortFlag(token, '-f')) {
+      return { valid: false, violation: `Force flag not allowed: ${token}` };
+    }
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Validate that the command specifies a maxdepth within allowed limits.
+ */
+const validateMaxDepth = (command: string, maxAllowed: number): ConstraintResult => {
+  const tokens = parseCommandTokens(command);
+  let foundMaxdepth = false;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+
+    if (token === '-maxdepth' || token === '--max-depth') {
+      foundMaxdepth = true;
+      const depthStr = tokens[i + 1];
+
+      if (!depthStr) {
+        return { valid: false, violation: `Missing value for ${token}` };
+      }
+
+      const depth = parseInt(depthStr, 10);
+      if (isNaN(depth)) {
+        return { valid: false, violation: `Invalid depth value: ${depthStr}` };
+      }
+
+      if (depth > maxAllowed) {
+        return { valid: false, violation: `Depth ${depth} exceeds maximum allowed ${maxAllowed}` };
+      }
+    }
+  }
+
+  if (!foundMaxdepth) {
+    return { valid: false, violation: `Must specify -maxdepth (max ${maxAllowed}) for safety` };
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Validate that a required flag is present in the command.
+ */
+const validateRequireFlag = (command: string, requiredFlag: string): ConstraintResult => {
+  const tokens = parseCommandTokens(command);
+
+  // Direct match
+  if (tokens.includes(requiredFlag)) {
+    return { valid: true };
+  }
+
+  // For short flags, check combined flags too
+  if (requiredFlag.startsWith('-') && !requiredFlag.startsWith('--') && requiredFlag.length === 2) {
+    for (const token of tokens) {
+      if (hasShortFlag(token, requiredFlag)) {
+        return { valid: true };
+      }
+    }
+  }
+
+  return { valid: false, violation: `Required flag '${requiredFlag}' not found` };
+};
+
+/**
+ * Validate all constraints for a matched rule.
+ */
+const validateConstraints = (
+  command: string,
+  workdir: string,
+  rule: PermissionPattern
+): ConstraintResult => {
+  // Collect all constraints
+  const constraints: ConstraintConfig[] = [];
+
+  if (rule.constraint) {
+    constraints.push(rule.constraint);
+  }
+  if (rule.constraints) {
+    constraints.push(...rule.constraints);
+  }
+
+  // If no constraints, allow
+  if (constraints.length === 0) {
+    return { valid: true };
+  }
+
+  // Validate each constraint - ALL must pass
+  for (const c of constraints) {
+    const type = typeof c === 'string' ? c : c.type;
+    let result: ConstraintResult;
+
+    switch (type) {
+      case 'cwd_only': {
+        const options = typeof c === 'object' && c.type === 'cwd_only'
+          ? { also_allow: c.also_allow, exclude: c.exclude }
+          : undefined;
+        result = validateCwdOnly(command, workdir, options);
+        break;
+      }
+
+      case 'no_recursive':
+        result = validateNoRecursive(command);
+        break;
+
+      case 'no_force':
+        result = validateNoForce(command);
+        break;
+
+      case 'max_depth': {
+        if (typeof c === 'object' && c.type === 'max_depth') {
+          result = validateMaxDepth(command, c.value);
+        } else {
+          result = { valid: false, violation: `max_depth constraint requires a 'value' parameter` };
+        }
+        break;
+      }
+
+      case 'require_flag': {
+        if (typeof c === 'object' && c.type === 'require_flag') {
+          result = validateRequireFlag(command, c.flag);
+        } else {
+          result = { valid: false, violation: `require_flag constraint requires a 'flag' parameter` };
+        }
+        break;
+      }
+
+      default:
+        result = { valid: false, violation: `Unknown constraint type: ${type}` };
+    }
+
+    if (!result.valid) {
+      return result;
+    }
+  }
+
+  return { valid: true };
 };
 
 // =============================================================================
@@ -209,7 +695,7 @@ interface LogEntry {
 const logCommand = (entry: LogEntry): number => {
   const db = getDb();
   const result = db.run(
-    `INSERT INTO command_log 
+    `INSERT INTO command_log
      (session_id, message_id, command, workdir, pattern_matched, decision, exit_code, duration_ms)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -250,10 +736,10 @@ Denied commands will return an error with the reason.`,
   async execute(args, context) {
     const { command, workdir, timeout = 120000 } = args;
     const { sessionID, messageID } = context;
-    
+
     // Check permissions
     const match = matchCommand(command);
-    
+
     if (match.decision === "deny") {
       // Log the denied attempt
       logCommand({
@@ -264,7 +750,7 @@ Denied commands will return an error with the reason.`,
         patternMatched: match.pattern,
         decision: "deny",
       });
-      
+
       // Format error message based on whether a pattern matched or it was the default deny
       let errorMessage: string;
       if (match.pattern) {
@@ -279,10 +765,34 @@ Reason: ${match.reason ?? "Command not in allowlist"}
 
 Command: ${command}`;
       }
-      
+
       return errorMessage;
     }
-    
+
+    // Check constraints for allowed commands
+    if (match.rule) {
+      const effectiveWorkdir = workdir ?? process.cwd();
+      const constraintResult = validateConstraints(command, effectiveWorkdir, match.rule);
+
+      if (!constraintResult.valid) {
+        // Log as denied due to constraint violation
+        logCommand({
+          sessionId: sessionID,
+          messageId: messageID,
+          command,
+          workdir,
+          patternMatched: match.pattern,
+          decision: "deny",
+        });
+
+        return `Error: Command denied by constraint
+Pattern: ${match.pattern}
+Constraint violation: ${constraintResult.violation}${match.reason ? `\nReason: ${match.reason}` : ""}
+
+Command: ${command}`;
+      }
+    }
+
     // Log the allowed attempt (will update with exit code after)
     const logId = logCommand({
       sessionId: sessionID,
@@ -292,9 +802,9 @@ Command: ${command}`;
       patternMatched: match.pattern,
       decision: "allow",
     });
-    
+
     const startTime = performance.now();
-    
+
     try {
       // Execute the command
       const proc = Bun.spawn(["sh", "-c", command], {
@@ -302,7 +812,7 @@ Command: ${command}`;
         stdout: "pipe",
         stderr: "pipe",
       });
-      
+
       // Handle timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
@@ -310,19 +820,19 @@ Command: ${command}`;
           reject(new Error(`Command timed out after ${timeout}ms`));
         }, timeout);
       });
-      
+
       // Wait for completion or timeout
       const exitCode = await Promise.race([proc.exited, timeoutPromise]);
-      
+
       const durationMs = Math.round(performance.now() - startTime);
-      
+
       // Read output
       const stdout = await new Response(proc.stdout).text();
       const stderr = await new Response(proc.stderr).text();
-      
+
       // Update log with results
       updateLogEntry(logId, exitCode, durationMs);
-      
+
       // Format output
       let output = "";
       if (stdout.trim()) {
@@ -332,22 +842,22 @@ Command: ${command}`;
         if (output) output += "\n";
         output += `[stderr]\n${stderr}`;
       }
-      
+
       // Truncate if too long
       const MAX_OUTPUT = 50 * 1024; // 50KB
       if (output.length > MAX_OUTPUT) {
         output = output.substring(0, MAX_OUTPUT) + `\n...[truncated, ${output.length} bytes total]`;
       }
-      
+
       if (exitCode !== 0) {
         output = `Command exited with code ${exitCode}\n${output}`;
       }
-      
+
       return output || "(no output)";
     } catch (error) {
       const durationMs = Math.round(performance.now() - startTime);
       updateLogEntry(logId, -1, durationMs);
-      
+
       return `Error executing command: ${error instanceof Error ? error.message : String(error)}`;
     }
   },
@@ -373,27 +883,27 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
   async execute(args) {
     const db = getDb();
     const { since, decision } = args;
-    
+
     // Build WHERE clause
     const conditions: string[] = [];
     const params: (string | null)[] = [];
-    
+
     if (since) {
       const sinceDate = parseSince(since);
       conditions.push("timestamp >= ?");
       params.push(sinceDate.toISOString());
     }
-    
+
     if (decision) {
       conditions.push("decision = ?");
       params.push(decision);
     }
-    
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    
+
     // Get overall stats
     const overallQuery = `
-      SELECT 
+      SELECT
         COUNT(*) as total,
         SUM(CASE WHEN decision = 'allow' THEN 1 ELSE 0 END) as allowed,
         SUM(CASE WHEN decision = 'deny' THEN 1 ELSE 0 END) as denied,
@@ -401,17 +911,17 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
       FROM command_log
       ${whereClause}
     `;
-    
+
     const overall = db.query(overallQuery).get(...params) as {
       total: number;
       allowed: number;
       denied: number;
       avg_duration_ms: number | null;
     };
-    
+
     // Get top patterns
     const patternsQuery = `
-      SELECT 
+      SELECT
         pattern_matched,
         decision,
         COUNT(*) as count
@@ -421,13 +931,13 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
       ORDER BY count DESC
       LIMIT 15
     `;
-    
+
     const patterns = db.query(patternsQuery).all(...params) as Array<{
       pattern_matched: string | null;
       decision: string;
       count: number;
     }>;
-    
+
     // Get top commands (denied)
     const deniedQuery = `
       SELECT command, COUNT(*) as count
@@ -438,17 +948,17 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
       ORDER BY count DESC
       LIMIT 10
     `;
-    
+
     const deniedCommands = since
       ? (db.query(deniedQuery).all(parseSince(since).toISOString()) as Array<{
           command: string;
           count: number;
         }>)
       : (db.query(deniedQuery).all() as Array<{ command: string; count: number }>);
-    
+
     // Format output
     let output = "# Shell Command Statistics\n\n";
-    
+
     output += `## Overview\n`;
     output += `- Total commands: ${overall.total}\n`;
     output += `- Allowed: ${overall.allowed} (${((overall.allowed / overall.total) * 100 || 0).toFixed(1)}%)\n`;
@@ -457,7 +967,7 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
       output += `- Avg execution time: ${overall.avg_duration_ms.toFixed(0)}ms\n`;
     }
     output += "\n";
-    
+
     if (patterns.length > 0) {
       output += `## Top Patterns\n`;
       output += "| Pattern | Decision | Count |\n";
@@ -467,7 +977,7 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
       }
       output += "\n";
     }
-    
+
     if (deniedCommands.length > 0) {
       output += `## Top Denied Commands\n`;
       output += "| Command | Count |\n";
@@ -477,7 +987,7 @@ Displays counts of allowed/denied commands, most common patterns, etc.`,
         output += `| \`${truncated}\` | ${c.count} |\n`;
       }
     }
-    
+
     return output;
   },
 });
@@ -513,23 +1023,23 @@ export const export_logs = tool({
   async execute(args) {
     const db = getDb();
     const { format = "csv", since, decision, limit = 1000 } = args;
-    
+
     // Build query
     const conditions: string[] = [];
     const params: (string | number)[] = [];
-    
+
     if (since) {
       conditions.push("timestamp >= ?");
       params.push(parseSince(since).toISOString());
     }
-    
+
     if (decision) {
       conditions.push("decision = ?");
       params.push(decision);
     }
-    
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    
+
     const query = `
       SELECT timestamp, session_id, command, workdir, pattern_matched, decision, exit_code, duration_ms
       FROM command_log
@@ -537,9 +1047,9 @@ export const export_logs = tool({
       ORDER BY timestamp DESC
       LIMIT ?
     `;
-    
+
     params.push(limit);
-    
+
     const rows = db.query(query).all(...params) as Array<{
       timestamp: string;
       session_id: string | null;
@@ -550,11 +1060,11 @@ export const export_logs = tool({
       exit_code: number | null;
       duration_ms: number | null;
     }>;
-    
+
     if (format === "json") {
       return JSON.stringify(rows, null, 2);
     }
-    
+
     // CSV format
     const headers = [
       "timestamp",
@@ -566,9 +1076,9 @@ export const export_logs = tool({
       "exit_code",
       "duration_ms",
     ];
-    
+
     let csv = headers.join(",") + "\n";
-    
+
     for (const row of rows) {
       const values = [
         row.timestamp,
@@ -582,7 +1092,7 @@ export const export_logs = tool({
       ];
       csv += values.join(",") + "\n";
     }
-    
+
     return csv;
   },
 });
@@ -608,29 +1118,29 @@ Groups commands by their first words to show patterns of usage.`,
   async execute(args) {
     const db = getDb();
     const { since, minCount = 1 } = args;
-    
+
     // Build query
     const conditions: string[] = [];
     const params: string[] = [];
-    
+
     if (since) {
       conditions.push("timestamp >= ?");
       params.push(parseSince(since).toISOString());
     }
-    
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    
+
     const query = `
       SELECT command, decision
       FROM command_log
       ${whereClause}
     `;
-    
+
     const rows = db.query(query).all(...params) as Array<{
       command: string;
       decision: string;
     }>;
-    
+
     // Build hierarchy tree
     interface TreeNode {
       name: string;
@@ -639,7 +1149,7 @@ Groups commands by their first words to show patterns of usage.`,
       denied: number;
       children: Map<string, TreeNode>;
     }
-    
+
     const root: TreeNode = {
       name: "root",
       total: 0,
@@ -647,15 +1157,15 @@ Groups commands by their first words to show patterns of usage.`,
       denied: 0,
       children: new Map(),
     };
-    
+
     for (const row of rows) {
       const parts = row.command.trim().split(/\s+/).slice(0, 3); // First 3 words
       let node = root;
-      
+
       root.total++;
       if (row.decision === "allow") root.allowed++;
       else root.denied++;
-      
+
       for (const part of parts) {
         if (!node.children.has(part)) {
           node.children.set(part, {
@@ -672,50 +1182,50 @@ Groups commands by their first words to show patterns of usage.`,
         else node.denied++;
       }
     }
-    
+
     // Render tree
     const renderNode = (node: TreeNode, prefix: string, isLast: boolean): string => {
       if (node.total < minCount) return "";
-      
+
       const denyRate =
         node.total > 0 ? ((node.denied / node.total) * 100).toFixed(1) : "0.0";
-      
+
       const connector = isLast ? "└── " : "├── ";
       const childPrefix = isLast ? "    " : "│   ";
-      
+
       let line = "";
       if (node.name !== "root") {
         line = `${prefix}${connector}${node.name} (${node.total} total, ${denyRate}% denied)\n`;
       }
-      
+
       const children = Array.from(node.children.values())
         .filter((c) => c.total >= minCount)
         .sort((a, b) => b.denied / b.total - a.denied / a.total || b.total - a.total);
-      
+
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
         const childIsLast = i === children.length - 1;
         line += renderNode(child, prefix + childPrefix, childIsLast);
       }
-      
+
       return line;
     };
-    
+
     let output = "# Command Hierarchy\n\n";
     output += `Total commands: ${root.total}\n`;
     output += `Allowed: ${root.allowed} | Denied: ${root.denied}\n\n`;
     output += "```\n";
-    
+
     const children = Array.from(root.children.values())
       .filter((c) => c.total >= minCount)
       .sort((a, b) => b.denied / b.total - a.denied / a.total || b.total - a.total);
-    
+
     for (let i = 0; i < children.length; i++) {
       output += renderNode(children[i], "", i === children.length - 1);
     }
-    
+
     output += "```\n";
-    
+
     return output;
   },
 });
@@ -726,7 +1236,7 @@ Groups commands by their first words to show patterns of usage.`,
 
 const parseSince = (since: string): Date => {
   const now = new Date();
-  
+
   const match = since.match(/^(\d+)(h|d|w|m)$/);
   if (match) {
     const [, num, unit] = match;
@@ -742,7 +1252,7 @@ const parseSince = (since: string): Date => {
         return new Date(now.getTime() - n * 30 * 24 * 60 * 60 * 1000);
     }
   }
-  
+
   // Named periods
   switch (since.toLowerCase()) {
     case "hour":
