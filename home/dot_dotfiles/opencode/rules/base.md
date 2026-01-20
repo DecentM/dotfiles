@@ -16,6 +16,7 @@
 | Task Type | MUST Delegate To | Root Agent Role |
 |-----------|------------------|-----------------|
 | Code execution, testing, debugging | **coder** | Provide requirements, review results |
+| Math calculations, numerical analysis | **math** | Describe problem, use results |
 | Code review, security audit | **reviewer** | Request review, synthesize findings |
 | System design, API patterns | **architect** | Frame problem, accept/refine design |
 | CI/CD, containers, infrastructure | **devops** | Specify needs, verify outcomes |
@@ -46,6 +47,7 @@
 
 ```
 Is this code execution/testing?     → coder
+Is this math/calculations?          → math
 Is this code/security review?       → reviewer  
 Is this system/API design?          → architect
 Is this infra/CI/CD/containers?     → devops
