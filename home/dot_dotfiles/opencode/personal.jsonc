@@ -115,5 +115,10 @@
       "url": "https://mcp-grafana.cluster.arpa/sse",
       "enabled": true,
     },
+
+    // Flaresolverr for Cloudflare-protected sites (bundled, self-contained)
+    "flaresolverr": {
+      "enabled": true,
+    },
   },
 }

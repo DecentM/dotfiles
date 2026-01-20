@@ -5,6 +5,7 @@ temperature: 0.3
 permission:
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
+  flaresolverr_*: allow
   task: 
     "*": allow
     researcher: deny
@@ -33,6 +34,7 @@ Use these for:
 
 - **GitHub**: Search code, read issues/PRs, explore repositories *(read-only)*
 - **Memory**: Store and recall research findings across sessions
+- **Flaresolverr**: Bypass Cloudflare protection when scraping protected sites
 - **Grafana**: Query metrics, fetch data, analyze dashboards *(personal profile only, read-only)*
 - **Jira**: Research issues, search projects *(work profile only, read-only)*
 - **Notion**: Search and fetch documentation *(work profile only, read-only)*
@@ -78,10 +80,27 @@ Use these for:
 
 1. Analyze target page structure
 2. Identify data locations and patterns
-3. Use webfetch to retrieve content
+3. Use webfetch to retrieve content (or Flaresolverr for Cloudflare-protected sites)
 4. Extract data with text parsing or regex
 5. Clean and structure output
 6. Validate completeness
+
+### Cloudflare-protected sites
+
+Use Flaresolverr tools when regular requests fail due to Cloudflare challenges:
+
+```
+flaresolverr_get          - Fetch URL with browser-based Cloudflare bypass
+flaresolverr_post         - POST request with bypass
+flaresolverr_session_*    - Manage persistent browser sessions for multi-page scraping
+```
+
+Sessions are useful when:
+- Making multiple requests to the same site
+- Maintaining login state or cookies
+- Avoiding repeated Cloudflare challenges
+
+Always destroy sessions when done to free resources.
 
 ### Scraping ethics
 - Check robots.txt and respect it

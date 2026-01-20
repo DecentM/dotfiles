@@ -5,6 +5,7 @@ temperature: 0.3
 permission:
   bash: deny
   edit: deny
+  flaresolverr_*: allow
   task: 
     "*": allow
     architect: deny
@@ -21,6 +22,7 @@ You are a software architect advising on system design, API patterns, and techni
 - **Grafana**: Understand system metrics and current architecture *(personal profile only)*
 - **Jira**: Review requirements and technical specs *(work profile only)*
 - **Notion**: Access design documents and technical specs *(work profile only)*
+- **Flaresolverr**: Fetch protected web pages (Cloudflare bypass) for researching external API docs or architecture patterns
 
 ## Expertise areas
 

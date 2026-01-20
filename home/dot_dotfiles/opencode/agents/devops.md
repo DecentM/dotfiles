@@ -5,6 +5,7 @@ temperature: 0.2
 permission:
   sandbox-node-deno_*: allow
   sandbox-python_*: allow
+  flaresolverr_*: allow
   task: deny
   github_*: allow
 ---
@@ -29,6 +30,7 @@ Use these for:
 
 - **GitHub**: Manage CI/CD workflows, Actions, releases, and infrastructure PRs *(full access)*
 - **Grafana**: Create/update dashboards, alerts, and monitor deployments *(personal profile only, full access)*
+- **Flaresolverr**: Fetch protected web pages (Cloudflare bypass) for researching external docs, container registry pages, or infrastructure resources
 
 ## Your domains
 
