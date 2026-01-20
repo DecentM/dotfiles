@@ -35,21 +35,26 @@ Returns stdout, stderr, and exit code.`,
       .number()
       .optional()
       .describe(`Timeout in milliseconds (default: ${DEFAULT_TIMEOUT_MS})`),
-    reset: tool.schema
-      .boolean()
-      .optional()
-      .describe("Ignored - kept for API compatibility. Each execution is already isolated."),
   },
   async execute(args) {
     const { code, timeout = DEFAULT_TIMEOUT_MS } = args;
 
     // Validate input
     if (!code.trim()) {
-      return {
-        stdout: "",
-        stderr: "Error: No code provided",
-        exitCode: 1,
-      };
+      return `## Execution Result
+
+**Exit Code:** 1
+
+### stdout
+\`\`\`
+(empty)
+\`\`\`
+
+### stderr
+\`\`\`
+Error: No code provided
+\`\`\`
+`;
     }
 
     const startTime = performance.now();
@@ -78,9 +83,8 @@ Returns stdout, stderr, and exit code.`,
       );
 
       // Write code to stdin and close
-      const writer = proc.stdin.getWriter();
-      await writer.write(new TextEncoder().encode(code));
-      await writer.close();
+      proc.stdin.write(code);
+      proc.stdin.end();
 
       // Handle timeout with process cleanup
       let timedOut = false;
@@ -127,13 +131,23 @@ Returns stdout, stderr, and exit code.`,
 
       // Handle timeout
       if (timedOut) {
-        return {
-          stdout: stdout.trim(),
-          stderr: `Execution timed out after ${timeout}ms and was terminated.\n${stderr}`.trim(),
-          exitCode: -2,
-          durationMs,
-          timedOut: true,
-        };
+        const timeoutStderr = `Execution timed out after ${timeout}ms and was terminated.\n${stderr}`.trim();
+        return `## Execution Result
+
+**Exit Code:** -2
+**Duration:** ${durationMs}ms
+**⚠️ TIMED OUT**
+
+### stdout
+\`\`\`
+${stdout.trim() || '(empty)'}
+\`\`\`
+
+### stderr
+\`\`\`
+${timeoutStderr || '(empty)'}
+\`\`\`
+`;
       }
 
       // Truncate very long output
@@ -145,41 +159,79 @@ Returns stdout, stderr, and exit code.`,
         return s;
       };
 
-      return {
-        stdout: truncate(stdout, "stdout"),
-        stderr: truncate(stderr, "stderr"),
-        exitCode,
-        durationMs,
-      };
+      return `## Execution Result
+
+**Exit Code:** ${exitCode}
+**Duration:** ${durationMs}ms
+
+### stdout
+\`\`\`
+${truncate(stdout, "stdout") || '(empty)'}
+\`\`\`
+
+### stderr
+\`\`\`
+${truncate(stderr, "stderr") || '(empty)'}
+\`\`\`
+`;
     } catch (error) {
       const durationMs = Math.round(performance.now() - startTime);
       const message = error instanceof Error ? error.message : String(error);
 
       // Check for common Docker errors
       if (message.includes("Cannot connect to the Docker daemon")) {
-        return {
-          stdout: "",
-          stderr: `Docker daemon not running. Start Docker and try again.\n\nOriginal error: ${message}`,
-          exitCode: -1,
-          durationMs,
-        };
+        return `## Execution Result
+
+**Exit Code:** -1
+**Duration:** ${durationMs}ms
+
+### stdout
+\`\`\`
+(empty)
+\`\`\`
+
+### stderr
+\`\`\`
+Docker daemon not running. Start Docker and try again.
+
+Original error: ${message}
+\`\`\`
+`;
       }
 
       if (message.includes("No such image") || message.includes("Unable to find image")) {
-        return {
-          stdout: "",
-          stderr: `Docker image "${DOCKER_IMAGE}" not found. Original error: ${message}`,
-          exitCode: -1,
-          durationMs,
-        };
+        return `## Execution Result
+
+**Exit Code:** -1
+**Duration:** ${durationMs}ms
+
+### stdout
+\`\`\`
+(empty)
+\`\`\`
+
+### stderr
+\`\`\`
+Docker image "${DOCKER_IMAGE}" not found. Original error: ${message}
+\`\`\`
+`;
       }
 
-      return {
-        stdout: "",
-        stderr: `Execution failed: ${message}`,
-        exitCode: -1,
-        durationMs,
-      };
+      return `## Execution Result
+
+**Exit Code:** -1
+**Duration:** ${durationMs}ms
+
+### stdout
+\`\`\`
+(empty)
+\`\`\`
+
+### stderr
+\`\`\`
+Execution failed: ${message}
+\`\`\`
+`;
     }
   },
 });
