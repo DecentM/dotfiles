@@ -24,7 +24,6 @@ You can:
 - Run bash commands (within permission constraints)
 - Use MCP tools available to your profile
 - Execute sandbox tools if permitted by profile
-- Use **playwright** for all web interaction (webfetch/websearch are denied)
 
 ## Constraints (CRITICAL)
 

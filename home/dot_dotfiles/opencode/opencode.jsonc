@@ -132,8 +132,8 @@
     "glob": {
       "*": "allow",
     },
-    "webfetch": "deny", // Use playwright for all web interaction
-    "websearch": "deny", // Use playwright for all web interaction
+    "webfetch": "allow",
+    "websearch": "allow",
     "grep": "allow",
     "list": "allow",
     "lsp": "allow",
