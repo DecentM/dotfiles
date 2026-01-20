@@ -467,10 +467,11 @@ export class AuditDatabase {
   }
 
   /**
-   * Get database path helper
+   * Get database path helper - always uses ~/.opencode/audit for consistent storage
    */
-  static getDefaultPath(directory: string): string {
-    return `${directory}/.opencode/audit/permissions.db`;
+  static getDefaultPath(_directory?: string): string {
+    const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
+    return `${home}/.opencode/audit/permissions.db`;
   }
 
   /**

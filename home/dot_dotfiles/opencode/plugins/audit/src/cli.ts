@@ -25,27 +25,14 @@ import {
 import type { ExportFilters } from "./types";
 
 /**
- * Find the audit database in common locations
+ * Find the audit database - always in ~/.opencode/audit
  */
 const findDatabase = (): string | null => {
-  const searchPaths = [
-    // Current directory
-    join(process.cwd(), ".opencode", "audit", "permissions.db"),
-    // Home directory
-    join(process.env.HOME ?? "", ".opencode", "audit", "permissions.db"),
-    // XDG data home
-    join(
-      process.env.XDG_DATA_HOME ?? join(process.env.HOME ?? "", ".local", "share"),
-      "opencode",
-      "audit",
-      "permissions.db"
-    ),
-  ];
-
-  for (const path of searchPaths) {
-    if (existsSync(path)) {
-      return path;
-    }
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
+  const dbPath = join(home, ".opencode", "audit", "permissions.db");
+  
+  if (existsSync(dbPath)) {
+    return dbPath;
   }
 
   return null;
