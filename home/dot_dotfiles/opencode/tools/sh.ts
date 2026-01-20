@@ -93,12 +93,12 @@ type ConstraintConfig =
   | NoRecursiveConstraint
   | NoForceConstraint;
 
-interface ConstraintResult {
+export interface ConstraintResult {
   valid: boolean;
   violation?: string;  // Human-readable reason for denial
 }
 
-interface PermissionPattern {
+export interface PermissionPattern {
   pattern: string;
   decision: Decision;
   reason?: string;
@@ -199,14 +199,14 @@ const getPermissions = (() => {
  * Convert a glob pattern to a regex.
  * Supports * as wildcard (matches any characters).
  */
-const patternToRegex = (pattern: string): RegExp => {
+export const patternToRegex = (pattern: string): RegExp => {
   const escaped = pattern
     .replace(/[.+^${}()|[\]\\]/g, "\\$&")
     .replace(/\*/g, ".*");
   return new RegExp(`^${escaped}$`, "i");
 };
 
-interface MatchResult {
+export interface MatchResult {
   decision: Decision;
   pattern: string | null;
   reason?: string;
@@ -217,7 +217,7 @@ interface MatchResult {
 /**
  * Find the first matching permission pattern for a command.
  */
-const matchCommand = (command: string): MatchResult => {
+export const matchCommand = (command: string): MatchResult => {
   const trimmed = command.trim();
   const config = getPermissions();
 
@@ -250,7 +250,7 @@ const matchCommand = (command: string): MatchResult => {
  * Parse a command into tokens, respecting quoted strings.
  * Handles both single and double quotes.
  */
-const parseCommandTokens = (command: string): string[] => {
+export const parseCommandTokens = (command: string): string[] => {
   const tokens: string[] = [];
   let current = '';
   let inQuote: string | null = null;
@@ -295,14 +295,14 @@ const parseCommandTokens = (command: string): string[] => {
 /**
  * Extract arguments that don't start with '-' (non-flag args).
  */
-const extractNonFlagArgs = (args: string[]): string[] => {
+export const extractNonFlagArgs = (args: string[]): string[] => {
   return args.filter(arg => !arg.startsWith('-'));
 };
 
 /**
  * Skip the first non-flag arg (e.g., pattern for grep), return rest.
  */
-const extractNonFlagArgsAfterFirst = (args: string[]): string[] => {
+export const extractNonFlagArgsAfterFirst = (args: string[]): string[] => {
   const nonFlags = extractNonFlagArgs(args);
   return nonFlags.slice(1);
 };
@@ -370,7 +370,7 @@ const PATH_EXTRACTORS: Record<string, (args: string[]) => string[]> = {
 /**
  * Extract path arguments from a command using command-specific logic.
  */
-const extractPaths = (command: string): string[] => {
+export const extractPaths = (command: string): string[] => {
   const tokens = parseCommandTokens(command);
   if (tokens.length === 0) return [];
 
@@ -400,7 +400,7 @@ const matchPattern = (value: string, pattern: string): boolean => {
 /**
  * Validate that all path arguments are within the working directory.
  */
-const validateCwdOnly = (
+export const validateCwdOnly = (
   command: string,
   workdir: string,
   options?: { also_allow?: string[]; exclude?: string[] }
@@ -484,7 +484,7 @@ const validateCwdOnly = (
  * Check if a token contains a specific short flag.
  * Handles combined flags like -rf, -Rf, etc.
  */
-const hasShortFlag = (token: string, flag: string): boolean => {
+export const hasShortFlag = (token: string, flag: string): boolean => {
   // Single character flag without the dash
   const flagChar = flag.replace(/^-/, '');
   if (flagChar.length !== 1) return false;
@@ -504,7 +504,7 @@ const hasShortFlag = (token: string, flag: string): boolean => {
 /**
  * Validate that the command doesn't contain recursive flags.
  */
-const validateNoRecursive = (command: string): ConstraintResult => {
+export const validateNoRecursive = (command: string): ConstraintResult => {
   const tokens = parseCommandTokens(command);
 
   for (const token of tokens) {
@@ -525,7 +525,7 @@ const validateNoRecursive = (command: string): ConstraintResult => {
 /**
  * Validate that the command doesn't contain force flags.
  */
-const validateNoForce = (command: string): ConstraintResult => {
+export const validateNoForce = (command: string): ConstraintResult => {
   const tokens = parseCommandTokens(command);
 
   for (const token of tokens) {
@@ -546,7 +546,7 @@ const validateNoForce = (command: string): ConstraintResult => {
 /**
  * Validate that the command specifies a maxdepth within allowed limits.
  */
-const validateMaxDepth = (command: string, maxAllowed: number): ConstraintResult => {
+export const validateMaxDepth = (command: string, maxAllowed: number): ConstraintResult => {
   const tokens = parseCommandTokens(command);
   let foundMaxdepth = false;
 
@@ -582,7 +582,7 @@ const validateMaxDepth = (command: string, maxAllowed: number): ConstraintResult
 /**
  * Validate that a required flag is present in the command.
  */
-const validateRequireFlag = (command: string, requiredFlag: string): ConstraintResult => {
+export const validateRequireFlag = (command: string, requiredFlag: string): ConstraintResult => {
   const tokens = parseCommandTokens(command);
 
   // Direct match
@@ -605,7 +605,7 @@ const validateRequireFlag = (command: string, requiredFlag: string): ConstraintR
 /**
  * Validate all constraints for a matched rule.
  */
-const validateConstraints = (
+export const validateConstraints = (
   command: string,
   workdir: string,
   rule: PermissionPattern
@@ -1234,7 +1234,7 @@ Groups commands by their first words to show patterns of usage.`,
 // Helpers
 // =============================================================================
 
-const parseSince = (since: string): Date => {
+export const parseSince = (since: string): Date => {
   const now = new Date();
 
   const match = since.match(/^(\d+)(h|d|w|m)$/);
