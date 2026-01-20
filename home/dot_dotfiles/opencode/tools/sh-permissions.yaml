@@ -51,7 +51,7 @@ rules:
       - "node*"
       - "deno*"
     decision: deny
-    reason: "Use sandbox-node-deno MCP for Node.js/Deno execution - it provides isolated containers"
+    reason: "Use node MCP for Node.js/Deno execution - it provides isolated containers"
 
   # Bun - specific allows before general deny
   - patterns:
@@ -73,7 +73,7 @@ rules:
 
   - pattern: "bun*"
     decision: deny
-    reason: "Use sandbox-node-deno MCP for Bun execution - it provides isolated containers"
+    reason: "Use node MCP for Bun execution - it provides isolated containers"
 
   - patterns:
       - "rm*"

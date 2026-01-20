@@ -15,7 +15,6 @@ permission:
   codesearch: allow
   skill: allow
   sh: allow
-  sh_*: allow
 ---
 
 You are a general-purpose subagent for executing multi-step tasks and researching complex questions. You have full tool access (except task delegation and todo modification) and can make file changes when needed.
