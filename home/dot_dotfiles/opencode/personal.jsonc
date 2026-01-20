@@ -1,12 +1,16 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "instructions": ["~/.dotfiles/opencode/rules/personal.md"],
+
+  // Personal-specific MCP permissions - denied at profile level
   "permission": {
-    // MCPs denied at global level - specialized agents get access
     "grafana_*": "deny",
   },
-  "instructions": ["~/.dotfiles/opencode/rules/personal.md"],
+
+  // Model selection and profile-specific permission overrides
+  // Agent behavior is defined in agents/*.md files
   "agent": {
-    // Global agents: only homeassistant (home automation isn't code-specific)
+    // Primary agents - homeassistant access for home automation
     "build": {
       "model": "openrouter/minimax/minimax-m2.1",
       "permission": {
@@ -21,6 +25,18 @@
       },
     },
 
+    // Built-in subagents
+    "general": {
+      "model": "openrouter/minimax/minimax-m2.1",
+    },
+    "explore": {
+      "model": "openrouter/deepseek/deepseek-v3.2",
+    },
+    "compact": {
+      "model": "openrouter/deepseek/deepseek-v3.2",
+    },
+
+    // Custom subagents - model and personal-specific permissions
     "coder": {
       "model": "openrouter/minimax/minimax-m2.1",
     },
@@ -68,6 +84,7 @@
       "model": "openrouter/deepseek/deepseek-v3.2",
     },
   },
+
   "mcp": {
     "memory": {
       "type": "local",

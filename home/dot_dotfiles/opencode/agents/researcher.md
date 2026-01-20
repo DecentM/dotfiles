@@ -78,7 +78,7 @@ Use these for:
 
 1. Analyze target page structure
 2. Identify data locations and patterns
-3. Choose tool (playwright for JS-heavy, webfetch for static)
+3. Use **playwright** for all web interaction (webfetch/websearch are denied)
 4. Extract data with robust selectors
 5. Clean and structure output
 6. Validate completeness

@@ -1,31 +1,52 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "share": "disabled",
+  "instructions": ["~/.dotfiles/opencode/rules/work.md"],
+
+  // Work-specific MCP permissions - denied at profile level, agents get selective access
   "permission": {
-    // MCPs denied at global level - specialized agents get access
+    "github_*": "deny",
     "jira_*": "deny",
     "notion_*": "deny",
     "slack_*": "deny",
     "{env:WORK_MCP_NAME}_*": "deny",
   },
-  "instructions": ["~/.dotfiles/opencode/rules/work.md"],
+
+  // Model selection and profile-specific permission overrides
+  // Agent behavior is defined in agents/*.md files
   "agent": {
-    // Global agents: reasoning models for orchestration
+    // Primary agents
     "build": {
       "model": "github-copilot/claude-opus-4.5",
-      "permission": {},
     },
     "plan": {
       "model": "github-copilot/claude-sonnet-4.5",
-      "permission": {},
     },
 
+    // Built-in subagents
+    "general": {
+      "model": "github-copilot/claude-sonnet-4.5",
+    },
+    "explore": {
+      "model": "github-copilot/claude-haiku-4.5",
+    },
+    "compact": {
+      "model": "github-copilot/claude-haiku-4.5",
+    },
+
+    // Custom subagents - model and work-specific permissions
     "coder": {
       "model": "github-copilot/claude-opus-4.5",
     },
     "reviewer": {
       "model": "github-copilot/claude-sonnet-4",
       "permission": {
+        "github_get_*": "allow",
+        "github_list_*": "allow",
+        "github_pull_request_read": "allow",
+        "github_issue_read": "allow",
+        "github_search_*": "allow",
+
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
@@ -39,6 +60,10 @@
     "architect": {
       "model": "github-copilot/claude-sonnet-4.5",
       "permission": {
+        "github_get_*": "allow",
+        "github_list_*": "allow",
+        "github_search_*": "allow",
+
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
@@ -60,10 +85,14 @@
     },
     "devops": {
       "model": "github-copilot/claude-opus-4.5",
+      "permission": {
+        "github_*": "allow",
+      },
     },
     "writer": {
       "model": "github-copilot/claude-sonnet-4",
       "permission": {
+        "github_*": "allow",
         "jira_*": "allow",
         "notion_*": "allow",
 
@@ -91,6 +120,10 @@
         "{env:WORK_MCP_NAME}_analyze_image": "allow",
         "{env:WORK_MCP_NAME}_export": "allow",
 
+        "github_get_*": "allow",
+        "github_list_*": "allow",
+        "github_search_*": "allow",
+
         "jira_atlassianUserInfo": "allow",
         "jira_fetch": "allow",
         "jira_get*": "allow",
@@ -113,11 +146,15 @@
     },
     "git": {
       "model": "github-copilot/claude-sonnet-4.5",
+      "permission": {
+        "github_*": "allow",
+      },
     },
     "creative": {
       "model": "github-copilot/claude-sonnet-4.5",
     },
   },
+
   "mcp": {
     "{env:WORK_MCP_NAME}": {
       "type": "local",
@@ -143,6 +180,14 @@
         "mcp/memory",
       ],
       "enabled": true,
+    },
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_TOKEN}",
+      },
     },
     "jira": {
       "type": "remote",
