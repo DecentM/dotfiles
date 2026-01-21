@@ -3,20 +3,20 @@
   "plugin": [
     "./plugins/audit-trail"
   ],
-  "autoupdate": true,
+  "autoupdate": false,
   "snapshot": true,
   "logLevel": "WARN",
   "default_agent": "build",
-  "theme": "catppuccin",
+  // "theme": "catppuccin",
   "keybinds": {},
   "tui": {
-    "scroll_speed": 1,
+    "scroll_speed": 3,
     "scroll_acceleration": {
       "enabled": true
     },
     "diff_style": "auto"
   },
-  "agent": {},
+  // "agent": {},
 
   // "username": "your-name",
   // "model": "anthropic/claude-sonnet-4-20250514",
@@ -30,11 +30,11 @@
   //   "cors": []
   // },
   // "command": {},
-  // "watcher": {
-  //   "ignore": []
-  // },
+  "watcher": {
+    "ignore": ["node_modules/**", "dist/**", ".git/**"]
+  },
 
-  "share": "manual",
+  "share": "disabled",
   "permission": {
     "*": "deny",
     "edit": {
@@ -61,7 +61,6 @@
   "instructions": [
     "~/.dotfiles/opencode/rules/base.md",
     "AGENTS.md",
-    ".cursorrules",
     ".cursor/rules/*.{md,mdx}",
   ],
   "mcp": {
@@ -79,6 +78,7 @@
       ],
       "enabled": true,
     },
+
     "time": {
       "type": "local",
       "command": [
@@ -93,6 +93,7 @@
       ],
       "enabled": true,
     },
+
     "github": {
       "type": "remote",
       "url": "https://api.githubcopilot.com/mcp",
