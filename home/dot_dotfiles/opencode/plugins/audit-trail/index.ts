@@ -16,7 +16,32 @@ import {
 	logToolExecution,
 	updateToolExecution,
 } from "./db";
+import { startMetricsServer, stopMetricsServer } from "./prometheus";
 import type { SessionEventType } from "./types";
+
+// =============================================================================
+// Prometheus Server Lifecycle
+// =============================================================================
+
+const METRICS_PORT = Number(process.env.OPENCODE_METRICS_PORT) || 9090;
+
+// Start the Prometheus metrics server when the plugin loads
+startMetricsServer(METRICS_PORT);
+
+// Register cleanup handlers to stop the server on process exit
+const cleanup = (): void => {
+	stopMetricsServer();
+};
+
+process.on("exit", cleanup);
+process.on("SIGINT", () => {
+	cleanup();
+	process.exit(0);
+});
+process.on("SIGTERM", () => {
+	cleanup();
+	process.exit(0);
+});
 
 // =============================================================================
 // In-Memory Tracking
