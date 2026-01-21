@@ -4,7 +4,6 @@ mode: subagent
 temperature: 0.2
 permission:
   task: deny
-  # Base tools
   read:
     "*": allow
     ".env": deny
@@ -12,10 +11,7 @@ permission:
     ".env.example": allow
   lsp: allow
   codesearch: allow
-  skill: allow
-  # Web scraping for external docs
   flaresolverr: allow
-  # Container inspection
   docker: allow
 ---
 

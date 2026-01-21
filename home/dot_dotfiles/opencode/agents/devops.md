@@ -11,7 +11,6 @@ permission:
     ".env.example": allow
   lsp: allow
   codesearch: allow
-  skill: allow
   sh: allow
   # Sandbox access
   node: allow

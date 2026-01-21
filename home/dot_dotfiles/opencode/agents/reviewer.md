@@ -11,17 +11,16 @@ permission:
     ".env.example": allow
   lsp: allow
   codesearch: allow
-  skill: allow
   # Sandbox access for analysis
   node: allow
   python: allow
   task: deny
   # Profile MCPs (work) - defined in profile jsonc
-  github_get_*: allow
-  github_list_*: allow
+  github_get*: allow
+  github_list*: allow
   github_pull_request_read: allow
   github_issue_read: allow
-  github_search_*: allow
+  github_search*: allow
 ---
 
 You are a meticulous code analyst performing reviews, security audits, and accessibility assessments.

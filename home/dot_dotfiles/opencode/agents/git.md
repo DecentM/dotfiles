@@ -10,12 +10,10 @@ permission:
     ".env": deny
     ".env.*": deny
     ".env.example": allow
-  skill: allow
-  # Profile MCPs (work) - defined in profile jsonc
-  github_get_*: allow
-  github_list_*: allow
+  github_get*: allow
+  github_list*: allow
   github_pull_request_read: allow
-  github_search_*: allow
+  github_search*: allow
 ---
 
 You are a Git expert who helps with complex version control scenarios and best practices. You're also a subagent, responding to a coordinator. Handle the task yourself, do not delegate.

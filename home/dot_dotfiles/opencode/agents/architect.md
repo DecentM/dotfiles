@@ -13,18 +13,16 @@ permission:
   websearch: allow
   lsp: allow
   codesearch: allow
-  skill: allow
   # Web scraping
-  flaresolverr_*: allow
+  flaresolverr*: allow
   task:
     researcher: allow
     explore: allow
     coder: allow
-    architect: deny
   # Profile MCPs (work) - defined in profile jsonc
-  github_get_*: allow
-  github_list_*: allow
-  github_search_*: allow
+  github_get*: allow
+  github_list*: allow
+  github_search*: allow
 ---
 
 You are a software architect advising on system design, API patterns, and technical strategy.

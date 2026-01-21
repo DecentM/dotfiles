@@ -3,6 +3,37 @@
   "plugin": [
     "./plugins/audit-trail"
   ],
+  "autoupdate": true,
+  "snapshot": true,
+  "logLevel": "WARN",
+  "default_agent": "build",
+  "theme": "catppuccin",
+  "keybinds": {},
+  "tui": {
+    "scroll_speed": 1,
+    "scroll_acceleration": {
+      "enabled": true
+    },
+    "diff_style": "auto"
+  },
+  "agent": {},
+
+  // "username": "your-name",
+  // "model": "anthropic/claude-sonnet-4-20250514",
+  // "small_model": "anthropic/claude-haiku",
+  // "disabled_providers": [],
+  // "enabled_providers": [],
+  // "server": {
+  //   "port": 8080,
+  //   "hostname": "localhost",
+  //   "mdns": false,
+  //   "cors": []
+  // },
+  // "command": {},
+  // "watcher": {
+  //   "ignore": []
+  // },
+
   "share": "manual",
   "permission": {
     "*": "deny",
@@ -20,13 +51,11 @@
     "todowrite": "allow",
 
     // MCPs
-    "sequentialthinking_*": "allow",
-    "memory_*": "allow",
-    "time_*": "allow",
+    "sequentialthinking*": "allow",
+    "memory*": "allow",
+    "time*": "allow",
 
     // Custom tools
-    "python": "allow",
-    "audit": "allow",
     "audit*": "allow"
   },
   "instructions": [

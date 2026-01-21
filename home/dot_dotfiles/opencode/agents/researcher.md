@@ -20,9 +20,9 @@ permission:
   docker: allow
   # Web scraping
   flaresolverr: allow
-  github_get_*: allow
-  github_list_*: allow
-  github_search_*: allow
+  github_get*: allow
+  github_list*: allow
+  github_search*: allow
 ---
 
 You are a research and data specialist who gathers, analyzes, and transforms information.
