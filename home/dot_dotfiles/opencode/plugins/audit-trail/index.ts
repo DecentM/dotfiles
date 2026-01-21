@@ -237,81 +237,67 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 			},
 		}),
 
-			audit_tool_usage: tool({
-				description: "Get tool usage breakdown from the audit trail",
-				args: {
-					since: tool.schema
-						.string()
-						.optional()
-						.describe("ISO timestamp to filter from"),
-					limit: tool.schema
-						.number()
-						.optional()
-						.describe("Max results, default 15"),
-				},
-				async execute(args) {
-					try {
-						const filter = {
-							since: parseOptionalDate(args.since),
-						};
-						const usage = getToolUsage(filter, args.limit ?? 15);
-						return JSON.stringify(usage, null, 2);
-					} catch (error) {
-						return `Error: Failed to get tool usage: ${error instanceof Error ? error.message : String(error)}`;
-					}
-				},
-			}),
+		audit_tool_usage: tool({
+			description:
+				"Get tool usage breakdown from the audit trail. Optional params: since (ISO timestamp), limit (max results, default 15)",
+			args: {},
+			async execute(args) {
+				const typedArgs = args as { since?: string; limit?: number };
+				try {
+					const filter = {
+						since: parseOptionalDate(typedArgs.since),
+					};
+					const usage = getToolUsage(filter, typedArgs.limit ?? 15);
+					return JSON.stringify(usage, null, 2);
+				} catch (error) {
+					return `Error: Failed to get tool usage: ${error instanceof Error ? error.message : String(error)}`;
+				}
+			},
+		}),
 
-			audit_session_timeline: tool({
-				description: "Get timeline of all events for a specific session",
-				args: {
-					session_id: tool.schema.string().describe("The session ID to query"),
-				},
-				async execute(args) {
-					try {
-						const timeline = getSessionTimeline(args.session_id);
-						return JSON.stringify(timeline, null, 2);
-					} catch (error) {
-						return `Error: Failed to get session timeline: ${error instanceof Error ? error.message : String(error)}`;
+		audit_session_timeline: tool({
+			description:
+				"Get timeline of all events for a specific session. Required param: session_id",
+			args: {},
+			async execute(args) {
+				const typedArgs = args as { session_id?: string };
+				try {
+					if (!typedArgs.session_id) {
+						return "Error: session_id is required";
 					}
-				},
-			}),
+					const timeline = getSessionTimeline(typedArgs.session_id);
+					return JSON.stringify(timeline, null, 2);
+				} catch (error) {
+					return `Error: Failed to get session timeline: ${error instanceof Error ? error.message : String(error)}`;
+				}
+			},
+		}),
 
-			audit_export_logs: tool({
-				description: "Export audit logs with optional filters",
-				args: {
-					since: tool.schema
-						.string()
-						.optional()
-						.describe("ISO timestamp to filter from"),
-					session_id: tool.schema
-						.string()
-						.optional()
-						.describe("Filter by session ID"),
-					tool_name: tool.schema
-						.string()
-						.optional()
-						.describe("Filter by tool name"),
-					limit: tool.schema
-						.number()
-						.optional()
-						.describe("Max results, default 1000"),
-				},
-				async execute(args) {
-					try {
-						const filter = {
-							since: parseOptionalDate(args.since),
-							sessionId: args.session_id,
-							toolName: args.tool_name,
-							limit: args.limit ?? 1000,
-						};
-						const logs = getLogs(filter);
-						return JSON.stringify(logs, null, 2);
-					} catch (error) {
-						return `Error: Failed to export logs: ${error instanceof Error ? error.message : String(error)}`;
-					}
-				},
-			}),
+		audit_export_logs: tool({
+			description:
+				"Export audit logs with optional filters. Optional params: since (ISO timestamp), session_id, tool_name, limit (max results, default 1000)",
+			args: {},
+			async execute(args) {
+				const typedArgs = args as {
+					since?: string;
+					session_id?: string;
+					tool_name?: string;
+					limit?: number;
+				};
+				try {
+					const filter = {
+						since: parseOptionalDate(typedArgs.since),
+						sessionId: typedArgs.session_id,
+						toolName: typedArgs.tool_name,
+						limit: typedArgs.limit ?? 1000,
+					};
+					const logs = getLogs(filter);
+					return JSON.stringify(logs, null, 2);
+				} catch (error) {
+					return `Error: Failed to export logs: ${error instanceof Error ? error.message : String(error)}`;
+				}
+			},
+		}),
 		},
 	};
 };
