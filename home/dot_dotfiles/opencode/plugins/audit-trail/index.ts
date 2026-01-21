@@ -187,7 +187,7 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 					callId: input.callID,
 					toolName: input.tool,
 					decision: "completed",
-					resultSummary: createResultSummary(output.output),
+					resultSummary: createResultSummary(output.output ?? ""),
 				});
 				return;
 			}
@@ -197,7 +197,7 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 
 			// Determine if this was a failure based on output content
 			// (heuristic: look for error indicators in the output)
-			const lowerOutput = output.output.toLowerCase();
+			const lowerOutput = (output.output ?? "").toLowerCase();
 			const isFailure =
 				(output.metadata as Record<string, unknown>)?.error === true ||
 				lowerOutput.match(/\b(error|failed):\s/i) !== null;
@@ -205,7 +205,7 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 			updateToolExecution(
 				pending.rowId,
 				isFailure ? "failed" : "completed",
-				createResultSummary(output.output),
+				createResultSummary(output.output ?? ""),
 				durationMs,
 			);
 
