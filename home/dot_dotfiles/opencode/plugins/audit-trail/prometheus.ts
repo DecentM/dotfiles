@@ -13,6 +13,30 @@ import { dbManager } from "./db";
 import type { SessionEventType, ToolDecision } from "./types";
 
 // =============================================================================
+// Sh Tool Imports (optional - gracefully handles missing)
+// =============================================================================
+
+import type {
+	ShCommandCount,
+	ShDeniedByPattern,
+	ShDurationEntry,
+} from "../../tools/sh";
+
+let getCommandCountsByBaseCommand: (() => ShCommandCount[]) | null = null;
+let getCommandDurationsForHistogram: (() => ShDurationEntry[]) | null = null;
+let getDeniedCommandsByPattern: (() => ShDeniedByPattern[]) | null = null;
+
+try {
+	const shModule = require("../../tools/sh") as typeof import("../../tools/sh");
+	getCommandCountsByBaseCommand = shModule.getCommandCountsByBaseCommand;
+	getCommandDurationsForHistogram = shModule.getCommandDurationsForHistogram;
+	getDeniedCommandsByPattern = shModule.getDeniedCommandsByPattern;
+} catch {
+	// Sh tool not available - metrics will be empty
+	console.warn("[audit-trail] Sh tool not available for metrics collection");
+}
+
+// =============================================================================
 // Types
 // =============================================================================
 
@@ -23,6 +47,10 @@ export interface MetricsData {
 	sessionEvents: SessionEventMetric[];
 	activeSessionCount: number;
 	dbSizeBytes: number;
+	// Sh tool metrics (optional - may be empty if sh tool unavailable)
+	shCommandCounts: ShCommandMetric[];
+	shCommandDurations: ShDurationMetric[];
+	shDeniedCommands: ShDeniedMetric[];
 }
 
 export interface ToolExecutionMetric {
@@ -40,6 +68,26 @@ export interface ToolDurationMetric {
 
 export interface SessionEventMetric {
 	eventType: SessionEventType;
+	count: number;
+}
+
+// Sh tool specific metrics
+export interface ShCommandMetric {
+	command: string;
+	decision: "allow" | "deny";
+	count: number;
+}
+
+export interface ShDurationMetric {
+	command: string;
+	count: number;
+	sum: number;
+	buckets: Record<string, number>;
+}
+
+export interface ShDeniedMetric {
+	command: string;
+	pattern: string;
 	count: number;
 }
 
@@ -221,6 +269,101 @@ export const getDatabaseSize = (): number => {
 	}
 };
 
+// =============================================================================
+// Sh Tool Metrics Query Functions
+// =============================================================================
+
+/**
+ * Get sh command counts grouped by base command and decision.
+ */
+export const getShCommandCounts = (): ShCommandMetric[] => {
+	if (!getCommandCountsByBaseCommand) {
+		return [];
+	}
+
+	try {
+		const counts = getCommandCountsByBaseCommand();
+		return counts.map((c) => ({
+			command: c.command,
+			decision: c.decision,
+			count: c.count,
+		}));
+	} catch {
+		return [];
+	}
+};
+
+/**
+ * Get sh command duration metrics for histogram.
+ */
+export const getShDurationMetrics = (): ShDurationMetric[] => {
+	if (!getCommandDurationsForHistogram) {
+		return [];
+	}
+
+	try {
+		const entries = getCommandDurationsForHistogram();
+
+		// Group by command and calculate histogram buckets
+		const metrics = new Map<string, ShDurationMetric>();
+
+		for (const entry of entries) {
+			const durationSec = entry.durationMs / 1000;
+
+			let metric = metrics.get(entry.command);
+			if (!metric) {
+				metric = {
+					command: entry.command,
+					count: 0,
+					sum: 0,
+					buckets: {},
+				};
+				// Initialize buckets
+				for (const bucket of DURATION_BUCKETS) {
+					metric.buckets[bucket.toString()] = 0;
+				}
+				metric.buckets["+Inf"] = 0;
+				metrics.set(entry.command, metric);
+			}
+
+			metric.count++;
+			metric.sum += durationSec;
+
+			// Update bucket counts (cumulative)
+			for (const bucket of DURATION_BUCKETS) {
+				if (durationSec <= bucket) {
+					metric.buckets[bucket.toString()]++;
+				}
+			}
+			metric.buckets["+Inf"]++;
+		}
+
+		return Array.from(metrics.values());
+	} catch {
+		return [];
+	}
+};
+
+/**
+ * Get sh denied commands grouped by command and pattern.
+ */
+export const getShDeniedCommands = (): ShDeniedMetric[] => {
+	if (!getDeniedCommandsByPattern) {
+		return [];
+	}
+
+	try {
+		const denied = getDeniedCommandsByPattern();
+		return denied.map((d) => ({
+			command: d.command,
+			pattern: d.pattern,
+			count: d.count,
+		}));
+	} catch {
+		return [];
+	}
+};
+
 /**
  * Default empty metrics for when collection fails.
  */
@@ -231,6 +374,9 @@ const EMPTY_METRICS: MetricsData = {
 	sessionEvents: [],
 	activeSessionCount: 0,
 	dbSizeBytes: 0,
+	shCommandCounts: [],
+	shCommandDurations: [],
+	shDeniedCommands: [],
 };
 
 /**
@@ -246,6 +392,9 @@ export const collectMetrics = (): MetricsData => {
 			sessionEvents: getSessionEventCounts(),
 			activeSessionCount: getActiveSessionCount(),
 			dbSizeBytes: getDatabaseSize(),
+			shCommandCounts: getShCommandCounts(),
+			shCommandDurations: getShDurationMetrics(),
+			shDeniedCommands: getShDeniedCommands(),
 		};
 	} catch (error) {
 		console.error("[audit-trail] Error collecting metrics:", error);
@@ -306,6 +455,9 @@ export const formatMetrics = (data?: MetricsData): string => {
 		sessionEvents: rawMetrics?.sessionEvents ?? [],
 		activeSessionCount: rawMetrics?.activeSessionCount ?? 0,
 		dbSizeBytes: rawMetrics?.dbSizeBytes ?? 0,
+		shCommandCounts: rawMetrics?.shCommandCounts ?? [],
+		shCommandDurations: rawMetrics?.shCommandDurations ?? [],
+		shDeniedCommands: rawMetrics?.shDeniedCommands ?? [],
 	};
 
 	const lines: string[] = [];
@@ -432,6 +584,101 @@ export const formatMetrics = (data?: MetricsData): string => {
 	lines.push(
 		formatSimpleMetricLine("opencode_audit_db_size_bytes", metrics.dbSizeBytes),
 	);
+
+	// =========================================================================
+	// Sh Tool Metrics
+	// =========================================================================
+
+	// Sh commands total (counter)
+	lines.push("");
+	lines.push(
+		"# HELP opencode_sh_commands_total Total number of shell commands by base command and decision",
+	);
+	lines.push("# TYPE opencode_sh_commands_total counter");
+	for (const metric of metrics.shCommandCounts) {
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_commands_total",
+				{
+					command: metric.command,
+					decision: metric.decision,
+				},
+				metric.count,
+			),
+		);
+	}
+
+	// Sh command duration histogram
+	lines.push("");
+	lines.push(
+		"# HELP opencode_sh_command_duration_seconds Duration of shell command executions in seconds",
+	);
+	lines.push("# TYPE opencode_sh_command_duration_seconds histogram");
+	for (const metric of metrics.shCommandDurations) {
+		// Bucket lines
+		for (const bucket of DURATION_BUCKETS) {
+			const bucketKey = bucket.toString();
+			lines.push(
+				formatMetricLine(
+					"opencode_sh_command_duration_seconds_bucket",
+					{
+						command: metric.command,
+						le: bucketKey,
+					},
+					metric.buckets[bucketKey] ?? 0,
+				),
+			);
+		}
+		// +Inf bucket
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_command_duration_seconds_bucket",
+				{
+					command: metric.command,
+					le: "+Inf",
+				},
+				metric.buckets["+Inf"] ?? 0,
+			),
+		);
+		// Sum and count
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_command_duration_seconds_sum",
+				{
+					command: metric.command,
+				},
+				metric.sum,
+			),
+		);
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_command_duration_seconds_count",
+				{
+					command: metric.command,
+				},
+				metric.count,
+			),
+		);
+	}
+
+	// Sh denied commands total (counter)
+	lines.push("");
+	lines.push(
+		"# HELP opencode_sh_denied_commands_total Total number of denied shell commands by command and pattern",
+	);
+	lines.push("# TYPE opencode_sh_denied_commands_total counter");
+	for (const metric of metrics.shDeniedCommands) {
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_denied_commands_total",
+				{
+					command: metric.command,
+					pattern: metric.pattern,
+				},
+				metric.count,
+			),
+		);
+	}
 
 	return lines.join("\n") + "\n";
 };

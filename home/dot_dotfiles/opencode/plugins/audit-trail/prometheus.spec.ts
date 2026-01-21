@@ -9,6 +9,9 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type {
 	MetricsData,
 	SessionEventMetric,
+	ShCommandMetric,
+	ShDeniedMetric,
+	ShDurationMetric,
 	ToolDurationMetric,
 	ToolExecutionMetric,
 } from "./prometheus";
@@ -163,6 +166,94 @@ const formatMetrics = (data: MetricsData): string => {
 	lines.push(
 		formatSimpleMetricLine("opencode_audit_db_size_bytes", data.dbSizeBytes),
 	);
+
+	// Sh commands total (counter)
+	lines.push("");
+	lines.push(
+		"# HELP opencode_sh_commands_total Total number of shell commands by base command and decision",
+	);
+	lines.push("# TYPE opencode_sh_commands_total counter");
+	for (const metric of data.shCommandCounts ?? []) {
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_commands_total",
+				{
+					command: metric.command,
+					decision: metric.decision,
+				},
+				metric.count,
+			),
+		);
+	}
+
+	// Sh command duration histogram
+	lines.push("");
+	lines.push(
+		"# HELP opencode_sh_command_duration_seconds Duration of shell command executions in seconds",
+	);
+	lines.push("# TYPE opencode_sh_command_duration_seconds histogram");
+	for (const metric of data.shCommandDurations ?? []) {
+		for (const bucket of DURATION_BUCKETS) {
+			const bucketKey = bucket.toString();
+			lines.push(
+				formatMetricLine(
+					"opencode_sh_command_duration_seconds_bucket",
+					{
+						command: metric.command,
+						le: bucketKey,
+					},
+					metric.buckets[bucketKey] ?? 0,
+				),
+			);
+		}
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_command_duration_seconds_bucket",
+				{
+					command: metric.command,
+					le: "+Inf",
+				},
+				metric.buckets["+Inf"] ?? 0,
+			),
+		);
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_command_duration_seconds_sum",
+				{
+					command: metric.command,
+				},
+				metric.sum,
+			),
+		);
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_command_duration_seconds_count",
+				{
+					command: metric.command,
+				},
+				metric.count,
+			),
+		);
+	}
+
+	// Sh denied commands total (counter)
+	lines.push("");
+	lines.push(
+		"# HELP opencode_sh_denied_commands_total Total number of denied shell commands by command and pattern",
+	);
+	lines.push("# TYPE opencode_sh_denied_commands_total counter");
+	for (const metric of data.shDeniedCommands ?? []) {
+		lines.push(
+			formatMetricLine(
+				"opencode_sh_denied_commands_total",
+				{
+					command: metric.command,
+					pattern: metric.pattern,
+				},
+				metric.count,
+			),
+		);
+	}
 
 	return lines.join("\n") + "\n";
 };
@@ -1113,5 +1204,220 @@ describe("escapeLabelValue", () => {
 
 	test("leaves safe strings unchanged", () => {
 		expect(escapeLabelValue("simple_tool_name")).toBe("simple_tool_name");
+	});
+});
+
+// =============================================================================
+// Sh Metrics Formatting Tests
+// =============================================================================
+
+describe("sh metrics formatting", () => {
+	describe("sh commands counter", () => {
+		test("formats sh command counts with labels", () => {
+			const data: MetricsData = {
+				toolExecutions: [],
+				toolDurations: [],
+				inProgressCount: 0,
+				sessionEvents: [],
+				activeSessionCount: 0,
+				dbSizeBytes: 0,
+				shCommandCounts: [
+					{ command: "git", decision: "allow", count: 42 },
+					{ command: "rm", decision: "deny", count: 5 },
+				],
+				shCommandDurations: [],
+				shDeniedCommands: [],
+			};
+
+			const output = formatMetrics(data);
+
+			expect(output).toContain(
+				'opencode_sh_commands_total{command="git",decision="allow"} 42',
+			);
+			expect(output).toContain(
+				'opencode_sh_commands_total{command="rm",decision="deny"} 5',
+			);
+		});
+
+		test("includes HELP and TYPE for sh commands", () => {
+			const data: MetricsData = {
+				toolExecutions: [],
+				toolDurations: [],
+				inProgressCount: 0,
+				sessionEvents: [],
+				activeSessionCount: 0,
+				dbSizeBytes: 0,
+				shCommandCounts: [],
+				shCommandDurations: [],
+				shDeniedCommands: [],
+			};
+
+			const output = formatMetrics(data);
+
+			expect(output).toContain("# HELP opencode_sh_commands_total");
+			expect(output).toContain("# TYPE opencode_sh_commands_total counter");
+		});
+	});
+
+	describe("sh duration histogram", () => {
+		test("formats sh duration histogram with buckets", () => {
+			const data: MetricsData = {
+				toolExecutions: [],
+				toolDurations: [],
+				inProgressCount: 0,
+				sessionEvents: [],
+				activeSessionCount: 0,
+				dbSizeBytes: 0,
+				shCommandCounts: [],
+				shCommandDurations: [
+					{
+						command: "git",
+						count: 10,
+						sum: 5.5,
+						buckets: {
+							"0.005": 1,
+							"0.01": 2,
+							"0.025": 3,
+							"0.05": 4,
+							"0.1": 5,
+							"0.25": 6,
+							"0.5": 7,
+							"1": 8,
+							"2.5": 9,
+							"5": 9,
+							"10": 10,
+							"+Inf": 10,
+						},
+					},
+				],
+				shDeniedCommands: [],
+			};
+
+			const output = formatMetrics(data);
+
+			expect(output).toContain(
+				'opencode_sh_command_duration_seconds_bucket{command="git",le="0.1"} 5',
+			);
+			expect(output).toContain(
+				'opencode_sh_command_duration_seconds_bucket{command="git",le="+Inf"} 10',
+			);
+			expect(output).toContain(
+				'opencode_sh_command_duration_seconds_sum{command="git"} 5.5',
+			);
+			expect(output).toContain(
+				'opencode_sh_command_duration_seconds_count{command="git"} 10',
+			);
+		});
+
+		test("includes HELP and TYPE for sh duration", () => {
+			const data: MetricsData = {
+				toolExecutions: [],
+				toolDurations: [],
+				inProgressCount: 0,
+				sessionEvents: [],
+				activeSessionCount: 0,
+				dbSizeBytes: 0,
+				shCommandCounts: [],
+				shCommandDurations: [],
+				shDeniedCommands: [],
+			};
+
+			const output = formatMetrics(data);
+
+			expect(output).toContain("# HELP opencode_sh_command_duration_seconds");
+			expect(output).toContain(
+				"# TYPE opencode_sh_command_duration_seconds histogram",
+			);
+		});
+	});
+
+	describe("sh denied commands counter", () => {
+		test("formats sh denied commands with labels", () => {
+			const data: MetricsData = {
+				toolExecutions: [],
+				toolDurations: [],
+				inProgressCount: 0,
+				sessionEvents: [],
+				activeSessionCount: 0,
+				dbSizeBytes: 0,
+				shCommandCounts: [],
+				shCommandDurations: [],
+				shDeniedCommands: [
+					{ command: "rm", pattern: "rm *", count: 5 },
+					{ command: "sudo", pattern: "sudo *", count: 3 },
+				],
+			};
+
+			const output = formatMetrics(data);
+
+			expect(output).toContain(
+				'opencode_sh_denied_commands_total{command="rm",pattern="rm *"} 5',
+			);
+			expect(output).toContain(
+				'opencode_sh_denied_commands_total{command="sudo",pattern="sudo *"} 3',
+			);
+		});
+
+		test("includes HELP and TYPE for denied commands", () => {
+			const data: MetricsData = {
+				toolExecutions: [],
+				toolDurations: [],
+				inProgressCount: 0,
+				sessionEvents: [],
+				activeSessionCount: 0,
+				dbSizeBytes: 0,
+				shCommandCounts: [],
+				shCommandDurations: [],
+				shDeniedCommands: [],
+			};
+
+			const output = formatMetrics(data);
+
+			expect(output).toContain("# HELP opencode_sh_denied_commands_total");
+			expect(output).toContain(
+				"# TYPE opencode_sh_denied_commands_total counter",
+			);
+		});
+
+		test("escapes special characters in pattern labels", () => {
+			const data: MetricsData = {
+				toolExecutions: [],
+				toolDurations: [],
+				inProgressCount: 0,
+				sessionEvents: [],
+				activeSessionCount: 0,
+				dbSizeBytes: 0,
+				shCommandCounts: [],
+				shCommandDurations: [],
+				shDeniedCommands: [
+					{ command: "echo", pattern: 'echo "test"', count: 1 },
+				],
+			};
+
+			const output = formatMetrics(data);
+
+			expect(output).toContain('pattern="echo \\"test\\""');
+		});
+	});
+
+	describe("handles missing sh metrics gracefully", () => {
+		test("handles undefined sh metrics arrays", () => {
+			// Create data without sh fields to test defensive handling
+			const data = {
+				toolExecutions: [],
+				toolDurations: [],
+				inProgressCount: 0,
+				sessionEvents: [],
+				activeSessionCount: 0,
+				dbSizeBytes: 0,
+			} as MetricsData;
+
+			const output = formatMetrics(data);
+
+			// Should still include the metric headers
+			expect(output).toContain("# HELP opencode_sh_commands_total");
+			expect(output).toContain("# HELP opencode_sh_command_duration_seconds");
+			expect(output).toContain("# HELP opencode_sh_denied_commands_total");
+		});
 	});
 });

@@ -8,37 +8,6 @@
 
 import { tool } from "@opencode-ai/plugin";
 
-// Re-export all public APIs from modules
-export {
-	// Types
-	type ConstraintResult,
-	export_data,
-	export_logs,
-	extractNonFlagArgs,
-	extractNonFlagArgsAfterFirst,
-	extractPaths,
-	hasShortFlag,
-	hierarchy,
-	type MatchResult,
-	// Permissions
-	matchCommand,
-	type PermissionPattern,
-	parseCommandTokens,
-	// Utils
-	parseSince,
-	// Parser
-	patternToRegex,
-	// Tools
-	stats,
-	validateConstraints,
-	// Validators
-	validateCwdOnly,
-	validateMaxDepth,
-	validateNoForce,
-	validateNoRecursive,
-	validateRequireFlag,
-} from "./sh/index";
-
 // Import for internal use
 import {
 	logCommand,

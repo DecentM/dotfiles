@@ -5,7 +5,16 @@
 
 
 // Database
-export { dbManager, logCommand, updateLogEntry } from "./db";
+export {
+  dbManager,
+  getCommandCountsByBaseCommand,
+  getCommandDurationsForHistogram,
+  getDeniedCommandsByPattern,
+  logCommand,
+  updateLogEntry,
+} from "./db";
+// Database types (for Prometheus metrics)
+export type { ShCommandCount, ShDeniedByPattern, ShDurationEntry } from "./db";
 // Parser
 export {
   extractNonFlagArgs,

@@ -345,6 +345,120 @@ export const getCommandsWithDecisions = (since?: Date): CommandWithDecision[] =>
 };
 
 // =============================================================================
+// Prometheus Metrics Queries
+// =============================================================================
+
+export interface ShCommandCount {
+  command: string;
+  decision: Decision;
+  count: number;
+}
+
+export interface ShDurationEntry {
+  command: string;
+  durationMs: number;
+}
+
+export interface ShDeniedByPattern {
+  command: string;
+  pattern: string;
+  count: number;
+}
+
+/**
+ * Extract the base command (first word) from a command string using SQL.
+ * Uses SQLite's substr and instr functions.
+ */
+const BASE_COMMAND_SQL = `substr(command, 1, instr(command || ' ', ' ') - 1)`;
+
+/**
+ * Get command counts grouped by base command (first word) and decision.
+ * Used for Prometheus counter metrics.
+ */
+export const getCommandCountsByBaseCommand = (): ShCommandCount[] => {
+  const db = dbManager.get();
+
+  const rows = db
+    .query(
+      `SELECT
+        ${BASE_COMMAND_SQL} as base_command,
+        decision,
+        COUNT(*) as count
+      FROM command_log
+      GROUP BY base_command, decision
+      ORDER BY count DESC`
+    )
+    .all() as Array<{
+    base_command: string;
+    decision: string;
+    count: number;
+  }>;
+
+  return rows.map((row) => ({
+    command: row.base_command,
+    decision: row.decision as Decision,
+    count: row.count,
+  }));
+};
+
+/**
+ * Get command durations for histogram metrics.
+ * Returns base command and duration for all completed (allowed) commands.
+ */
+export const getCommandDurationsForHistogram = (): ShDurationEntry[] => {
+  const db = dbManager.get();
+
+  const rows = db
+    .query(
+      `SELECT
+        ${BASE_COMMAND_SQL} as base_command,
+        duration_ms
+      FROM command_log
+      WHERE decision = 'allow' AND duration_ms IS NOT NULL`
+    )
+    .all() as Array<{
+    base_command: string;
+    duration_ms: number;
+  }>;
+
+  return rows.map((row) => ({
+    command: row.base_command,
+    durationMs: row.duration_ms,
+  }));
+};
+
+/**
+ * Get denied commands grouped by base command and pattern matched.
+ * Used for Prometheus counter metrics to show which patterns are blocking what.
+ */
+export const getDeniedCommandsByPattern = (): ShDeniedByPattern[] => {
+  const db = dbManager.get();
+
+  const rows = db
+    .query(
+      `SELECT
+        ${BASE_COMMAND_SQL} as base_command,
+        COALESCE(pattern_matched, 'no_match') as pattern,
+        COUNT(*) as count
+      FROM command_log
+      WHERE decision = 'deny'
+      GROUP BY base_command, pattern
+      ORDER BY count DESC`
+    )
+    .all() as Array<{
+    base_command: string;
+    pattern: string;
+    count: number;
+  }>;
+
+  return rows.map((row) => ({
+    command: row.base_command,
+    pattern: row.pattern,
+    count: row.count,
+  }));
+};
+
+// =============================================================================
 // Helpers
 // =============================================================================
 
