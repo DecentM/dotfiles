@@ -16,6 +16,7 @@ permission:
   # Sandbox access
   node: allow
   python: allow
+  docker: allow
   # Web scraping
   flaresolverr: allow
   # Profile MCPs (work) - defined in profile jsonc

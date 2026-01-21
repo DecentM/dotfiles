@@ -92,6 +92,10 @@ Otherwise                           → You may handle directly
 - coder, devops, researcher, reviewer have access
 - Isolated containers: no network, 512MB RAM, 1 CPU
 
+## docker
+- **NOT available to root agent** - delegate to specialized agents
+- coder, devops, explore, researcher have access
+
 ## github
 - **NOT available to root agent** - delegate to specialized agents
 - writer, reviewer, devops, git, researcher, architect have access 

@@ -73,16 +73,6 @@ Use these for:
 - **Precision**: Use appropriate decimal places, note rounding
 - **Units**: Always include units in answers when applicable
 
-## Python libraries
-
-```python
-import numpy as np        # Numerical arrays, linear algebra
-import sympy as sp        # Symbolic math, exact solutions
-from scipy import stats   # Statistical functions
-from scipy import optimize # Optimization, root finding
-from scipy import integrate # Numerical integration
-```
-
 ## Example patterns
 
 ### Symbolic math (exact answers)

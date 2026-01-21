@@ -17,6 +17,7 @@ permission:
   # Sandbox access
   node: allow
   python: allow
+  docker: allow
   # Web scraping
   flaresolverr: allow
   github_get_*: allow

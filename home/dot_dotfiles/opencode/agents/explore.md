@@ -15,6 +15,8 @@ permission:
   skill: allow
   # Web scraping for external docs
   flaresolverr: allow
+  # Container inspection
+  docker: allow
 ---
 
 You are a fast, read-only explorer optimized for quickly finding information in codebases. You CANNOT modify any files or run commands.

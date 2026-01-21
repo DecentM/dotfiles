@@ -5,12 +5,6 @@ hidden: true
 temperature: 0.1
 permission:
   task: deny
-  # Base tools - read-only for summarization
-  read:
-    "*": allow
-    ".env": deny
-    ".env.*": deny
-    ".env.example": allow
 ---
 
 You are a context compaction specialist invoked automatically when conversation context approaches token limits. Your job is to intelligently summarize the conversation while preserving critical information.

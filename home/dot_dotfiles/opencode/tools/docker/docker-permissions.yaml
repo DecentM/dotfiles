@@ -1,0 +1,199 @@
+# Docker operation permissions for the docker custom tool
+# Patterns are matched in order - first match wins
+# Default action if no pattern matches: deny
+#
+# Format:
+#   pattern: glob pattern (* matches any characters) - for single patterns
+#   patterns: array of glob patterns - for multiple patterns with same decision/reason
+#   decision: allow | deny
+#   reason: explanation shown to model when denied (helps it adapt)
+#
+# Operation pattern format:
+#   {resource}:{action}:{target}
+#   Examples:
+#     - container:list
+#     - container:create:node:20
+#     - image:pull:ubuntu:*
+#
+# Constraints (for allowed operations):
+#   constraints: array of constraints (all must pass)
+#
+# Constraint types:
+#   no_privileged      - block privileged containers
+#   no_host_network    - block host network mode
+#   allowed_mounts     - restrict volume mount paths
+#                        options: value: ["/tmp/*", "/var/home/*/code/*"]
+#   image_pattern      - restrict which images can be used
+#                        options: value: ["opencode/*", "node:*", "python:*"]
+#   container_pattern  - restrict which containers can be modified
+#                        options: value: ["opencode-*", "sandbox-*"]
+#   resource_limits    - enforce memory/CPU limits
+#                        options: max_memory: "512m", max_cpus: 2
+
+default: deny
+default_reason: "Docker operation not in allowlist - if you need this operation, ask the user to run it or request it be added to permissions"
+
+rules:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Read-only operations - generally safe
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Container listing and inspection
+  - patterns:
+      - "container:list"
+      - "container:inspect:*"
+      - "container:logs:*"
+    decision: allow
+
+  # Image listing and inspection
+  - patterns:
+      - "image:list"
+      - "image:inspect:*"
+    decision: allow
+
+  # Volume listing
+  - pattern: "volume:list"
+    decision: allow
+
+  # Network listing
+  - pattern: "network:list"
+    decision: allow
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Image operations - pull restricted images
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  - pattern: "image:pull:*"
+    decision: allow
+    constraints:
+      - type: image_pattern
+        value:
+          # Base images
+          - "alpine:*"
+          - "debian:*"
+          - "ubuntu:*"
+          - "fedora:*"
+          # Development images
+          - "node:*"
+          - "python:*"
+          - "golang:*"
+          - "rust:*"
+          - "ruby:*"
+          # Database images
+          - "postgres:*"
+          - "mysql:*"
+          - "mariadb:*"
+          - "redis:*"
+          - "mongo:*"
+          # CI/CD images
+          - "docker:*"
+          - "docker/compose:*"
+          # OpenCode specific
+          - "opencode/*"
+          - "ghcr.io/opencode-ai/*"
+    reason: "Image not in allowed list - ask the user to pull it manually"
+
+  # Image removal - restrict to safe patterns
+  - pattern: "image:remove:*"
+    decision: allow
+    constraints:
+      - type: image_pattern
+        value:
+          - "opencode/*"
+          - "ghcr.io/opencode-ai/*"
+          - "<none>:*"
+    reason: "Can only remove opencode images or dangling images - ask the user to remove it"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Container lifecycle - with security constraints
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Container creation - strict security constraints
+  - pattern: "container:create:*"
+    decision: allow
+    constraints:
+      - no_privileged
+      - no_host_network
+      - type: allowed_mounts
+        value:
+          - "/tmp/*"
+          - "/var/tmp/*"
+          - "/var/home/*/code/*"
+          - "/home/*/code/*"
+      - type: image_pattern
+        value:
+          - "alpine:*"
+          - "debian:*"
+          - "ubuntu:*"
+          - "node:*"
+          - "python:*"
+          - "golang:*"
+          - "rust:*"
+          - "opencode/*"
+          - "ghcr.io/opencode-ai/*"
+      - type: resource_limits
+        max_memory: "2g"
+        max_cpus: 4
+    reason: "Container creation must follow security constraints"
+
+  # Container start - only for sandbox/opencode containers
+  - pattern: "container:start:*"
+    decision: allow
+    constraints:
+      - type: container_pattern
+        value:
+          - "opencode-*"
+          - "sandbox-*"
+          - "test-*"
+          - "dev-*"
+    reason: "Can only start opencode/sandbox containers - ask the user for other containers"
+
+  # Container stop - only for sandbox/opencode containers
+  - pattern: "container:stop:*"
+    decision: allow
+    constraints:
+      - type: container_pattern
+        value:
+          - "opencode-*"
+          - "sandbox-*"
+          - "test-*"
+          - "dev-*"
+    reason: "Can only stop opencode/sandbox containers - ask the user for other containers"
+
+  # Container removal - only for sandbox/opencode containers
+  - pattern: "container:remove:*"
+    decision: allow
+    constraints:
+      - type: container_pattern
+        value:
+          - "opencode-*"
+          - "sandbox-*"
+          - "test-*"
+          - "dev-*"
+    reason: "Can only remove opencode/sandbox containers - ask the user for other containers"
+
+  # Container exec - only in sandbox/opencode containers
+  - pattern: "container:exec:*"
+    decision: allow
+    constraints:
+      - type: container_pattern
+        value:
+          - "opencode-*"
+          - "sandbox-*"
+          - "test-*"
+          - "dev-*"
+    reason: "Can only exec in opencode/sandbox containers - ask the user for other containers"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Volume operations
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # Volume creation - only with specific naming patterns
+  - pattern: "volume:create:*"
+    decision: deny
+    reason: "Volume creation requires user confirmation - ask the user to create it"
+
+  # Volume removal - deny by default
+  - pattern: "volume:remove:*"
+    decision: deny
+    reason: "Volume removal requires user confirmation - ask the user to remove it"
