@@ -9,7 +9,8 @@ import { statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { dbManager } from "./db";
+import { dbManager, getAllMetrics } from "./db";
+import type { AllMetricsResult } from "./db";
 import type { SessionEventType, ToolDecision } from "./types";
 
 // =============================================================================
@@ -380,10 +381,106 @@ const EMPTY_METRICS: MetricsData = {
 };
 
 /**
- * Collect all metrics data.
+ * Build histogram buckets from raw duration data.
+ * This is shared logic for both tool and sh command duration metrics.
+ */
+const buildDurationHistogram = <T extends { count: number; sum: number; buckets: Record<string, number> }>(
+	entries: Array<{ name: string; duration_ms: number }>,
+	createMetric: (name: string) => T
+): Map<string, T> => {
+	const metrics = new Map<string, T>();
+
+	for (const entry of entries) {
+		const durationSec = entry.duration_ms / 1000;
+
+		let metric = metrics.get(entry.name);
+		if (!metric) {
+			metric = createMetric(entry.name);
+			// Initialize buckets
+			for (const bucket of DURATION_BUCKETS) {
+				metric.buckets[bucket.toString()] = 0;
+			}
+			metric.buckets["+Inf"] = 0;
+			metrics.set(entry.name, metric);
+		}
+
+		metric.count++;
+		metric.sum += durationSec;
+
+		// Update bucket counts (cumulative)
+		for (const bucket of DURATION_BUCKETS) {
+			if (durationSec <= bucket) {
+				metric.buckets[bucket.toString()]++;
+			}
+		}
+		metric.buckets["+Inf"]++;
+	}
+
+	return metrics;
+};
+
+/**
+ * Collect all metrics data using optimized batch queries.
  * Returns empty metrics if database is unavailable or queries fail.
+ *
+ * This uses getAllMetrics() from db.ts which:
+ * - Combines multiple queries into fewer database round-trips
+ * - Uses optimized query patterns (NOT EXISTS instead of NOT IN)
+ * - Uses simple decision='started' check for in-progress count
  */
 export const collectMetrics = (): MetricsData => {
+	try {
+		// Use optimized batch query
+		const allMetrics = getAllMetrics();
+
+		// Convert tool counts to the expected format
+		const toolExecutions: ToolExecutionMetric[] = allMetrics.toolCounts.map((row) => ({
+			toolName: row.tool_name,
+			decision: row.decision as ToolDecision,
+			count: row.count,
+		}));
+
+		// Build duration histograms from raw data
+		const durationMap = buildDurationHistogram(
+			allMetrics.toolDurations.map((d) => ({ name: d.tool_name, duration_ms: d.duration_ms })),
+			(name) => ({
+				toolName: name,
+				count: 0,
+				sum: 0,
+				buckets: {},
+			})
+		);
+		const toolDurations: ToolDurationMetric[] = Array.from(durationMap.values());
+
+		// Convert session counts to the expected format
+		const sessionEvents: SessionEventMetric[] = allMetrics.sessionCounts.map((row) => ({
+			eventType: row.event_type as SessionEventType,
+			count: row.count,
+		}));
+
+		return {
+			toolExecutions,
+			toolDurations,
+			inProgressCount: allMetrics.inProgressCount,
+			sessionEvents,
+			activeSessionCount: allMetrics.activeSessionCount,
+			dbSizeBytes: allMetrics.dbSizeBytes,
+			shCommandCounts: getShCommandCounts(),
+			shCommandDurations: getShDurationMetrics(),
+			shDeniedCommands: getShDeniedCommands(),
+		};
+	} catch (error) {
+		console.error("[audit-trail] Error collecting metrics:", error);
+		return EMPTY_METRICS;
+	}
+};
+
+/**
+ * Collect all metrics data using legacy individual queries.
+ * Kept for backward compatibility; prefer collectMetrics() for better performance.
+ * @deprecated Use collectMetrics() instead
+ */
+export const collectMetricsLegacy = (): MetricsData => {
 	try {
 		return {
 			toolExecutions: getToolExecutionCounts(),
@@ -690,11 +787,11 @@ export const formatMetrics = (data?: MetricsData): string => {
 /**
  * Start the Prometheus metrics HTTP server.
  * @param port Port to listen on (default: 9090)
- * @returns true if server started successfully, false otherwise
+ * @returns The port number the server is listening on, or null if failed to start
  */
-export const startMetricsServer = (port = 9090): boolean => {
+export const startMetricsServer = (port = 9090): number | null => {
 	if (server) {
-		return true; // Already running
+		return server.port; // Already running, return existing port
 	}
 
 	try {
@@ -729,17 +826,17 @@ export const startMetricsServer = (port = 9090): boolean => {
 		console.log(
 			`[audit-trail] Prometheus metrics server started on port ${server.port}`,
 		);
-		return true;
+		return server.port;
 	} catch (error) {
 		if (error instanceof Error && error.message.includes("EADDRINUSE")) {
 			console.log(
 				`[audit-trail] Prometheus metrics server not started: port ${port} already in use`,
 			);
-			return false;
+			return null;
 		}
 		// Log other errors but don't crash
 		console.error("[audit-trail] Failed to start Prometheus server:", error);
-		return false;
+		return null;
 	}
 };
 

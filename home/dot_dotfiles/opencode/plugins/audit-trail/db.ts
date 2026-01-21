@@ -23,6 +23,35 @@ import type {
 } from "./types";
 
 // =============================================================================
+// Error Reporting
+// =============================================================================
+
+/**
+ * Error handler type for database operations.
+ * Set this from the plugin to enable structured logging.
+ */
+export type DbErrorHandler = (operation: string, error: unknown) => void;
+
+let errorHandler: DbErrorHandler = () => {
+  // Default: silent (errors are returned as 0 or swallowed)
+  // The plugin will set this to use structured logging
+};
+
+/**
+ * Set the error handler for database operations.
+ */
+export const setDbErrorHandler = (handler: DbErrorHandler): void => {
+  errorHandler = handler;
+};
+
+/**
+ * Report a database error through the configured handler.
+ */
+const reportError = (operation: string, error: unknown): void => {
+  errorHandler(operation, error);
+};
+
+// =============================================================================
 // Database Setup
 // =============================================================================
 
@@ -61,6 +90,7 @@ export const dbManager = (() => {
       db.run(`CREATE INDEX IF NOT EXISTS idx_tool_timestamp ON tool_execution_log(timestamp)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_tool_name ON tool_execution_log(tool_name)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_tool_session_id ON tool_execution_log(session_id)`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_tool_decision ON tool_execution_log(decision)`);
 
       // Create session_log table
       db.run(`
@@ -135,7 +165,7 @@ export const logToolExecution = (entry: ToolExecutionLogEntry): number => {
     );
     return Number(result.lastInsertRowid);
   } catch (error) {
-    console.error("[audit-trail] Database error in logToolExecution:", error);
+    reportError("logToolExecution", error);
     return 0;
   }
 };
@@ -156,7 +186,7 @@ export const updateToolExecution = (
       [decision, resultSummary, durationMs, id]
     );
   } catch (error) {
-    console.error("[audit-trail] Database error in updateToolExecution:", error);
+    reportError("updateToolExecution", error);
   }
 };
 
@@ -177,7 +207,7 @@ export const logSessionEvent = (entry: SessionLogEntry): number => {
     );
     return Number(result.lastInsertRowid);
   } catch (error) {
-    console.error("[audit-trail] Database error in logSessionEvent:", error);
+    reportError("logSessionEvent", error);
     return 0;
   }
 };
@@ -455,4 +485,107 @@ const buildToolWhereClause = (
   }
 
   return { conditions, params };
+};
+
+// =============================================================================
+// Optimized Metrics Queries (for Prometheus)
+// =============================================================================
+
+/**
+ * Result types for getAllMetrics.
+ */
+export interface AllMetricsResult {
+  toolCounts: Array<{ tool_name: string; decision: string; count: number }>;
+  toolDurations: Array<{ tool_name: string; duration_ms: number }>;
+  inProgressCount: number;
+  sessionCounts: Array<{ event_type: string; count: number }>;
+  activeSessionCount: number;
+  dbSizeBytes: number;
+}
+
+/**
+ * Get all metrics in optimized batch queries.
+ *
+ * This function consolidates multiple metric queries to reduce database round-trips
+ * and uses optimized query patterns:
+ * - In-progress count: NOT EXISTS instead of NOT IN for better query plan
+ * - Active sessions: NOT EXISTS instead of NOT IN for better query plan
+ */
+export const getAllMetrics = (): AllMetricsResult => {
+  const db = dbManager.get();
+
+  // 1. Tool execution counts by tool_name and decision
+  const toolCounts = db
+    .query(
+      `SELECT tool_name, decision, COUNT(*) as count
+       FROM tool_execution_log
+       GROUP BY tool_name, decision`
+    )
+    .all() as Array<{ tool_name: string; decision: string; count: number }>;
+
+  // 2. Tool durations for histogram (only completed/failed with duration)
+  const toolDurations = db
+    .query(
+      `SELECT tool_name, duration_ms
+       FROM tool_execution_log
+       WHERE decision IN ('completed', 'failed') AND duration_ms IS NOT NULL`
+    )
+    .all() as Array<{ tool_name: string; duration_ms: number }>;
+
+  // 3. In-progress count: started entries without corresponding completion
+  //    Uses NOT EXISTS instead of NOT IN for better query plan
+  const inProgressRow = db
+    .query(
+      `SELECT COUNT(*) as count FROM tool_execution_log t1
+       WHERE t1.decision = 'started'
+         AND NOT EXISTS (
+           SELECT 1 FROM tool_execution_log t2
+           WHERE t2.call_id = t1.call_id
+             AND t2.decision IN ('completed', 'failed')
+             AND t2.call_id IS NOT NULL
+         )`
+    )
+    .get() as { count: number };
+
+  // 4. Session event counts by event_type
+  const sessionCounts = db
+    .query(
+      `SELECT event_type, COUNT(*) as count
+       FROM session_log
+       GROUP BY event_type`
+    )
+    .all() as Array<{ event_type: string; count: number }>;
+
+  // 5. Active sessions: created but not deleted (using NOT EXISTS for efficiency)
+  const activeSessionRow = db
+    .query(
+      `SELECT COUNT(DISTINCT session_id) as count
+       FROM session_log s1
+       WHERE event_type = 'created'
+         AND NOT EXISTS (
+           SELECT 1 FROM session_log s2
+           WHERE s2.session_id = s1.session_id AND s2.event_type = 'deleted'
+         )`
+    )
+    .get() as { count: number };
+
+  // 6. Database size
+  let dbSizeBytes = 0;
+  try {
+    const stats = require("node:fs").statSync(
+      require("node:path").join(require("node:os").homedir(), ".opencode", "audit", "audit-trail.db")
+    );
+    dbSizeBytes = stats.size;
+  } catch {
+    // File may not exist yet
+  }
+
+  return {
+    toolCounts,
+    toolDurations,
+    inProgressCount: inProgressRow.count,
+    sessionCounts,
+    activeSessionCount: activeSessionRow.count,
+    dbSizeBytes,
+  };
 };

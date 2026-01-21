@@ -5,7 +5,8 @@
  * for comprehensive audit trail and analytics.
  */
 
-import { type Event, type Plugin, tool } from "@opencode-ai/plugin";
+import { type Event, type Plugin, type PluginContext, tool } from "@opencode-ai/plugin";
+import { randomUUID } from "node:crypto";
 
 import {
 	getLogs,
@@ -14,10 +15,84 @@ import {
 	getToolUsage,
 	logSessionEvent,
 	logToolExecution,
+	setDbErrorHandler,
 	updateToolExecution,
 } from "./db";
 import { startMetricsServer, stopMetricsServer } from "./prometheus";
 import type { SessionEventType } from "./types";
+
+// =============================================================================
+// Logging Configuration
+// =============================================================================
+
+const LOG_LEVEL = (process.env.OPENCODE_AUDIT_LOG_LEVEL ?? "info").toLowerCase();
+const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 } as const;
+
+type LogLevel = keyof typeof LOG_LEVELS;
+
+const shouldLog = (level: LogLevel): boolean => {
+	const currentLevel = LOG_LEVELS[LOG_LEVEL as LogLevel] ?? LOG_LEVELS.info;
+	return LOG_LEVELS[level] >= currentLevel;
+};
+
+// Store client reference for logging
+let pluginClient: PluginContext["client"] | null = null;
+
+/**
+ * Structured logging using OpenCode's logging API.
+ */
+const log = async (
+	level: LogLevel,
+	message: string,
+	extra?: Record<string, unknown>
+): Promise<void> => {
+	if (!shouldLog(level) || !pluginClient) {
+		return;
+	}
+	try {
+		await pluginClient.app.log({
+			service: "audit-trail",
+			level,
+			message,
+			extra,
+		});
+	} catch {
+		// Fallback silently - don't cause issues if logging fails
+	}
+};
+
+// =============================================================================
+// Sensitive Data Sanitization
+// =============================================================================
+
+const SENSITIVE_KEY_PATTERN = /^(password|secret|token|key|apikey|api_key|auth|credential|private)$/i;
+
+/**
+ * Recursively sanitize sensitive keys in an object.
+ */
+const sanitizeArgs = (value: unknown): unknown => {
+	if (value === null || value === undefined) {
+		return value;
+	}
+
+	if (Array.isArray(value)) {
+		return value.map(sanitizeArgs);
+	}
+
+	if (typeof value === "object") {
+		const sanitized: Record<string, unknown> = {};
+		for (const [key, val] of Object.entries(value)) {
+			if (SENSITIVE_KEY_PATTERN.test(key)) {
+				sanitized[key] = "[REDACTED]";
+			} else {
+				sanitized[key] = sanitizeArgs(val);
+			}
+		}
+		return sanitized;
+	}
+
+	return value;
+};
 
 // =============================================================================
 // Prometheus Server Lifecycle
@@ -48,14 +123,14 @@ process.on("SIGTERM", () => {
 // In-Memory Tracking
 // =============================================================================
 
-const PENDING_CALL_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const PENDING_CALL_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 /**
- * Track in-flight tool calls: callId -> { rowId, startTime, expiry }
+ * Track in-flight tool calls: callId -> { rowId, startTime, expiry, correlationId }
  */
 const pendingCalls = new Map<
 	string,
-	{ rowId: number; startTime: number; expiry: number }
+	{ rowId: number; startTime: number; expiry: number; correlationId: string }
 >();
 
 /**
@@ -78,7 +153,7 @@ const startCleanupInterval = (): void => {
 				}
 			}
 		},
-		5 * 60 * 1000,
+		1 * 60 * 1000, // 1 minute cleanup interval
 	);
 };
 
@@ -131,11 +206,12 @@ const createResultSummary = (
 };
 
 /**
- * Safely stringify args, handling circular references.
+ * Safely stringify args, handling circular references and sanitizing sensitive data.
  */
 const safeStringify = (args: unknown): string => {
 	try {
-		return JSON.stringify(args);
+		const sanitized = sanitizeArgs(args);
+		return JSON.stringify(sanitized);
 	} catch {
 		return "[Unable to serialize args]";
 	}
@@ -145,9 +221,25 @@ const safeStringify = (args: unknown): string => {
 // Plugin Export
 // =============================================================================
 
-const AuditTrailPlugin: Plugin = async (_ctx) => {
+const AuditTrailPlugin: Plugin = async (ctx) => {
+	// Store client reference for structured logging
+	pluginClient = ctx.client;
+
+	// Configure database error handler to use structured logging
+	setDbErrorHandler((operation, error) => {
+		log("error", `Database error in ${operation}`, {
+			operation,
+			error: error instanceof Error ? error.message : String(error),
+		});
+	});
+
 	// Start the cleanup interval for expired pending calls
 	startCleanupInterval();
+
+	await log("info", "Audit trail plugin initialized", {
+		metricsPort: METRICS_PORT,
+		logLevel: LOG_LEVEL,
+	});
 
 	return {
 		/**
@@ -174,6 +266,11 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 				eventType,
 				detailsJson: safeStringify(event.properties),
 			});
+
+			await log("debug", `Session event: ${eventType}`, {
+				sessionId,
+				eventType,
+			});
 		},
 
 		/**
@@ -181,6 +278,7 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 		 */
 		"tool.execute.before": async (input, output) => {
 			const startTime = Date.now();
+			const correlationId = randomUUID();
 
 			const rowId = logToolExecution({
 				sessionId: input.sessionID,
@@ -195,6 +293,14 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 				rowId,
 				startTime,
 				expiry: Date.now() + PENDING_CALL_TTL_MS,
+				correlationId,
+			});
+
+			await log("debug", `Tool execution started: ${input.tool}`, {
+				correlationId,
+				tool: input.tool,
+				sessionId: input.sessionID,
+				callId: input.callID,
 			});
 		},
 
@@ -203,6 +309,7 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 		 */
 		"tool.execute.after": async (input, output) => {
 			const pending = pendingCalls.get(input.callID);
+			const correlationId = pending?.correlationId ?? randomUUID();
 
 			if (!pending) {
 				// No matching start event, log as standalone completion
@@ -213,18 +320,25 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 					decision: "completed",
 					resultSummary: createResultSummary(output.output ?? ""),
 				});
+
+				await log("warn", `Tool execution completed without matching start: ${input.tool}`, {
+					correlationId,
+					tool: input.tool,
+					sessionId: input.sessionID,
+					callId: input.callID,
+				});
 				return;
 			}
 
 			// Calculate duration and update the existing row
 			const durationMs = Date.now() - pending.startTime;
 
-			// Determine if this was a failure based on output content
-			// (heuristic: look for error indicators in the output)
-			const lowerOutput = (output.output ?? "").toLowerCase();
+			// Determine if this was a failure based on explicit metadata checks
+			const metadata = output.metadata as Record<string, unknown> | undefined;
 			const isFailure =
-				(output.metadata as Record<string, unknown>)?.error === true ||
-				lowerOutput.match(/\b(error|failed):\s/i) !== null;
+				metadata?.error === true ||
+				(metadata?.exitCode !== undefined && metadata.exitCode !== 0) ||
+				metadata?.success === false;
 
 			updateToolExecution(
 				pending.rowId,
@@ -235,6 +349,15 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 
 			// Clean up tracking
 			pendingCalls.delete(input.callID);
+
+			await log("debug", `Tool execution ${isFailure ? "failed" : "completed"}: ${input.tool}`, {
+				correlationId,
+				tool: input.tool,
+				sessionId: input.sessionID,
+				callId: input.callID,
+				durationMs,
+				isFailure,
+			});
 		},
 
 		// =========================================================================
@@ -245,14 +368,17 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 			audit_stats: tool({
 				description:
 					"Get overall tool execution statistics from the audit trail. Optional params: since (ISO timestamp), before (ISO timestamp), session_id",
-				args: {},
+				args: {
+					since: tool.schema.string().optional().describe("ISO timestamp to filter from"),
+					before: tool.schema.string().optional().describe("ISO timestamp to filter until"),
+					session_id: tool.schema.string().optional().describe("Filter by session ID"),
+				},
 				async execute(args, ctx) {
-					const typedArgs = args as { since?: string; before?: string; session_id?: string };
 					try {
 						const filter = {
-							since: parseOptionalDate(typedArgs.since),
-							before: parseOptionalDate(typedArgs.before),
-							sessionId: typedArgs.session_id,
+							since: parseOptionalDate(args.since),
+							before: parseOptionalDate(args.before),
+							sessionId: args.session_id,
 						};
 						const stats = getToolStats(filter);
 						return JSON.stringify(stats, null, 2);
@@ -265,15 +391,18 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 			audit_tool_usage: tool({
 				description:
 					"Get tool usage breakdown from the audit trail. Optional params: since (ISO timestamp), before (ISO timestamp), limit (max results, default 15)",
-				args: {},
+				args: {
+					since: tool.schema.string().optional().describe("ISO timestamp to filter from"),
+					before: tool.schema.string().optional().describe("ISO timestamp to filter until"),
+					limit: tool.schema.number().optional().describe("Maximum number of results (default 15)"),
+				},
 				async execute(args, ctx) {
-					const typedArgs = args as { since?: string; before?: string; limit?: number };
 					try {
 						const filter = {
-							since: parseOptionalDate(typedArgs.since),
-							before: parseOptionalDate(typedArgs.before),
+							since: parseOptionalDate(args.since),
+							before: parseOptionalDate(args.before),
 						};
-						const usage = getToolUsage(filter, typedArgs.limit ?? 15);
+						const usage = getToolUsage(filter, args.limit ?? 15);
 						return JSON.stringify(usage, null, 2);
 					} catch (error) {
 						return `Error: Failed to get tool usage: ${error instanceof Error ? error.message : String(error)}`;
@@ -284,14 +413,15 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 			audit_session_timeline: tool({
 				description:
 					"Get timeline of all events for a specific session. Required param: session_id",
-				args: {},
+				args: {
+					session_id: tool.schema.string().describe("The session ID to get timeline for (required)"),
+				},
 				async execute(args, ctx) {
-					const typedArgs = args as { session_id?: string };
 					try {
-						if (!typedArgs.session_id) {
+						if (!args.session_id) {
 							return "Error: session_id is required";
 						}
-						const timeline = getSessionTimeline(typedArgs.session_id);
+						const timeline = getSessionTimeline(args.session_id);
 						return JSON.stringify(timeline, null, 2);
 					} catch (error) {
 						return `Error: Failed to get session timeline: ${error instanceof Error ? error.message : String(error)}`;
@@ -302,22 +432,21 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 			audit_export_logs: tool({
 				description:
 					"Export audit logs with optional filters. Optional params: since (ISO timestamp), before (ISO timestamp), session_id, tool_name, limit (max results, default 1000)",
-				args: {},
+				args: {
+					since: tool.schema.string().optional().describe("ISO timestamp to filter from"),
+					before: tool.schema.string().optional().describe("ISO timestamp to filter until"),
+					session_id: tool.schema.string().optional().describe("Filter by session ID"),
+					tool_name: tool.schema.string().optional().describe("Filter by tool name"),
+					limit: tool.schema.number().optional().describe("Maximum number of results (default 1000)"),
+				},
 				async execute(args, ctx) {
-					const typedArgs = args as {
-						since?: string;
-						before?: string;
-						session_id?: string;
-						tool_name?: string;
-						limit?: number;
-					};
 					try {
 						const filter = {
-							since: parseOptionalDate(typedArgs.since),
-							before: parseOptionalDate(typedArgs.before),
-							sessionId: typedArgs.session_id,
-							toolName: typedArgs.tool_name,
-							limit: typedArgs.limit ?? 1000,
+							since: parseOptionalDate(args.since),
+							before: parseOptionalDate(args.before),
+							sessionId: args.session_id,
+							toolName: args.tool_name,
+							limit: args.limit ?? 1000,
 						};
 						const logs = getLogs(filter);
 						return JSON.stringify(logs, null, 2);
