@@ -218,11 +218,19 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 		// =========================================================================
 
 		tool: {
+		audit_test: tool({
+			description: "Test tool that just returns a string",
+			args: {},
+			async execute(args, ctx) {
+				return "Hello from audit_test!";
+			},
+		}),
+
 		audit_stats: tool({
 			description:
 				"Get overall tool execution statistics from the audit trail. Optional params: since (ISO timestamp), session_id",
 			args: {},
-			async execute(args) {
+			async execute(args, ctx) {
 				const typedArgs = args as { since?: string; session_id?: string };
 				try {
 					const filter = {
@@ -241,7 +249,7 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 			description:
 				"Get tool usage breakdown from the audit trail. Optional params: since (ISO timestamp), limit (max results, default 15)",
 			args: {},
-			async execute(args) {
+			async execute(args, ctx) {
 				const typedArgs = args as { since?: string; limit?: number };
 				try {
 					const filter = {
@@ -259,7 +267,7 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 			description:
 				"Get timeline of all events for a specific session. Required param: session_id",
 			args: {},
-			async execute(args) {
+			async execute(args, ctx) {
 				const typedArgs = args as { session_id?: string };
 				try {
 					if (!typedArgs.session_id) {
@@ -277,7 +285,7 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 			description:
 				"Export audit logs with optional filters. Optional params: since (ISO timestamp), session_id, tool_name, limit (max results, default 1000)",
 			args: {},
-			async execute(args) {
+			async execute(args, ctx) {
 				const typedArgs = args as {
 					since?: string;
 					session_id?: string;
