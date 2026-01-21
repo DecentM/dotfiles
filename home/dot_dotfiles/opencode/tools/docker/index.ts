@@ -5,81 +5,91 @@
 
 // Client
 export {
-  // Container operations
-  listContainers,
-  inspectContainer,
-  createContainer,
-  startContainer,
-  stopContainer,
-  removeContainer,
-  getContainerLogs,
-  execInContainer,
-  // Image operations
-  listImages,
-  pullImage,
-  inspectImage,
-  removeImage,
-  // Volume operations
-  listVolumes,
-  createVolume,
-  removeVolume,
-  // Network operations
-  listNetworks,
-  // Health
-  ping,
-  // Types
-  type Container,
-  type ContainerInspect,
-  type Image,
-  type ImageInspect,
-  type Volume,
-  type Network,
-  type DockerApiResponse,
+	// Types
+	type Container,
+	type ContainerInspect,
+	createContainer,
+	createVolume,
+	type DockerApiResponse,
+	execInContainer,
+	getContainerLogs,
+	type Image,
+	type ImageInspect,
+	inspectContainer,
+	inspectImage,
+	// Container operations
+	listContainers,
+	// Image operations
+	listImages,
+	// Network operations
+	listNetworks,
+	// Volume operations
+	listVolumes,
+	type Network,
+	// Health
+	ping,
+	pullImage,
+	removeContainer,
+	removeImage,
+	removeVolume,
+	startContainer,
+	stopContainer,
+	type Volume,
 } from "./client";
 
 // Database
 export { dbManager, logOperation, updateLogEntry } from "./db";
 
 // Permissions
-export { getPermissions, matchOperation, buildOperationPattern } from "./permissions";
+export {
+	buildOperationPattern,
+	getPermissions,
+	matchOperation,
+} from "./permissions";
 
 // Tools
-export { docker_stats, docker_export_logs } from "./tools";
+export { docker_export_logs, docker_stats } from "./tools";
 
 // Types
 export type {
-  CompiledPermissionPattern,
-  ConstraintConfig,
-  ConstraintResult,
-  ConstraintType,
-  ContainerConfig,
-  Decision,
-  ExecConfig,
-  HostConfig,
-  LogEntry,
-  MatchResult,
-  PermissionPattern,
-  PermissionsConfig,
-  YamlRule,
-  DockerOperationType,
+	CompiledPermissionPattern,
+	ConstraintConfig,
+	ConstraintResult,
+	ConstraintType,
+	ContainerConfig,
+	Decision,
+	DockerOperationType,
+	ExecConfig,
+	HostConfig,
+	LogEntry,
+	MatchResult,
+	PermissionPattern,
+	PermissionsConfig,
+	YamlRule,
 } from "./types";
 
 // Utils
-export { parseSince, formatBytes, formatTimestamp, truncate, formatContainerName } from "./utils";
+export {
+	formatBytes,
+	formatContainerName,
+	formatTimestamp,
+	parseSince,
+	truncate,
+} from "./utils";
 
 // Validators
 export {
-  patternToRegex,
-  matchesAnyPattern,
-  validateConstraint,
-  validateYamlRule,
-  validateYamlConfig,
-  validateNoPrivileged,
-  validateNoHostNetwork,
-  validateAllowedMounts,
-  validateImagePattern,
-  validateContainerPattern,
-  validateResourceLimits,
-  validateConstraints,
-  type ValidationContext,
+	matchesAnyPattern,
+	patternToRegex,
+	type ValidationContext,
+	validateAllowedMounts,
+	validateConstraint,
+	validateConstraints,
+	validateContainerPattern,
+	validateImagePattern,
+	validateNoHostNetwork,
+	validateNoPrivileged,
+	validateResourceLimits,
+	validateYamlConfig,
+	validateYamlRule,
 } from "./validators";
