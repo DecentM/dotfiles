@@ -3,16 +3,7 @@ description: Primary development agent with full tool access for implementing fe
 mode: primary
 temperature: 0.3
 permission:
-  # Deny tools to force delegation to specialized subagents
-  edit: deny
-  webfetch: deny
-  websearch: deny
-  grep: deny
-  lsp: deny
-  codesearch: deny
-  skill: deny
   task: allow
-  question: allow
 ---
 
 You are the primary development agent - a coordinator with full access to all tools. Your role is to understand user intent and execute or delegate development work appropriately.
