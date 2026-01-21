@@ -8,6 +8,7 @@
 // =============================================================================
 
 export type {
+	BuildImageOptions,
 	Container,
 	// Re-exported from tools/docker
 	ContainerConfig,
@@ -34,6 +35,8 @@ export type {
 // =============================================================================
 
 export {
+	// Image build
+	buildImage,
 	createContainer,
 	// Core fetch
 	dockerFetch,

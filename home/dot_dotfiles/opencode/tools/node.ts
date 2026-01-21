@@ -4,8 +4,13 @@
  * Supports parallel executions with resource isolation.
  */
 
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 import { tool } from "@opencode-ai/plugin";
 import {
+	buildImage,
+	formatErrorResult,
 	formatExecutionResult,
 	formatNoCodeError,
 	runContainer,
@@ -16,31 +21,14 @@ import {
 // =============================================================================
 
 const DEFAULT_TIMEOUT_MS = 120_000;
-const DOCKERFILE_PATH = "~/.dotfiles/opencode/docker/mcp-node.dockerfile";
-const DOCKER_CONTEXT = "~/.dotfiles/opencode/docker";
+const DOCKER_CONTEXT = join(homedir(), ".dotfiles/opencode/docker");
+const DOCKERFILE_PATH = "mcp-node.dockerfile";
 
 type Runtime = "node" | "tsx" | "deno";
 
 // =============================================================================
 // Helpers
 // =============================================================================
-
-/**
- * Build the Docker image and return the image ID.
- */
-const buildImage = async (): Promise<string> => {
-	const proc = Bun.spawn(
-		["bash", "-c", `docker build -q -f ${DOCKERFILE_PATH} ${DOCKER_CONTEXT}`],
-		{ stdout: "pipe", stderr: "pipe" },
-	);
-	await proc.exited;
-	const imageId = (await new Response(proc.stdout).text()).trim();
-	if (!imageId) {
-		const stderr = await new Response(proc.stderr).text();
-		throw new Error(`Failed to build image: ${stderr}`);
-	}
-	return imageId;
-};
 
 /**
  * Get the command array for the given runtime.
@@ -93,11 +81,22 @@ Returns stdout, stderr, and exit code.`,
 		}
 
 		// Build the image
-		const image = await buildImage();
+		const buildResult = await buildImage(DOCKER_CONTEXT, {
+			dockerfile: DOCKERFILE_PATH,
+			quiet: true,
+		});
+
+		if (!buildResult.success || !buildResult.data) {
+			return formatErrorResult(
+				buildResult.error ?? "Failed to build image",
+				0,
+				runtime,
+			);
+		}
 
 		// Run container with the docker library
 		const result = await runContainer({
-			image,
+			image: buildResult.data,
 			code,
 			cmd: getCommand(runtime as Runtime),
 			timeout,

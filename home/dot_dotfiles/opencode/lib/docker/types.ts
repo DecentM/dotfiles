@@ -317,3 +317,24 @@ export interface WaitContainerResponse {
 		Message: string;
 	};
 }
+
+// =============================================================================
+// Build Types
+// =============================================================================
+
+/**
+ * Options for building a Docker image.
+ */
+export interface BuildImageOptions {
+	/** Path to Dockerfile relative to context (default: "Dockerfile") */
+	dockerfile?: string;
+
+	/** Tag to apply to the built image (e.g., "myimage:latest") */
+	tag?: string;
+
+	/** Use quiet mode - only return image ID (default: true) */
+	quiet?: boolean;
+
+	/** Build arguments to pass to the build */
+	buildArgs?: Record<string, string>;
+}
