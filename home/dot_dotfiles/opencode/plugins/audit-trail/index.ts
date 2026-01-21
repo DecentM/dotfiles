@@ -5,8 +5,7 @@
  * for comprehensive audit trail and analytics.
  */
 
-import { type Plugin, tool } from "@opencode-ai/plugin";
-import type { Event } from "@opencode-ai/sdk";
+import { type Plugin, type Event, tool } from "@opencode-ai/plugin";
 
 import {
 	dbManager,
