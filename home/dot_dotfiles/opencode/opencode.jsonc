@@ -15,7 +15,6 @@
     "list": "allow",
     "todoread": "allow",
     "todowrite": "allow",
-    "question": "allow",
 
     // MCPs
     "sequentialthinking_*": "allow",
