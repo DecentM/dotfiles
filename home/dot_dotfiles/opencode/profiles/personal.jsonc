@@ -98,6 +98,7 @@
       ],
       "enabled": true,
     },
+
     "homeassistant": {
       "type": "remote",
       "url": "https://hass.cluster.arpa/api/mcp",
@@ -106,14 +107,10 @@
         "Authorization": "Bearer {env:HOMEASSISTANT_TOKEN}",
       },
     },
+
     "grafana": {
       "type": "remote",
       "url": "https://mcp-grafana.cluster.arpa/sse",
-      "enabled": true,
-    },
-
-    // Flaresolverr for Cloudflare-protected sites (bundled, self-contained)
-    "flaresolverr": {
       "enabled": true,
     },
   },

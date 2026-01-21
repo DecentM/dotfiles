@@ -22,7 +22,7 @@ export interface ToolExecutionLogEntry {
 
 export interface ToolExecutionLogRow {
   id: number;
-  timestamp: string;
+  timestamp: number;
   sessionId: string | null;
   messageId: string | null;
   callId: string | null;
@@ -48,7 +48,7 @@ export interface SessionLogEntry {
 
 export interface SessionLogRow {
   id: number;
-  timestamp: string;
+  timestamp: number;
   sessionId: string;
   eventType: SessionEventType;
   detailsJson: string | null;
@@ -60,12 +60,14 @@ export interface SessionLogRow {
 
 export interface StatsFilter {
   since?: Date;
+  before?: Date;
   sessionId?: string;
   toolName?: string;
 }
 
 export interface LogsFilter {
   since?: Date;
+  before?: Date;
   sessionId?: string;
   toolName?: string;
   limit?: number;
@@ -89,7 +91,7 @@ export interface ToolUsage {
 }
 
 export interface SessionTimelineEntry {
-  timestamp: string;
+  timestamp: number;
   type: "tool_execution" | "session_event";
   toolName?: string;
   eventType?: SessionEventType;

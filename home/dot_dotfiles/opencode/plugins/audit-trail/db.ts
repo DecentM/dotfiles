@@ -46,7 +46,7 @@ export const dbManager = (() => {
       db.run(`
         CREATE TABLE IF NOT EXISTS tool_execution_log (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+          timestamp INTEGER NOT NULL,
           session_id TEXT,
           message_id TEXT,
           call_id TEXT,
@@ -66,7 +66,7 @@ export const dbManager = (() => {
       db.run(`
         CREATE TABLE IF NOT EXISTS session_log (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+          timestamp INTEGER NOT NULL,
           session_id TEXT NOT NULL,
           event_type TEXT NOT NULL CHECK (event_type IN ('created', 'compacted', 'deleted', 'error', 'idle')),
           details_json TEXT
@@ -118,9 +118,10 @@ export const logToolExecution = (entry: ToolExecutionLogEntry): number => {
     const db = dbManager.get();
     const result = db.run(
       `INSERT INTO tool_execution_log
-       (session_id, message_id, call_id, tool_name, agent, args_json, decision, result_summary, duration_ms)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (timestamp, session_id, message_id, call_id, tool_name, agent, args_json, decision, result_summary, duration_ms)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        Date.now(),
         entry.sessionId ?? null,
         entry.messageId ?? null,
         entry.callId ?? null,
@@ -171,8 +172,8 @@ export const logSessionEvent = (entry: SessionLogEntry): number => {
   try {
     const db = dbManager.get();
     const result = db.run(
-      `INSERT INTO session_log (session_id, event_type, details_json) VALUES (?, ?, ?)`,
-      [entry.sessionId, entry.eventType, entry.detailsJson ?? null]
+      `INSERT INTO session_log (timestamp, session_id, event_type, details_json) VALUES (?, ?, ?, ?)`,
+      [Date.now(), entry.sessionId, entry.eventType, entry.detailsJson ?? null]
     );
     return Number(result.lastInsertRowid);
   } catch (error) {
@@ -266,7 +267,7 @@ export const getSessionTimeline = (sessionId: string): SessionTimelineEntry[] =>
        ORDER BY timestamp ASC`
     )
     .all(sessionId) as Array<{
-    timestamp: string;
+    timestamp: number;
     tool_name: string;
     decision: string;
     result_summary: string | null;
@@ -282,7 +283,7 @@ export const getSessionTimeline = (sessionId: string): SessionTimelineEntry[] =>
        ORDER BY timestamp ASC`
     )
     .all(sessionId) as Array<{
-    timestamp: string;
+    timestamp: number;
     event_type: string;
     details_json: string | null;
   }>;
@@ -305,10 +306,8 @@ export const getSessionTimeline = (sessionId: string): SessionTimelineEntry[] =>
     })),
   ];
 
-  // Sort by timestamp using Date comparison for proper chronological order
-  timeline.sort((a, b) =>
-    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
+  // Sort by timestamp (numeric comparison for unix timestamps)
+  timeline.sort((a, b) => a.timestamp - b.timestamp);
 
   return timeline;
 };
@@ -322,13 +321,18 @@ export const getSessionTimeline = (sessionId: string): SessionTimelineEntry[] =>
  */
 export const getLogs = (filter: LogsFilter = {}): ToolExecutionLogRow[] => {
   const db = dbManager.get();
-  const { since, sessionId, toolName, limit = 1000 } = filter;
+  const { since, before, sessionId, toolName, limit = 1000 } = filter;
   const conditions: string[] = [];
   const params: (string | number)[] = [];
 
   if (since) {
     conditions.push("timestamp >= ?");
-    params.push(since.toISOString());
+    params.push(since.getTime());
+  }
+
+  if (before) {
+    conditions.push("timestamp <= ?");
+    params.push(before.getTime());
   }
 
   if (sessionId) {
@@ -353,7 +357,7 @@ export const getLogs = (filter: LogsFilter = {}): ToolExecutionLogRow[] => {
     )
     .all(...params, limit) as Array<{
     id: number;
-    timestamp: string;
+    timestamp: number;
     session_id: string | null;
     message_id: string | null;
     call_id: string | null;
@@ -405,7 +409,7 @@ export const getSessionLogs = (sessionId?: string, limit = 1000): SessionLogRow[
     )
     .all(...params, limit) as Array<{
     id: number;
-    timestamp: string;
+    timestamp: number;
     session_id: string;
     event_type: string;
     details_json: string | null;
@@ -432,7 +436,12 @@ const buildToolWhereClause = (
 
   if (filter.since) {
     conditions.push("timestamp >= ?");
-    params.push(filter.since.toISOString());
+    params.push(filter.since.getTime());
+  }
+
+  if (filter.before) {
+    conditions.push("timestamp <= ?");
+    params.push(filter.before.getTime());
   }
 
   if (filter.sessionId) {

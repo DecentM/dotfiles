@@ -131,16 +131,19 @@
       ],
       "enabled": true,
     },
+
     "jira": {
       "type": "remote",
       "url": "https://mcp.atlassian.com/v1/mcp",
       "enabled": true,
     },
+
     "notion": {
       "type": "remote",
       "url": "https://mcp.notion.com/mcp",
       "enabled": true,
     },
+
     "slack": {
       "type": "local",
       "command": [

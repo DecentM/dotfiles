@@ -52,7 +52,7 @@ const createTestDb = (): TestDb => {
 	db.run(`
     CREATE TABLE IF NOT EXISTS tool_execution_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+      timestamp INTEGER NOT NULL,
       session_id TEXT,
       message_id TEXT,
       call_id TEXT,
@@ -78,7 +78,7 @@ const createTestDb = (): TestDb => {
 	db.run(`
     CREATE TABLE IF NOT EXISTS session_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+      timestamp INTEGER NOT NULL,
       session_id TEXT NOT NULL,
       event_type TEXT NOT NULL CHECK (event_type IN ('created', 'compacted', 'deleted', 'error', 'idle')),
       details_json TEXT
@@ -94,9 +94,10 @@ const createTestDb = (): TestDb => {
 	const logToolExecution = (entry: ToolExecutionLogEntry): number => {
 		const result = db.run(
 			`INSERT INTO tool_execution_log
-       (session_id, message_id, call_id, tool_name, agent, args_json, decision, result_summary, duration_ms)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (timestamp, session_id, message_id, call_id, tool_name, agent, args_json, decision, result_summary, duration_ms)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
+				Date.now(),
 				entry.sessionId ?? null,
 				entry.messageId ?? null,
 				entry.callId ?? null,
@@ -125,21 +126,26 @@ const createTestDb = (): TestDb => {
 
 	const logSessionEvent = (entry: SessionLogEntry): number => {
 		const result = db.run(
-			`INSERT INTO session_log (session_id, event_type, details_json) VALUES (?, ?, ?)`,
-			[entry.sessionId, entry.eventType, entry.detailsJson ?? null],
+			`INSERT INTO session_log (timestamp, session_id, event_type, details_json) VALUES (?, ?, ?, ?)`,
+			[Date.now(), entry.sessionId, entry.eventType, entry.detailsJson ?? null],
 		);
 		return Number(result.lastInsertRowid);
 	};
 
 	const buildToolWhereClause = (
 		filter: StatsFilter,
-	): { conditions: string[]; params: (string | null)[] } => {
+	): { conditions: string[]; params: (string | number | null)[] } => {
 		const conditions: string[] = [];
-		const params: (string | null)[] = [];
+		const params: (string | number | null)[] = [];
 
 		if (filter.since) {
 			conditions.push("timestamp >= ?");
-			params.push(filter.since.toISOString());
+			params.push(filter.since.getTime());
+		}
+
+		if (filter.before) {
+			conditions.push("timestamp <= ?");
+			params.push(filter.before.getTime());
 		}
 
 		if (filter.sessionId) {
@@ -225,7 +231,7 @@ const createTestDb = (): TestDb => {
          ORDER BY timestamp ASC`,
 			)
 			.all(sessionId) as Array<{
-			timestamp: string;
+			timestamp: number;
 			tool_name: string;
 			decision: string;
 			result_summary: string | null;
@@ -241,7 +247,7 @@ const createTestDb = (): TestDb => {
          ORDER BY timestamp ASC`,
 			)
 			.all(sessionId) as Array<{
-			timestamp: string;
+			timestamp: number;
 			event_type: string;
 			details_json: string | null;
 		}>;
@@ -264,20 +270,25 @@ const createTestDb = (): TestDb => {
 			})),
 		];
 
-		// Sort by timestamp
-		timeline.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+		// Sort by timestamp (numeric comparison)
+		timeline.sort((a, b) => a.timestamp - b.timestamp);
 
 		return timeline;
 	};
 
 	const getLogs = (filter: LogsFilter = {}): ToolExecutionLogRow[] => {
-		const { since, sessionId, toolName, limit = 1000 } = filter;
+		const { since, before, sessionId, toolName, limit = 1000 } = filter;
 		const conditions: string[] = [];
 		const params: (string | number)[] = [];
 
 		if (since) {
 			conditions.push("timestamp >= ?");
-			params.push(since.toISOString());
+			params.push(since.getTime());
+		}
+
+		if (before) {
+			conditions.push("timestamp <= ?");
+			params.push(before.getTime());
 		}
 
 		if (sessionId) {
@@ -303,7 +314,7 @@ const createTestDb = (): TestDb => {
 			)
 			.all(...params, limit) as Array<{
 			id: number;
-			timestamp: string;
+			timestamp: number;
 			session_id: string | null;
 			message_id: string | null;
 			call_id: string | null;
@@ -355,7 +366,7 @@ const createTestDb = (): TestDb => {
 			)
 			.all(...params, limit) as Array<{
 			id: number;
-			timestamp: string;
+			timestamp: number;
 			session_id: string;
 			event_type: string;
 			details_json: string | null;
@@ -612,8 +623,9 @@ describe("logToolExecution", () => {
 			});
 			const logs = testDb.getLogs();
 			expect(logs[0].timestamp).toBeDefined();
-			// Timestamp should be a valid date string
-			expect(new Date(logs[0].timestamp).getTime()).not.toBeNaN();
+			// Timestamp should be a valid unix timestamp (number)
+			expect(typeof logs[0].timestamp).toBe("number");
+			expect(logs[0].timestamp).toBeGreaterThan(0);
 		});
 	});
 });
@@ -853,7 +865,9 @@ describe("logSessionEvent", () => {
 			});
 			const logs = testDb.getSessionLogs("sess-1");
 			expect(logs[0].timestamp).toBeDefined();
-			expect(new Date(logs[0].timestamp).getTime()).not.toBeNaN();
+			// Timestamp should be a valid unix timestamp (number)
+			expect(typeof logs[0].timestamp).toBe("number");
+			expect(logs[0].timestamp).toBeGreaterThan(0);
 		});
 	});
 });
@@ -1013,6 +1027,51 @@ describe("getToolStats", () => {
 			const stats = testDb.getToolStats({
 				sessionId: "sess-1",
 				toolName: "read",
+			});
+			expect(stats.total).toBe(1);
+		});
+
+		test("filters by before timestamp", () => {
+			// Insert entries with controlled timestamps using raw SQL
+			const pastTime = Date.now() - 10000;
+			const futureTime = Date.now() + 10000;
+
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision, duration_ms) VALUES (?, ?, ?, ?)`,
+				[pastTime, "old_tool", "completed", 50]
+			);
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision, duration_ms) VALUES (?, ?, ?, ?)`,
+				[futureTime, "new_tool", "completed", 60]
+			);
+
+			const stats = testDb.getToolStats({ before: new Date(Date.now()) });
+			expect(stats.total).toBe(1);
+		});
+
+		test("filters by since and before together (range query)", () => {
+			// Insert entries with controlled timestamps
+			const oldTime = Date.now() - 20000;
+			const midTime = Date.now() - 10000;
+			const newTime = Date.now() + 10000;
+
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision, duration_ms) VALUES (?, ?, ?, ?)`,
+				[oldTime, "old_tool", "completed", 50]
+			);
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision, duration_ms) VALUES (?, ?, ?, ?)`,
+				[midTime, "mid_tool", "completed", 60]
+			);
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision, duration_ms) VALUES (?, ?, ?, ?)`,
+				[newTime, "new_tool", "completed", 70]
+			);
+
+			// Query for range: only mid_tool should match
+			const stats = testDb.getToolStats({
+				since: new Date(oldTime + 1),
+				before: new Date(newTime - 1),
 			});
 			expect(stats.total).toBe(1);
 		});
@@ -1384,6 +1443,53 @@ describe("getLogs", () => {
 			expect(logs.length).toBe(1);
 			expect(logs[0].sessionId).toBe("sess-1");
 			expect(logs[0].toolName).toBe("read");
+		});
+
+		test("filters by before timestamp", () => {
+			// Insert entries with controlled timestamps using raw SQL
+			const pastTime = Date.now() - 10000;
+			const futureTime = Date.now() + 10000;
+
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision) VALUES (?, ?, ?)`,
+				[pastTime, "old_tool", "started"]
+			);
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision) VALUES (?, ?, ?)`,
+				[futureTime, "new_tool", "started"]
+			);
+
+			const logs = testDb.getLogs({ before: new Date(Date.now()) });
+			expect(logs.length).toBe(1);
+			expect(logs[0].toolName).toBe("old_tool");
+		});
+
+		test("filters by since and before together (range query)", () => {
+			// Insert entries with controlled timestamps
+			const oldTime = Date.now() - 20000;
+			const midTime = Date.now() - 10000;
+			const newTime = Date.now() + 10000;
+
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision) VALUES (?, ?, ?)`,
+				[oldTime, "old_tool", "started"]
+			);
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision) VALUES (?, ?, ?)`,
+				[midTime, "mid_tool", "started"]
+			);
+			testDb.db.run(
+				`INSERT INTO tool_execution_log (timestamp, tool_name, decision) VALUES (?, ?, ?)`,
+				[newTime, "new_tool", "started"]
+			);
+
+			// Query for range: only mid_tool should match
+			const logs = testDb.getLogs({
+				since: new Date(oldTime + 1),
+				before: new Date(newTime - 1),
+			});
+			expect(logs.length).toBe(1);
+			expect(logs[0].toolName).toBe("mid_tool");
 		});
 	});
 

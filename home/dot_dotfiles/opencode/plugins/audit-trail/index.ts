@@ -5,12 +5,10 @@
  * for comprehensive audit trail and analytics.
  */
 
-import { type Plugin, type Event, tool } from "@opencode-ai/plugin";
+import { type Event, type Plugin, tool } from "@opencode-ai/plugin";
 
 import {
-	dbManager,
 	getLogs,
-	getSessionLogs,
 	getSessionTimeline,
 	getToolStats,
 	getToolUsage,
@@ -103,7 +101,7 @@ const createResultSummary = (
 	if (output.length <= maxLength) {
 		return output;
 	}
-	return output.substring(0, maxLength - 3) + "...";
+	return `${output.substring(0, maxLength - 3)}...`;
 };
 
 /**
@@ -218,86 +216,90 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 		// =========================================================================
 
 		tool: {
-		audit_stats: tool({
-			description:
-				"Get overall tool execution statistics from the audit trail. Optional params: since (ISO timestamp), session_id",
-			args: {},
-			async execute(args, ctx) {
-				const typedArgs = args as { since?: string; session_id?: string };
-				try {
-					const filter = {
-						since: parseOptionalDate(typedArgs.since),
-						sessionId: typedArgs.session_id,
-					};
-					const stats = getToolStats(filter);
-					return JSON.stringify(stats, null, 2);
-				} catch (error) {
-					return `Error: Failed to get audit stats: ${error instanceof Error ? error.message : String(error)}`;
-				}
-			},
-		}),
-
-		audit_tool_usage: tool({
-			description:
-				"Get tool usage breakdown from the audit trail. Optional params: since (ISO timestamp), limit (max results, default 15)",
-			args: {},
-			async execute(args, ctx) {
-				const typedArgs = args as { since?: string; limit?: number };
-				try {
-					const filter = {
-						since: parseOptionalDate(typedArgs.since),
-					};
-					const usage = getToolUsage(filter, typedArgs.limit ?? 15);
-					return JSON.stringify(usage, null, 2);
-				} catch (error) {
-					return `Error: Failed to get tool usage: ${error instanceof Error ? error.message : String(error)}`;
-				}
-			},
-		}),
-
-		audit_session_timeline: tool({
-			description:
-				"Get timeline of all events for a specific session. Required param: session_id",
-			args: {},
-			async execute(args, ctx) {
-				const typedArgs = args as { session_id?: string };
-				try {
-					if (!typedArgs.session_id) {
-						return "Error: session_id is required";
+			audit_stats: tool({
+				description:
+					"Get overall tool execution statistics from the audit trail. Optional params: since (ISO timestamp), before (ISO timestamp), session_id",
+				args: {},
+				async execute(args, ctx) {
+					const typedArgs = args as { since?: string; before?: string; session_id?: string };
+					try {
+						const filter = {
+							since: parseOptionalDate(typedArgs.since),
+							before: parseOptionalDate(typedArgs.before),
+							sessionId: typedArgs.session_id,
+						};
+						const stats = getToolStats(filter);
+						return JSON.stringify(stats, null, 2);
+					} catch (error) {
+						return `Error: Failed to get audit stats: ${error instanceof Error ? error.message : String(error)}`;
 					}
-					const timeline = getSessionTimeline(typedArgs.session_id);
-					return JSON.stringify(timeline, null, 2);
-				} catch (error) {
-					return `Error: Failed to get session timeline: ${error instanceof Error ? error.message : String(error)}`;
-				}
-			},
-		}),
+				},
+			}),
 
-		audit_export_logs: tool({
-			description:
-				"Export audit logs with optional filters. Optional params: since (ISO timestamp), session_id, tool_name, limit (max results, default 1000)",
-			args: {},
-			async execute(args, ctx) {
-				const typedArgs = args as {
-					since?: string;
-					session_id?: string;
-					tool_name?: string;
-					limit?: number;
-				};
-				try {
-					const filter = {
-						since: parseOptionalDate(typedArgs.since),
-						sessionId: typedArgs.session_id,
-						toolName: typedArgs.tool_name,
-						limit: typedArgs.limit ?? 1000,
+			audit_tool_usage: tool({
+				description:
+					"Get tool usage breakdown from the audit trail. Optional params: since (ISO timestamp), before (ISO timestamp), limit (max results, default 15)",
+				args: {},
+				async execute(args, ctx) {
+					const typedArgs = args as { since?: string; before?: string; limit?: number };
+					try {
+						const filter = {
+							since: parseOptionalDate(typedArgs.since),
+							before: parseOptionalDate(typedArgs.before),
+						};
+						const usage = getToolUsage(filter, typedArgs.limit ?? 15);
+						return JSON.stringify(usage, null, 2);
+					} catch (error) {
+						return `Error: Failed to get tool usage: ${error instanceof Error ? error.message : String(error)}`;
+					}
+				},
+			}),
+
+			audit_session_timeline: tool({
+				description:
+					"Get timeline of all events for a specific session. Required param: session_id",
+				args: {},
+				async execute(args, ctx) {
+					const typedArgs = args as { session_id?: string };
+					try {
+						if (!typedArgs.session_id) {
+							return "Error: session_id is required";
+						}
+						const timeline = getSessionTimeline(typedArgs.session_id);
+						return JSON.stringify(timeline, null, 2);
+					} catch (error) {
+						return `Error: Failed to get session timeline: ${error instanceof Error ? error.message : String(error)}`;
+					}
+				},
+			}),
+
+			audit_export_logs: tool({
+				description:
+					"Export audit logs with optional filters. Optional params: since (ISO timestamp), before (ISO timestamp), session_id, tool_name, limit (max results, default 1000)",
+				args: {},
+				async execute(args, ctx) {
+					const typedArgs = args as {
+						since?: string;
+						before?: string;
+						session_id?: string;
+						tool_name?: string;
+						limit?: number;
 					};
-					const logs = getLogs(filter);
-					return JSON.stringify(logs, null, 2);
-				} catch (error) {
-					return `Error: Failed to export logs: ${error instanceof Error ? error.message : String(error)}`;
-				}
-			},
-		}),
+					try {
+						const filter = {
+							since: parseOptionalDate(typedArgs.since),
+							before: parseOptionalDate(typedArgs.before),
+							sessionId: typedArgs.session_id,
+							toolName: typedArgs.tool_name,
+							limit: typedArgs.limit ?? 1000,
+						};
+						const logs = getLogs(filter);
+						return JSON.stringify(logs, null, 2);
+					} catch (error) {
+						return `Error: Failed to export logs: ${error instanceof Error ? error.message : String(error)}`;
+					}
+				},
+			}),
 		},
 	};
 };
