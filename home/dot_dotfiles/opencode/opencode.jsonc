@@ -25,7 +25,8 @@
     "time_*": "allow",
 
     // Custom tools
-    "python_*": "allow",
+    "python": "allow",
+    "audit": "allow"
   },
   "instructions": [
     "~/.dotfiles/opencode/rules/base.md",
