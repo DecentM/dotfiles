@@ -690,46 +690,57 @@ export const formatMetrics = (data?: MetricsData): string => {
 /**
  * Start the Prometheus metrics HTTP server.
  * @param port Port to listen on (default: 9090)
- * @returns The port the server is listening on
+ * @returns true if server started successfully, false otherwise
  */
-export const startMetricsServer = (port = 9090): number => {
+export const startMetricsServer = (port = 9090): boolean => {
 	if (server) {
-		console.warn("[audit-trail] Prometheus metrics server already running");
-		return server.port;
+		return true; // Already running
 	}
 
-	server = Bun.serve({
-		port,
-		fetch(request) {
-			const url = new URL(request.url);
+	try {
+		server = Bun.serve({
+			port,
+			fetch(request) {
+				const url = new URL(request.url);
 
-			if (request.method === "GET" && url.pathname === "/metrics") {
-				try {
-					const metricsOutput = formatMetrics();
-					return new Response(metricsOutput, {
-						status: 200,
-						headers: {
-							"Content-Type": "text/plain; version=0.0.4; charset=utf-8",
-						},
-					});
-				} catch (error) {
-					console.error("[audit-trail] Error generating metrics:", error);
-					return new Response("Internal Server Error", { status: 500 });
+				if (request.method === "GET" && url.pathname === "/metrics") {
+					try {
+						const metricsOutput = formatMetrics();
+						return new Response(metricsOutput, {
+							status: 200,
+							headers: {
+								"Content-Type": "text/plain; version=0.0.4; charset=utf-8",
+							},
+						});
+					} catch (error) {
+						console.error("[audit-trail] Error generating metrics:", error);
+						return new Response("Internal Server Error", { status: 500 });
+					}
 				}
-			}
 
-			if (request.method === "GET" && url.pathname === "/health") {
-				return new Response("OK", { status: 200 });
-			}
+				if (request.method === "GET" && url.pathname === "/health") {
+					return new Response("OK", { status: 200 });
+				}
 
-			return new Response("Not Found", { status: 404 });
-		},
-	});
+				return new Response("Not Found", { status: 404 });
+			},
+		});
 
-	console.log(
-		`[audit-trail] Prometheus metrics server started on port ${server.port}`,
-	);
-	return server.port;
+		console.log(
+			`[audit-trail] Prometheus metrics server started on port ${server.port}`,
+		);
+		return true;
+	} catch (error) {
+		if (error instanceof Error && error.message.includes("EADDRINUSE")) {
+			console.log(
+				`[audit-trail] Prometheus metrics server not started: port ${port} already in use`,
+			);
+			return false;
+		}
+		// Log other errors but don't crash
+		console.error("[audit-trail] Failed to start Prometheus server:", error);
+		return false;
+	}
 };
 
 /**

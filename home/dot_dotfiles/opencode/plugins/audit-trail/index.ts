@@ -23,9 +23,10 @@ import type { SessionEventType } from "./types";
 // Prometheus Server Lifecycle
 // =============================================================================
 
-const METRICS_PORT = Number(process.env.OPENCODE_METRICS_PORT) || 9090;
+const METRICS_PORT = Number.parseInt(process.env.OPENCODE_METRICS_PORT ?? "", 10) || 9090;
 
 // Start the Prometheus metrics server when the plugin loads
+// Returns false if port is in use (e.g., another instance running) - this is fine
 startMetricsServer(METRICS_PORT);
 
 // Register cleanup handlers to stop the server on process exit
