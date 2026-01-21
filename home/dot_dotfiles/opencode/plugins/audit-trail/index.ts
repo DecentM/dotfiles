@@ -218,28 +218,24 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 		// =========================================================================
 
 		tool: {
-			audit_stats: tool({
-				description:
-					"Get overall tool execution statistics from the audit trail",
-				args: {
-					since: tool.schema
-						.string()
-						.optional()
-						.describe("ISO timestamp to filter from"),
-					session_id: tool.schema
-						.string()
-						.optional()
-						.describe("Filter by session ID"),
-				},
-				async execute(args) {
+		audit_stats: tool({
+			description:
+				"Get overall tool execution statistics from the audit trail. Optional params: since (ISO timestamp), session_id",
+			args: {},
+			async execute(args) {
+				const typedArgs = args as { since?: string; session_id?: string };
+				try {
 					const filter = {
-						since: parseOptionalDate(args.since),
-						sessionId: args.session_id,
+						since: parseOptionalDate(typedArgs.since),
+						sessionId: typedArgs.session_id,
 					};
 					const stats = getToolStats(filter);
 					return JSON.stringify(stats, null, 2);
-				},
-			}),
+				} catch (error) {
+					return `Error: Failed to get audit stats: ${error instanceof Error ? error.message : String(error)}`;
+				}
+			},
+		}),
 
 			audit_tool_usage: tool({
 				description: "Get tool usage breakdown from the audit trail",
@@ -254,11 +250,15 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 						.describe("Max results, default 15"),
 				},
 				async execute(args) {
-					const filter = {
-						since: parseOptionalDate(args.since),
-					};
-					const usage = getToolUsage(filter, args.limit ?? 15);
-					return JSON.stringify(usage, null, 2);
+					try {
+						const filter = {
+							since: parseOptionalDate(args.since),
+						};
+						const usage = getToolUsage(filter, args.limit ?? 15);
+						return JSON.stringify(usage, null, 2);
+					} catch (error) {
+						return `Error: Failed to get tool usage: ${error instanceof Error ? error.message : String(error)}`;
+					}
 				},
 			}),
 
@@ -268,8 +268,12 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 					session_id: tool.schema.string().describe("The session ID to query"),
 				},
 				async execute(args) {
-					const timeline = getSessionTimeline(args.session_id);
-					return JSON.stringify(timeline, null, 2);
+					try {
+						const timeline = getSessionTimeline(args.session_id);
+						return JSON.stringify(timeline, null, 2);
+					} catch (error) {
+						return `Error: Failed to get session timeline: ${error instanceof Error ? error.message : String(error)}`;
+					}
 				},
 			}),
 
@@ -294,14 +298,18 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 						.describe("Max results, default 1000"),
 				},
 				async execute(args) {
-					const filter = {
-						since: parseOptionalDate(args.since),
-						sessionId: args.session_id,
-						toolName: args.tool_name,
-						limit: args.limit ?? 1000,
-					};
-					const logs = getLogs(filter);
-					return JSON.stringify(logs, null, 2);
+					try {
+						const filter = {
+							since: parseOptionalDate(args.since),
+							sessionId: args.session_id,
+							toolName: args.tool_name,
+							limit: args.limit ?? 1000,
+						};
+						const logs = getLogs(filter);
+						return JSON.stringify(logs, null, 2);
+					} catch (error) {
+						return `Error: Failed to export logs: ${error instanceof Error ? error.message : String(error)}`;
+					}
 				},
 			}),
 		},
