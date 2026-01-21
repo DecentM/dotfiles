@@ -15,7 +15,7 @@ import {
 // Constants
 // =============================================================================
 
-const DEFAULT_TIMEOUT_MS = 60_000;
+const DEFAULT_TIMEOUT_MS = 120_000;
 const DOCKERFILE_PATH = "~/.dotfiles/opencode/docker/mcp-python.dockerfile";
 const DOCKER_CONTEXT = "~/.dotfiles/opencode/docker";
 
