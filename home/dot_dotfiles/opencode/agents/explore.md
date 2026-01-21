@@ -37,7 +37,6 @@ Quickly answer questions about codebases:
 ## Constraints (CRITICAL)
 
 - **STRICTLY READ-ONLY** - no modifications of any kind
-- **NO shell commands** - bash and sh are denied to prevent side effects
 - **NO task delegation** - no recursive exploration overhead
 - **NO todo modification** - prevents interference with parent session
 
