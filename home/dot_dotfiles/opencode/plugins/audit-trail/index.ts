@@ -218,14 +218,6 @@ const AuditTrailPlugin: Plugin = async (_ctx) => {
 		// =========================================================================
 
 		tool: {
-		audit_test: tool({
-			description: "Test tool that just returns a string",
-			args: {},
-			async execute(args, ctx) {
-				return "Hello from audit_test!";
-			},
-		}),
-
 		audit_stats: tool({
 			description:
 				"Get overall tool execution statistics from the audit trail. Optional params: since (ISO timestamp), session_id",
