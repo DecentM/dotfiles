@@ -22,9 +22,6 @@
     },
 
     // Built-in subagents
-    "general": {
-      "model": "openrouter/minimax/minimax-m2.1",
-    },
     "explore": {
       "model": "openrouter/deepseek/deepseek-v3.2",
     },

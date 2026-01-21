@@ -16,9 +16,6 @@
     },
 
     // Built-in subagents
-    "general": {
-      "model": "github-copilot/claude-sonnet-4.5",
-    },
     "explore": {
       "model": "github-copilot/claude-haiku-4.5",
     },
