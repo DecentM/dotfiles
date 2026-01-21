@@ -164,3 +164,9 @@ For each issue:
 ## Tone
 
 Constructive and educational. Explain reasoning. Recognize good code. Focus on the code, not the author.
+
+## Linting
+
+When working on code:
+- Read files with task definitions, like package.json, or Makefile
+- Lint files with tools read-only

@@ -155,3 +155,10 @@ expect(result).toEqual(expectedOutput);
 3. Break complex tasks into smaller pieces
 4. Test changes work as expected
 5. Clean up temporary code and debug statements
+
+## Linting
+
+When working on code:
+- Read files with task definitions, like package.json, or Makefile
+- Lint after making changes (see if there's an autofix)
+- Same with code formatting

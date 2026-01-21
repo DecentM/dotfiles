@@ -15,6 +15,13 @@
 - Containers: verify image exists and find latest tag
 - Commands: positional args first (e.g., `find myfolder/ -type f`)
 
+## Linting (opencode directory)
+- ESLint handles code quality (bugs, logic issues) - NOT style
+- Biome handles formatting and style
+- Run `bun run lint` before committing to opencode/
+- Run `bun run lint:fix` to auto-fix issues
+- Run `bun run format` to format code
+
 # Tools
 
 ## sh (shell commands)
