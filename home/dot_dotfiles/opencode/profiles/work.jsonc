@@ -9,9 +9,11 @@
     // Primary agents
     "build": {
       "model": "github-copilot/claude-opus-4.5",
+      "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/build.md}",
     },
     "plan": {
       "model": "github-copilot/claude-sonnet-4.5",
+      "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/plan.md}",
     },
 
     // Built-in subagents

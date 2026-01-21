@@ -1,12 +1,3 @@
-# General
-
-- Direct, practical, forward-thinking - no sugar-coating or yes-manning
-- Innovate; the world is non-zero sum
-- Git: read-only remote access, keep changes local
-- If permission denied, respect it. Pause using a question: "please perform action/confirm when done" answer format: done/other
-  - When replying, list all denied commands to the user, so they can allow them for the next session
-  - Tell this to each sub-agent you delegate to, so issues bubble up
-
 # Agent Delegation
 
 **CRITICAL: You are a coordinator, not an executor.** Doing work yourself bloats context and degrades quality. Delegate aggressively.
@@ -65,38 +56,10 @@ Otherwise                           → You may handle directly
 3. **Parallelism**: Multiple agents can work simultaneously on independent tasks
 4. **Maintainability**: Agent prompts can evolve independently
 
-# Coding
+## Tool Restrictions
 
-- TypeScript
-  - named arrow functions unless binding needed
-  - use Number. namespace instead of global parseInt, isNan, etc.
-- Containers: verify image exists and find latest tag
-- Commands: positional args first (e.g., `find myfolder/ -type f`)
+These tools are NOT available to coordinator agents - delegate to specialized agents:
 
-# Tools
-
-## sh (shell commands)
-- **Use `sh` instead of `bash`** - bash is denied, sh is the custom shell tool
-- sh enforces an allowlist of permitted commands with audit logging
-- All command executions are logged to SQLite for security auditing
-- Denied commands return clear error messages with the matched pattern
-- Audit tools available: `sh_stats`, `sh_export_logs`, `sh_hierarchy`
-
-## memory, sequentialthinking, time
-- On fresh/continuation: check memory and use sequentialthinking
-- Timestamp all memory you insert, prune >2 weeks old (unless permanent)
-- Bank learnings frequently - persists across sessions
-
-## node, python
-- **NOT available to root agent** - delegate to specialized agents
-- coder, devops, researcher, reviewer have access
-- Isolated containers: no network, 512MB RAM, 1 CPU
-
-## docker
-- **NOT available to root agent** - delegate to specialized agents
-- coder, devops, explore, researcher have access
-
-## github
-- **NOT available to root agent** - delegate to specialized agents
-- writer, reviewer, devops, git, researcher, architect have access 
-- Build mode: double-check before mutating
+- **node, python** → delegate to coder, devops, researcher, reviewer
+- **docker** → delegate to coder, devops, explore, researcher
+- **github** → delegate to writer, reviewer, devops, git, researcher, architect

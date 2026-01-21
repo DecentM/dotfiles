@@ -12,7 +12,7 @@
   "tui": {
     "scroll_speed": 3,
     "scroll_acceleration": {
-      "enabled": true
+      "enabled": false
     },
     "diff_style": "auto"
   },
@@ -59,7 +59,7 @@
     "audit*": "allow"
   },
   "instructions": [
-    "~/.dotfiles/opencode/rules/base.md",
+    "~/.dotfiles/opencode/rules/all.md",
     "AGENTS.md",
     ".cursor/rules/*.{md,mdx}",
   ],

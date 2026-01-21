@@ -10,12 +10,14 @@
     // Primary agents - homeassistant access for home automation
     "build": {
       "model": "openrouter/minimax/minimax-m2.1",
+      "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/build.md}",
       "permission": {
         "homeassistant_*": "allow",
       },
     },
     "plan": {
       "model": "openrouter/minimax/minimax-m1",
+      "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/plan.md}",
       "permission": {
         "homeassistant_Get*": "allow",
         "homeassistant_todo_get_items": "allow",
