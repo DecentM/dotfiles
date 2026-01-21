@@ -10,197 +10,216 @@ import { tool } from "@opencode-ai/plugin";
 
 // Re-export all public APIs from modules
 export {
-  // Types
-  type ConstraintResult,
-  type PermissionPattern,
-  type MatchResult,
-  // Parser
-  patternToRegex,
-  parseCommandTokens,
-  extractNonFlagArgs,
-  extractNonFlagArgsAfterFirst,
-  extractPaths,
-  // Validators
-  validateCwdOnly,
-  hasShortFlag,
-  validateNoRecursive,
-  validateNoForce,
-  validateMaxDepth,
-  validateRequireFlag,
-  validateConstraints,
-  // Permissions
-  matchCommand,
-  // Utils
-  parseSince,
-  // Tools
-  stats,
-  export_data,
-  export_logs,
-  hierarchy,
+	// Types
+	type ConstraintResult,
+	export_data,
+	export_logs,
+	extractNonFlagArgs,
+	extractNonFlagArgsAfterFirst,
+	extractPaths,
+	hasShortFlag,
+	hierarchy,
+	type MatchResult,
+	// Permissions
+	matchCommand,
+	type PermissionPattern,
+	parseCommandTokens,
+	// Utils
+	parseSince,
+	// Parser
+	patternToRegex,
+	// Tools
+	stats,
+	validateConstraints,
+	// Validators
+	validateCwdOnly,
+	validateMaxDepth,
+	validateNoForce,
+	validateNoRecursive,
+	validateRequireFlag,
 } from "./sh/index";
 
 // Import for internal use
-import { matchCommand, validateConstraints, logCommand, updateLogEntry } from "./sh/index";
+import {
+	logCommand,
+	matchCommand,
+	updateLogEntry,
+	validateConstraints,
+} from "./sh/index";
 
 // =============================================================================
 // Main Shell Tool
 // =============================================================================
 
 export default tool({
-  description: `Execute shell commands with permission enforcement and audit logging.
+	description: `Execute shell commands with permission enforcement and audit logging.
 Commands are checked against an allowlist before execution.
 Denied commands will return an error with the reason.`,
-  args: {
-    command: tool.schema.string().describe("The shell command to execute"),
-    workdir: tool.schema.string().optional().describe("Working directory for command execution"),
-    timeout: tool.schema.number().optional().describe("Timeout in milliseconds (default: 120000)"),
-  },
-  async execute(args, context) {
-    const { command, workdir, timeout = 120000 } = args;
-    const { sessionID, messageID } = context;
+	args: {
+		command: tool.schema.string().describe("The shell command to execute"),
+		workdir: tool.schema
+			.string()
+			.optional()
+			.describe("Working directory for command execution"),
+		timeout: tool.schema
+			.number()
+			.optional()
+			.describe("Timeout in milliseconds (default: 120000)"),
+	},
+	async execute(args, context) {
+		const { command, workdir, timeout = 120000 } = args;
+		const { sessionID, messageID } = context;
 
-    // Check permissions
-    const match = matchCommand(command);
+		// Check permissions
+		const match = matchCommand(command);
 
-    if (match.decision === "deny") {
-      // Log the denied attempt
-      logCommand({
-        sessionId: sessionID,
-        messageId: messageID,
-        command,
-        workdir,
-        patternMatched: match.pattern,
-        decision: "deny",
-      });
+		if (match.decision === "deny") {
+			// Log the denied attempt
+			logCommand({
+				sessionId: sessionID,
+				messageId: messageID,
+				command,
+				workdir,
+				patternMatched: match.pattern,
+				decision: "deny",
+			});
 
-      // Standardized error format
-      const reason = match.reason ?? "Command not in allowlist";
-      const patternInfo = match.pattern ? `\nPattern: ${match.pattern}` : "";
-      return `Error: Command denied\nReason: ${reason}${patternInfo}\n\nCommand: ${command}`;
-    }
+			// Standardized error format
+			const reason = match.reason ?? "Command not in allowlist";
+			const patternInfo = match.pattern ? `\nPattern: ${match.pattern}` : "";
+			return `Error: Command denied\nReason: ${reason}${patternInfo}\n\nCommand: ${command}`;
+		}
 
-    // Check constraints for allowed commands
-    if (match.rule) {
-      const effectiveWorkdir = workdir ?? process.cwd();
-      const constraintResult = validateConstraints(command, effectiveWorkdir, match.rule);
+		// Check constraints for allowed commands
+		if (match.rule) {
+			const effectiveWorkdir = workdir ?? process.cwd();
+			const constraintResult = validateConstraints(
+				command,
+				effectiveWorkdir,
+				match.rule,
+			);
 
-      if (!constraintResult.valid) {
-        // Log as denied due to constraint violation
-        logCommand({
-          sessionId: sessionID,
-          messageId: messageID,
-          command,
-          workdir,
-          patternMatched: match.pattern,
-          decision: "deny",
-        });
+			if (!constraintResult.valid) {
+				// Log as denied due to constraint violation
+				logCommand({
+					sessionId: sessionID,
+					messageId: messageID,
+					command,
+					workdir,
+					patternMatched: match.pattern,
+					decision: "deny",
+				});
 
-        // Standardized error format - violation message already includes "Command denied:"
-        const reasonInfo = match.reason ? `\nReason: ${match.reason}` : "";
-        return `Error: ${constraintResult.violation}\nPattern: ${match.pattern}${reasonInfo}\n\nCommand: ${command}`;
-      }
-    }
+				// Standardized error format - violation message already includes "Command denied:"
+				const reasonInfo = match.reason ? `\nReason: ${match.reason}` : "";
+				return `Error: ${constraintResult.violation}\nPattern: ${match.pattern}${reasonInfo}\n\nCommand: ${command}`;
+			}
+		}
 
-    // Log the allowed attempt (will update with exit code after)
-    const logId = logCommand({
-      sessionId: sessionID,
-      messageId: messageID,
-      command,
-      workdir,
-      patternMatched: match.pattern,
-      decision: "allow",
-    });
+		// Log the allowed attempt (will update with exit code after)
+		const logId = logCommand({
+			sessionId: sessionID,
+			messageId: messageID,
+			command,
+			workdir,
+			patternMatched: match.pattern,
+			decision: "allow",
+		});
 
-    const startTime = performance.now();
+		const startTime = performance.now();
 
-    try {
-      // Execute the command
-      const proc = Bun.spawn(["sh", "-c", command], {
-        cwd: workdir ?? process.cwd(),
-        stdout: "pipe",
-        stderr: "pipe",
-      });
+		try {
+			// Execute the command
+			const proc = Bun.spawn(["sh", "-c", command], {
+				cwd: workdir ?? process.cwd(),
+				stdout: "pipe",
+				stderr: "pipe",
+			});
 
-      /**
-       * Terminate process with signal escalation.
-       * Tries SIGTERM first, then SIGKILL after grace period.
-       */
-      const terminateProcess = async (): Promise<void> => {
-        try {
-          // First attempt: SIGTERM (graceful)
-          proc.kill("SIGTERM");
+			/**
+			 * Terminate process with signal escalation.
+			 * Tries SIGTERM first, then SIGKILL after grace period.
+			 */
+			const terminateProcess = async (): Promise<void> => {
+				try {
+					// First attempt: SIGTERM (graceful)
+					proc.kill("SIGTERM");
 
-          // Wait briefly for graceful shutdown
-          const gracePeriod = 1000; // 1 second
-          const exited = await Promise.race([
-            proc.exited.then(() => true),
-            new Promise<false>((resolve) => setTimeout(() => resolve(false), gracePeriod)),
-          ]);
+					// Wait briefly for graceful shutdown
+					const gracePeriod = 1000; // 1 second
+					const exited = await Promise.race([
+						proc.exited.then(() => true),
+						new Promise<false>((resolve) =>
+							setTimeout(() => resolve(false), gracePeriod),
+						),
+					]);
 
-          // If still running, escalate to SIGKILL
-          if (!exited) {
-            try {
-              proc.kill("SIGKILL");
-            } catch {
-              // Process may have exited between check and kill
-            }
-          }
-        } catch {
-          // Process may have already exited
-        }
-      };
+					// If still running, escalate to SIGKILL
+					if (!exited) {
+						try {
+							proc.kill("SIGKILL");
+						} catch {
+							// Process may have exited between check and kill
+						}
+					}
+				} catch {
+					// Process may have already exited
+				}
+			};
 
-      // Handle timeout with proper cleanup
-      let timedOut = false;
-      const timeoutId = setTimeout(() => {
-        timedOut = true;
-        terminateProcess();
-      }, timeout);
+			// Handle timeout with proper cleanup
+			let timedOut = false;
+			const timeoutId = setTimeout(() => {
+				timedOut = true;
+				terminateProcess();
+			}, timeout);
 
-      // Wait for completion
-      const exitCode = await proc.exited;
-      clearTimeout(timeoutId);
+			// Wait for completion
+			const exitCode = await proc.exited;
+			clearTimeout(timeoutId);
 
-      const durationMs = Math.round(performance.now() - startTime);
+			const durationMs = Math.round(performance.now() - startTime);
 
-      // Read output
-      const stdout = await new Response(proc.stdout).text();
-      const stderr = await new Response(proc.stderr).text();
+			// Read output
+			const stdout = await new Response(proc.stdout).text();
+			const stderr = await new Response(proc.stderr).text();
 
-      // Update log with results
-      updateLogEntry(logId, timedOut ? -2 : exitCode, durationMs);
+			// Update log with results
+			updateLogEntry(logId, timedOut ? -2 : exitCode, durationMs);
 
-      // Handle timeout case
-      if (timedOut) {
-        return `Error: Command timed out after ${timeout}ms and was terminated\n\nCommand: ${command}`;
-      }
+			// Handle timeout case
+			if (timedOut) {
+				return `Error: Command timed out after ${timeout}ms and was terminated\n\nCommand: ${command}`;
+			}
 
-      // Format output
-      let output = "";
-      if (stdout.trim()) {
-        output += stdout;
-      }
-      if (stderr.trim()) {
-        if (output) output += "\n";
-        output += `[stderr]\n${stderr}`;
-      }
+			// Format output
+			let output = "";
+			if (stdout.trim()) {
+				output += stdout;
+			}
+			if (stderr.trim()) {
+				if (output) output += "\n";
+				output += `[stderr]\n${stderr}`;
+			}
 
-      // Truncate if too long
-      const MAX_OUTPUT = 50 * 1024; // 50KB
-      if (output.length > MAX_OUTPUT) {
-        output = output.substring(0, MAX_OUTPUT) + `\n...[truncated, ${output.length} bytes total]`;
-      }
+			// Truncate if too long
+			const MAX_OUTPUT = 50 * 1024; // 50KB
+			if (output.length > MAX_OUTPUT) {
+				output =
+					output.substring(0, MAX_OUTPUT) +
+					`\n...[truncated, ${output.length} bytes total]`;
+			}
 
-      if (exitCode !== 0) {
-        output = `Command exited with code ${exitCode}\n${output}`;
-      }
+			if (exitCode !== 0) {
+				output = `Command exited with code ${exitCode}\n${output}`;
+			}
 
-      return output || "(no output)";
-    } catch (error) {
-      const durationMs = Math.round(performance.now() - startTime);
-      updateLogEntry(logId, -1, durationMs);
+			return output || "(no output)";
+		} catch (error) {
+			const durationMs = Math.round(performance.now() - startTime);
+			updateLogEntry(logId, -1, durationMs);
 
-      return `Error: Command execution failed: ${error instanceof Error ? error.message : String(error)}\n\nCommand: ${command}`;
-    }
-  },
+			return `Error: Command execution failed: ${error instanceof Error ? error.message : String(error)}\n\nCommand: ${command}`;
+		}
+	},
 });

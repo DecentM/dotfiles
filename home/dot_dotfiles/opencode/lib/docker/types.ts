@@ -4,15 +4,65 @@
  */
 
 // =============================================================================
-// Re-export types from tools/docker for backward compatibility
+// Docker API Types
 // =============================================================================
 
-export type {
-	ContainerConfig,
-	ExecConfig,
-	HostConfig,
-	NetworkingConfig,
-} from "../../tools/docker/types";
+/**
+ * Configuration for creating a container.
+ */
+export interface ContainerConfig {
+	Image: string;
+	Cmd?: string[];
+	Env?: string[];
+	WorkingDir?: string;
+	User?: string;
+	HostConfig?: HostConfig;
+	NetworkingConfig?: NetworkingConfig;
+	Labels?: Record<string, string>;
+	Tty?: boolean;
+	OpenStdin?: boolean;
+	AttachStdin?: boolean;
+	AttachStdout?: boolean;
+	AttachStderr?: boolean;
+}
+
+/**
+ * Host-level configuration for a container.
+ */
+export interface HostConfig {
+	Binds?: string[];
+	Memory?: number;
+	NanoCpus?: number;
+	Privileged?: boolean;
+	NetworkMode?: string;
+	PortBindings?: Record<string, Array<{ HostPort: string }>>;
+	AutoRemove?: boolean;
+	RestartPolicy?: {
+		Name: string;
+		MaximumRetryCount?: number;
+	};
+}
+
+/**
+ * Network configuration for a container.
+ */
+export interface NetworkingConfig {
+	EndpointsConfig?: Record<string, object>;
+}
+
+/**
+ * Configuration for executing a command in a running container.
+ */
+export interface ExecConfig {
+	Cmd: string[];
+	AttachStdin?: boolean;
+	AttachStdout?: boolean;
+	AttachStderr?: boolean;
+	Tty?: boolean;
+	Env?: string[];
+	WorkingDir?: string;
+	User?: string;
+}
 
 // =============================================================================
 // Container Running Types

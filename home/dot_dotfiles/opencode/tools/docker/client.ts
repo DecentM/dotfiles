@@ -12,25 +12,25 @@
 
 // Core fetch helper and container operations
 export {
-  dockerFetch,
-  listContainers,
-  inspectContainer,
-  createContainer,
-  startContainer,
-  stopContainer,
-  removeContainer,
-  // Exec operations (with original names for backward compat)
-  execCreate as createExec,
-  execStart as startExec,
-  execInspect as inspectExec,
-  // Image operations
-  listImages,
-  pullImage,
-  inspectImage,
-  // Health check
-  ping,
-  // Log processing helpers
-  stripDockerLogHeaders,
+	createContainer,
+	dockerFetch,
+	// Exec operations (with original names for backward compat)
+	execCreate as createExec,
+	execInspect as inspectExec,
+	execStart as startExec,
+	inspectContainer,
+	inspectImage,
+	listContainers,
+	// Image operations
+	listImages,
+	// Health check
+	ping,
+	pullImage,
+	removeContainer,
+	startContainer,
+	stopContainer,
+	// Log processing helpers
+	stripDockerLogHeaders,
 } from "../../lib/docker/client";
 
 // =============================================================================
@@ -38,14 +38,14 @@ export {
 // =============================================================================
 
 export type {
-  DockerApiResponse,
-  Container,
-  ContainerInspect,
-  Image,
-  ImageInspect,
-  CreateContainerResponse,
-  ExecCreateResponse,
-  ExecInspectResponse,
+	Container,
+	ContainerInspect,
+	CreateContainerResponse,
+	DockerApiResponse,
+	ExecCreateResponse,
+	ExecInspectResponse,
+	Image,
+	ImageInspect,
 } from "../../lib/docker/types";
 
 // =============================================================================
@@ -53,36 +53,36 @@ export type {
 // =============================================================================
 
 export interface Volume {
-  Name: string;
-  Driver: string;
-  Mountpoint: string;
-  CreatedAt: string;
-  Status: Record<string, string>;
-  Labels: Record<string, string>;
-  Scope: string;
-  Options: Record<string, string> | null;
+	Name: string;
+	Driver: string;
+	Mountpoint: string;
+	CreatedAt: string;
+	Status: Record<string, string>;
+	Labels: Record<string, string>;
+	Scope: string;
+	Options: Record<string, string> | null;
 }
 
 export interface Network {
-  Name: string;
-  Id: string;
-  Created: string;
-  Scope: string;
-  Driver: string;
-  EnableIPv6: boolean;
-  IPAM: {
-    Driver: string;
-    Options: Record<string, string> | null;
-    Config: Array<{
-      Subnet: string;
-      Gateway: string;
-    }>;
-  };
-  Internal: boolean;
-  Attachable: boolean;
-  Ingress: boolean;
-  Options: Record<string, string>;
-  Labels: Record<string, string>;
+	Name: string;
+	Id: string;
+	Created: string;
+	Scope: string;
+	Driver: string;
+	EnableIPv6: boolean;
+	IPAM: {
+		Driver: string;
+		Options: Record<string, string> | null;
+		Config: Array<{
+			Subnet: string;
+			Gateway: string;
+		}>;
+	};
+	Internal: boolean;
+	Attachable: boolean;
+	Ingress: boolean;
+	Options: Record<string, string>;
+	Labels: Record<string, string>;
 }
 
 // =============================================================================
@@ -90,10 +90,10 @@ export interface Network {
 // =============================================================================
 
 import {
-  dockerFetch,
-  execCreate,
-  execStart,
-  execInspect,
+	dockerFetch,
+	execCreate,
+	execInspect,
+	execStart,
 } from "../../lib/docker/client";
 
 import type { DockerApiResponse } from "../../lib/docker/types";
@@ -110,13 +110,15 @@ import type { DockerApiResponse } from "../../lib/docker/types";
  * @param timestamps - Include timestamps
  */
 export const getContainerLogs = async (
-  id: string,
-  tail = 100,
-  timestamps = false
+	id: string,
+	tail = 100,
+	timestamps = false,
 ): Promise<DockerApiResponse<string>> => {
-  // Import dynamically to use the lib version with options object
-  const { getContainerLogs: libGetContainerLogs } = await import("../../lib/docker/client");
-  return libGetContainerLogs(id, { tail, timestamps });
+	// Import dynamically to use the lib version with options object
+	const { getContainerLogs: libGetContainerLogs } = await import(
+		"../../lib/docker/client"
+	);
+	return libGetContainerLogs(id, { tail, timestamps });
 };
 
 // =============================================================================
@@ -130,43 +132,49 @@ export const getContainerLogs = async (
  * @param options - Execution options (workdir, user, env)
  */
 export const execInContainer = async (
-  containerId: string,
-  cmd: string[],
-  options: { workdir?: string; user?: string; env?: string[] } = {}
+	containerId: string,
+	cmd: string[],
+	options: { workdir?: string; user?: string; env?: string[] } = {},
 ): Promise<DockerApiResponse<{ output: string; exitCode: number }>> => {
-  // Create exec instance
-  const createResult = await execCreate(containerId, {
-    Cmd: cmd,
-    AttachStdout: true,
-    AttachStderr: true,
-    WorkingDir: options.workdir,
-    User: options.user,
-    Env: options.env,
-  });
+	// Create exec instance
+	const createResult = await execCreate(containerId, {
+		Cmd: cmd,
+		AttachStdout: true,
+		AttachStderr: true,
+		WorkingDir: options.workdir,
+		User: options.user,
+		Env: options.env,
+	});
 
-  if (!createResult.success || !createResult.data) {
-    return { success: false, error: createResult.error ?? "Failed to create exec" };
-  }
+	if (!createResult.success || !createResult.data) {
+		return {
+			success: false,
+			error: createResult.error ?? "Failed to create exec",
+		};
+	}
 
-  const execId = createResult.data.Id;
+	const execId = createResult.data.Id;
 
-  // Start exec and get output
-  const startResult = await execStart(execId);
-  if (!startResult.success) {
-    return { success: false, error: startResult.error ?? "Failed to start exec" };
-  }
+	// Start exec and get output
+	const startResult = await execStart(execId);
+	if (!startResult.success) {
+		return {
+			success: false,
+			error: startResult.error ?? "Failed to start exec",
+		};
+	}
 
-  // Get exit code
-  const inspectResult = await execInspect(execId);
-  const exitCode = inspectResult.data?.ExitCode ?? -1;
+	// Get exit code
+	const inspectResult = await execInspect(execId);
+	const exitCode = inspectResult.data?.ExitCode ?? -1;
 
-  return {
-    success: true,
-    data: {
-      output: startResult.data ?? "",
-      exitCode,
-    },
-  };
+	return {
+		success: true,
+		data: {
+			output: startResult.data ?? "",
+			exitCode,
+		},
+	};
 };
 
 // =============================================================================
@@ -180,14 +188,14 @@ export const execInContainer = async (
  * @param noprune - Don't delete untagged parents
  */
 export const removeImage = async (
-  name: string,
-  force = false,
-  noprune = false
+	name: string,
+	force = false,
+	noprune = false,
 ): Promise<DockerApiResponse<void>> => {
-  return dockerFetch<void>(
-    `/images/${encodeURIComponent(name)}?force=${force}&noprune=${noprune}`,
-    { method: "DELETE" }
-  );
+	return dockerFetch<void>(
+		`/images/${encodeURIComponent(name)}?force=${force}&noprune=${noprune}`,
+		{ method: "DELETE" },
+	);
 };
 
 // =============================================================================
@@ -198,9 +206,9 @@ export const removeImage = async (
  * List volumes.
  */
 export const listVolumes = async (): Promise<
-  DockerApiResponse<{ Volumes: Volume[]; Warnings: string[] }>
+	DockerApiResponse<{ Volumes: Volume[]; Warnings: string[] }>
 > => {
-  return dockerFetch<{ Volumes: Volume[]; Warnings: string[] }>("/volumes");
+	return dockerFetch<{ Volumes: Volume[]; Warnings: string[] }>("/volumes");
 };
 
 /**
@@ -209,25 +217,29 @@ export const listVolumes = async (): Promise<
  * @param options - Volume creation options
  */
 export const createVolume = async (
-  name: string,
-  options: { driver?: string; labels?: Record<string, string> } = {}
+	name: string,
+	options: { driver?: string; labels?: Record<string, string> } = {},
 ): Promise<DockerApiResponse<Volume>> => {
-  return dockerFetch<Volume>("/volumes/create", {
-    method: "POST",
-    body: {
-      Name: name,
-      Driver: options.driver ?? "local",
-      Labels: options.labels,
-    },
-  });
+	return dockerFetch<Volume>("/volumes/create", {
+		method: "POST",
+		body: {
+			Name: name,
+			Driver: options.driver ?? "local",
+			Labels: options.labels,
+		},
+	});
 };
 
 /**
  * Remove a volume.
  * @param name - Volume name
  */
-export const removeVolume = async (name: string): Promise<DockerApiResponse<void>> => {
-  return dockerFetch<void>(`/volumes/${encodeURIComponent(name)}`, { method: "DELETE" });
+export const removeVolume = async (
+	name: string,
+): Promise<DockerApiResponse<void>> => {
+	return dockerFetch<void>(`/volumes/${encodeURIComponent(name)}`, {
+		method: "DELETE",
+	});
 };
 
 // =============================================================================
@@ -238,5 +250,5 @@ export const removeVolume = async (name: string): Promise<DockerApiResponse<void
  * List networks.
  */
 export const listNetworks = async (): Promise<DockerApiResponse<Network[]>> => {
-  return dockerFetch<Network[]>("/networks");
+	return dockerFetch<Network[]>("/networks");
 };

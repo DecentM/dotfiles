@@ -12,6 +12,14 @@ import type {
 	YamlRule as BaseYamlRule,
 } from "../../lib/permissions";
 
+// Re-export Docker API types from lib/docker (source of truth)
+export type {
+	ContainerConfig,
+	ExecConfig,
+	HostConfig,
+	NetworkingConfig,
+} from "../../lib/docker/types";
+
 // =============================================================================
 // Core Types (re-exported from shared library)
 // =============================================================================
@@ -110,55 +118,6 @@ export type CompiledPermissionPattern =
 export type PermissionsConfig = BasePermissionsConfig<ConstraintConfig>;
 export type MatchResult = BaseMatchResult<ConstraintConfig>;
 export type YamlRule = BaseYamlRule<ConstraintConfig>;
-
-// =============================================================================
-// Docker API Types
-// =============================================================================
-
-export interface ContainerConfig {
-	Image: string;
-	Cmd?: string[];
-	Env?: string[];
-	WorkingDir?: string;
-	User?: string;
-	HostConfig?: HostConfig;
-	NetworkingConfig?: NetworkingConfig;
-	Labels?: Record<string, string>;
-	Tty?: boolean;
-	OpenStdin?: boolean;
-	AttachStdin?: boolean;
-	AttachStdout?: boolean;
-	AttachStderr?: boolean;
-}
-
-export interface HostConfig {
-	Binds?: string[];
-	Memory?: number;
-	NanoCpus?: number;
-	Privileged?: boolean;
-	NetworkMode?: string;
-	PortBindings?: Record<string, Array<{ HostPort: string }>>;
-	AutoRemove?: boolean;
-	RestartPolicy?: {
-		Name: string;
-		MaximumRetryCount?: number;
-	};
-}
-
-export interface NetworkingConfig {
-	EndpointsConfig?: Record<string, object>;
-}
-
-export interface ExecConfig {
-	Cmd: string[];
-	AttachStdin?: boolean;
-	AttachStdout?: boolean;
-	AttachStderr?: boolean;
-	Tty?: boolean;
-	Env?: string[];
-	WorkingDir?: string;
-	User?: string;
-}
 
 // =============================================================================
 // Logging Types
