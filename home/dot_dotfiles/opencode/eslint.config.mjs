@@ -1,7 +1,11 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+export default eslint.configs(
+	// Global ignores MUST come first to prevent scanning these directories
+	{
+		ignores: ['node_modules/**', 'dist/**', 'docker/**'],
+	},
 	eslint.configs.recommended,
 	...tseslint.configs.recommended,
 	{
@@ -92,8 +96,5 @@ export default tseslint.config(
 			'no-shadow-restricted-names': 'error',
 			'no-undef-init': 'error',
 		},
-	},
-	{
-		ignores: ['node_modules/**', 'dist/**', '**/*.spec.ts', 'docker/**/*.js'],
 	},
 );

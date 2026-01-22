@@ -10,9 +10,7 @@ import { tool } from "@opencode-ai/plugin";
 
 // Import for internal use
 import {
-	logCommand,
 	matchCommand,
-	updateLogEntry,
 	validateConstraints,
 } from "./sh/index";
 
@@ -35,24 +33,13 @@ Denied commands will return an error with the reason.`,
 			.optional()
 			.describe("Timeout in milliseconds (default: 120000)"),
 	},
-	async execute(args, context) {
+	async execute(args) {
 		const { command, workdir, timeout = 120000 } = args;
-		const { sessionID, messageID } = context;
 
 		// Check permissions
 		const match = matchCommand(command);
 
 		if (match.decision === "deny") {
-			// Log the denied attempt
-			logCommand({
-				sessionId: sessionID,
-				messageId: messageID,
-				command,
-				workdir,
-				patternMatched: match.pattern,
-				decision: "deny",
-			});
-
 			// Standardized error format
 			const reason = match.reason ?? "Command not in allowlist";
 			const patternInfo = match.pattern ? `\nPattern: ${match.pattern}` : "";
@@ -69,33 +56,11 @@ Denied commands will return an error with the reason.`,
 			);
 
 			if (!constraintResult.valid) {
-				// Log as denied due to constraint violation
-				logCommand({
-					sessionId: sessionID,
-					messageId: messageID,
-					command,
-					workdir,
-					patternMatched: match.pattern,
-					decision: "deny",
-				});
-
 				// Standardized error format - violation message already includes "Command denied:"
 				const reasonInfo = match.reason ? `\nReason: ${match.reason}` : "";
 				return `Error: ${constraintResult.violation}\nPattern: ${match.pattern}${reasonInfo}\n\nCommand: ${command}`;
 			}
 		}
-
-		// Log the allowed attempt (will update with exit code after)
-		const logId = logCommand({
-			sessionId: sessionID,
-			messageId: messageID,
-			command,
-			workdir,
-			patternMatched: match.pattern,
-			decision: "allow",
-		});
-
-		const startTime = performance.now();
 
 		try {
 			// Execute the command
@@ -147,14 +112,9 @@ Denied commands will return an error with the reason.`,
 			const exitCode = await proc.exited;
 			clearTimeout(timeoutId);
 
-			const durationMs = Math.round(performance.now() - startTime);
-
 			// Read output
 			const stdout = await new Response(proc.stdout).text();
 			const stderr = await new Response(proc.stderr).text();
-
-			// Update log with results
-			updateLogEntry(logId, timedOut ? -2 : exitCode, durationMs);
 
 			// Handle timeout case
 			if (timedOut) {
@@ -185,9 +145,6 @@ Denied commands will return an error with the reason.`,
 
 			return output || "(no output)";
 		} catch (error) {
-			const durationMs = Math.round(performance.now() - startTime);
-			updateLogEntry(logId, -1, durationMs);
-
 			return `Error: Command execution failed: ${error instanceof Error ? error.message : String(error)}\n\nCommand: ${command}`;
 		}
 	},

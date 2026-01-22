@@ -3,7 +3,10 @@
  */
 
 import { join } from "node:path";
-import { createPermissionLoader, createPatternMatcher } from "../../lib/permissions";
+import {
+	createPatternMatcher,
+	createPermissionLoader,
+} from "../../lib/permissions";
 import { patternToRegex } from "./parser";
 import type { ConstraintConfig, MatchResult, PermissionsConfig } from "./types";
 import { validateYamlConfig } from "./validators";
@@ -21,26 +24,29 @@ import { validateYamlConfig } from "./validators";
  * 1. Single pattern:  { pattern: "rm*", decision: "deny", reason: "..." }
  * 2. Multi-pattern:   { patterns: ["rm*", "rmdir*"], decision: "deny", reason: "..." }
  */
-export const getPermissions: () => PermissionsConfig = createPermissionLoader<ConstraintConfig>({
-  yamlPath: join(import.meta.dir, "..", "sh-permissions.yaml"),
-  patternToRegex,
-  validateConfig: validateYamlConfig,
-  fallbackDefault: "deny",
-  fallbackDefaultReason: "Permissions file failed to load - all commands denied for safety",
-  logPrefix: "[sh]",
-});
+export const getPermissions: () => PermissionsConfig =
+	createPermissionLoader<ConstraintConfig>({
+		yamlPath: join(import.meta.dir, "..", "sh-permissions.yaml"),
+		patternToRegex,
+		validateConfig: validateYamlConfig,
+		fallbackDefault: "deny",
+		fallbackDefaultReason:
+			"Permissions file failed to load - all commands denied for safety",
+		logPrefix: "[sh]",
+	});
 
 // =============================================================================
 // Command Matching
 // =============================================================================
 
-const matchCommandInternal = createPatternMatcher<ConstraintConfig>(getPermissions);
+const matchCommandInternal =
+	createPatternMatcher<ConstraintConfig>(getPermissions);
 
 /**
  * Find the first matching permission pattern for a command.
  * Uses pre-compiled regexes for performance.
  */
 export const matchCommand = (command: string): MatchResult => {
-  const trimmed = command.trim();
-  return matchCommandInternal(trimmed);
+	const trimmed = command.trim();
+	return matchCommandInternal(trimmed);
 };
