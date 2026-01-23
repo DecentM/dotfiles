@@ -3,6 +3,8 @@
   "theme": "chess-com",
   "instructions": ["~/.dotfiles/opencode/rules/work.md"],
 
+  "small_model": "github-copilot/claude-haiku-4.5",
+
   // Model selection and profile-specific permission overrides
   // Agent behavior is defined in agents/*.md files
   "agent": {

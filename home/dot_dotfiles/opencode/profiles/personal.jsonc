@@ -4,19 +4,21 @@
   "share": "manual",
   "instructions": ["~/.dotfiles/opencode/rules/personal.md"],
 
+  "small_model": "openrouter/minimax/minimax-m1",
+
   // Model selection and profile-specific permission overrides
   // Agent behavior is defined in agents/*.md files
   "agent": {
     // Primary agents - homeassistant access for home automation
     "build": {
-      "model": "openrouter/minimax/minimax-m2.1",
+      "model": "openrouter/qwen/qwen3-coder:free",
       "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/build.md}",
       "permission": {
         "homeassistant_*": "allow"
       }
     },
     "plan": {
-      "model": "openrouter/minimax/minimax-m1",
+      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free",
       "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/plan.md}",
       "permission": {
         "homeassistant_Get*": "allow",
@@ -26,18 +28,18 @@
 
     // Built-in subagents
     "explore": {
-      "model": "openrouter/deepseek/deepseek-v3.2"
+      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free"
     },
     "compact": {
-      "model": "openrouter/deepseek/deepseek-v3.2"
+      "model": "openrouter/minimax/minimax-m2.1"
     },
 
     // Custom subagents - model and personal-specific MCP permissions
     "coder": {
-      "model": "openrouter/minimax/minimax-m2.1"
+      "model": "openrouter/qwen/qwen3-coder:free"
     },
     "reviewer": {
-      "model": "openrouter/minimax/minimax-m2.1",
+      "model": "openrouter/qwen/qwen3-coder:free",
       "permission": {
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
@@ -46,7 +48,7 @@
       }
     },
     "architect": {
-      "model": "openrouter/minimax/minimax-m2.1",
+      "model": "openrouter/qwen/qwen3-coder:free",
       "permission": {
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
@@ -54,16 +56,16 @@
       }
     },
     "devops": {
-      "model": "openrouter/minimax/minimax-m2.1",
+      "model": "openrouter/qwen/qwen3-coder:free",
       "permission": {
         "grafana_*": "allow"
       }
     },
     "writer": {
-      "model": "openrouter/deepseek/deepseek-v3.2"
+      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free"
     },
     "researcher": {
-      "model": "openrouter/deepseek/deepseek-v3.2",
+      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free",
       "permission": {
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
@@ -74,10 +76,10 @@
       }
     },
     "git": {
-      "model": "openrouter/minimax/minimax-m2.1"
+      "model": "openrouter/qwen/qwen3-coder:free"
     },
     "creative": {
-      "model": "openrouter/deepseek/deepseek-v3.2"
+      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free"
     }
   },
 
