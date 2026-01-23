@@ -28,11 +28,9 @@ rules:
   # ─────────────────────────────────────────────────────────────────────────────
   # Directory navigation - constrained to cwd
   # ─────────────────────────────────────────────────────────────────────────────
-  - pattern: "cd *"
-    decision: allow
-    constraints:
-      - cwd_only
-    reason: "Cannot cd outside working directory - stay within the project"
+  - pattern: "cd*"
+    decision: deny
+    reason: "Set the workdir instead. If two separate commands are used, make separate tool calls"
 
   - pattern: "cd"
     decision: deny

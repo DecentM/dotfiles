@@ -3,6 +3,18 @@ import type { ToolExecution } from '../db/entities/tool-execution.entity'
 import { getToolExecutionStore } from '../db/index'
 import { formatDuration, formatNumber, formatTimestamp, parseOptionalDate } from '../lib'
 
+const formatArguments = (args: string | null): string => {
+  if (!args) return '- Arguments: (none)'
+
+  // For short arguments, keep inline
+  if (args.length <= 60 && !args.includes('\n')) {
+    return `- Arguments: ${args}`
+  }
+
+  // For longer arguments, use a code block
+  return `- Arguments:\n  \`\`\`json\n  ${args}\n  \`\`\``
+}
+
 const formatLogEntry = (log: ToolExecution): string => {
   const timestamp = formatTimestamp(log.timestamp)
   const lines = [
@@ -15,6 +27,8 @@ const formatLogEntry = (log: ToolExecution): string => {
   if (log.agentId) {
     lines.push(`- Agent: ${log.agentId}`)
   }
+
+  lines.push(formatArguments(log.arguments))
 
   return lines.join('\n')
 }
