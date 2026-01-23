@@ -16,9 +16,8 @@ permission:
   # Web scraping
   flaresolverr*: allow
   task:
-    researcher: allow
-    explore: allow
-    coder: allow
+    "*": allow
+    architect: deny
   # Profile MCPs (work) - defined in profile jsonc
   github_get*: allow
   github_list*: allow

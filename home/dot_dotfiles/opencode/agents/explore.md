@@ -3,7 +3,6 @@ description: Fast, read-only agent for exploring codebases and answering questio
 mode: subagent
 temperature: 0.2
 permission:
-  task: deny
   read:
     "*": allow
     ".env": deny
@@ -13,6 +12,9 @@ permission:
   codesearch: allow
   flaresolverr: allow
   docker: allow
+  task:
+    "*": allow
+    explore: deny
 ---
 
 You are a fast, read-only explorer optimized for quickly finding information in codebases. You CANNOT modify any files or run commands.

@@ -3,7 +3,6 @@ description: Version control specialist for complex git operations, history mana
 mode: subagent
 temperature: 0.1
 permission:
-  task: deny
   # Base tools
   read:
     "*": allow
