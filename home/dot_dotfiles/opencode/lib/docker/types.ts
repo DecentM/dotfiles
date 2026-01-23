@@ -21,6 +21,7 @@ export interface ContainerConfig {
   Labels?: Record<string, string>
   Tty?: boolean
   OpenStdin?: boolean
+  StdinOnce?: boolean
   AttachStdin?: boolean
   AttachStdout?: boolean
   AttachStderr?: boolean

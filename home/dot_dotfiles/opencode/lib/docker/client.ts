@@ -197,31 +197,48 @@ export const waitContainer = async (
 }
 
 /**
- * Attach to a container and write data to stdin via raw Unix socket.
- * Uses Docker's attach API with stream mode to pipe stdin data.
+ * Session object returned by attachBeforeStart for two-phase stdin writing.
+ * Provides methods to write data and close the connection after the container starts.
+ */
+export type AttachSession = {
+  /** Write data to the container's stdin */
+  write: (data: string | Uint8Array) => void
+  /** Close the stdin stream (signals EOF to the container) */
+  close: () => void
+}
+
+/**
+ * Attach to a container BEFORE starting it and return a session for writing stdin.
+ * This prevents race conditions where the interpreter blocks on stdin before
+ * the attach completes.
+ *
+ * Usage:
+ *   1. Create container with OpenStdin=true, StdinOnce=true
+ *   2. Call attachBeforeStart(containerId) - waits for connection upgrade
+ *   3. Start the container
+ *   4. Write code to session.write(code)
+ *   5. Close stdin with session.close()
+ *   6. Wait for container to finish
  *
  * @param containerId - Container ID or name
- * @param stdinData - Data to write to container's stdin
- * @returns DockerApiResponse indicating success/failure
+ * @returns Promise resolving to session object or error
  */
-export const attachAndWriteStdin = async (
-  containerId: string,
-  stdinData: string
-): Promise<DockerApiResponse<void>> => {
+export const attachBeforeStart = async (
+  containerId: string
+): Promise<DockerApiResponse<AttachSession>> => {
   return new Promise((resolve) => {
-    const encoder = new TextEncoder()
-    const stdinBytes = encoder.encode(stdinData)
     let responseReceived = false
     let headerBuffer = ''
+    let resolvedSocket: ReturnType<typeof Bun.connect> extends Promise<infer T> ? T : never
 
-    const socket = Bun.connect({
+    const socketPromise = Bun.connect({
       unix: DOCKER_SOCKET,
       socket: {
         open(socket) {
-          // Build HTTP request for attach endpoint
-          // stdin=1 to attach stdin, stream=1 for streaming mode
+          // Build HTTP request for attach endpoint with hijack=1
+          // stdin=1 to attach stdin, stream=1 for streaming mode, hijack=1 for raw connection
           // stdout=0, stderr=0 since we'll use logs API for output
-          const path = `/${DOCKER_API_VERSION}/containers/${encodeURIComponent(containerId)}/attach?stdin=1&stream=1&stdout=0&stderr=0`
+          const path = `/${DOCKER_API_VERSION}/containers/${encodeURIComponent(containerId)}/attach?stdin=1&stream=1&hijack=1&stdout=0&stderr=0`
           const request = [
             `POST ${path} HTTP/1.1`,
             'Host: localhost',
@@ -244,16 +261,28 @@ export const attachAndWriteStdin = async (
           if (!responseReceived && headerBuffer.includes('\r\n\r\n')) {
             responseReceived = true
 
-            // Check for successful upgrade or OK response
+            // Check for successful upgrade response
             const statusLine = headerBuffer.split('\r\n')[0]
             const statusMatch = statusLine.match(/HTTP\/\d\.\d (\d+)/)
             const statusCode = statusMatch ? Number.parseInt(statusMatch[1], 10) : 0
 
             if (statusCode === 101 || statusCode === 200) {
-              // Connection upgraded, now write stdin data
-              socket.write(stdinBytes)
-              // Close write side after sending data
-              socket.end()
+              // Connection upgraded, return session object for later writing
+              resolvedSocket = socket as typeof resolvedSocket
+
+              const session: AttachSession = {
+                write: (stdinData: string | Uint8Array) => {
+                  const encoder = new TextEncoder()
+                  const bytes =
+                    typeof stdinData === 'string' ? encoder.encode(stdinData) : stdinData
+                  resolvedSocket.write(bytes)
+                },
+                close: () => {
+                  resolvedSocket.end()
+                },
+              }
+
+              resolve({ success: true, data: session })
             } else {
               socket.end()
               resolve({
@@ -266,21 +295,19 @@ export const attachAndWriteStdin = async (
         },
 
         close() {
-          if (responseReceived) {
-            resolve({ success: true })
-          } else {
+          if (!responseReceived) {
             resolve({ success: false, error: 'Connection closed before response' })
           }
         },
 
-        error(socket, error) {
+        error(_socket, error) {
           resolve({
             success: false,
             error: error instanceof Error ? error.message : String(error),
           })
         },
 
-        connectError(socket, error) {
+        connectError(_socket, error) {
           resolve({
             success: false,
             error: `Cannot connect to Docker socket: ${error instanceof Error ? error.message : String(error)}`,
@@ -290,7 +317,7 @@ export const attachAndWriteStdin = async (
     })
 
     // Handle connection promise rejection
-    socket.catch((error: unknown) => {
+    socketPromise.catch((error: unknown) => {
       resolve({
         success: false,
         error: `Socket connection failed: ${error instanceof Error ? error.message : String(error)}`,

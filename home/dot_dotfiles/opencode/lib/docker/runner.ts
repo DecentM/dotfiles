@@ -4,13 +4,14 @@
  */
 
 import {
-  attachAndWriteStdin,
+  attachBeforeStart,
   createContainer,
   getContainerLogsSeparated,
   removeContainer,
   startContainer,
   stopContainer,
   waitContainer,
+  type AttachSession,
 } from './client'
 import type { ContainerConfig, RunContainerOptions, RunContainerResult } from './types'
 
@@ -126,6 +127,7 @@ export const runContainer = async (options: RunContainerOptions): Promise<RunCon
   const config: ContainerConfig = {
     Image: image,
     OpenStdin: true,
+    StdinOnce: Boolean(code), // Close stdin after first write when piping code
     AttachStdin: true,
     AttachStdout: true,
     AttachStderr: true,
@@ -166,89 +168,70 @@ export const runContainer = async (options: RunContainerOptions): Promise<RunCon
 
     containerId = createResult.data.Id
 
-    // For code execution, we need to write code to stdin
-    // Use Docker socket API to attach and pipe stdin
+    // For code execution, attach BEFORE starting to avoid race condition
+    // where interpreter blocks on stdin before attach completes
+    let attachSession: AttachSession | undefined
+
     if (code) {
-      // Start container first
-      const startResult = await startContainer(containerId)
-      if (!startResult.success) {
+      // Phase 1: Attach before start - establishes stdin connection
+      const attachResult = await attachBeforeStart(containerId)
+      if (!attachResult.success || !attachResult.data) {
         return {
           exitCode: -1,
           stdout: '',
-          stderr: startResult.error ?? 'Failed to start container',
+          stderr: attachResult.error ?? 'Failed to attach to container',
           durationMs: Math.round(performance.now() - startTime),
           timedOut: false,
           containerId,
         }
       }
+      attachSession = attachResult.data
+    }
 
-      // Attach and write code to stdin via Docker socket API
-      const attachResult = await attachAndWriteStdin(containerId, code)
-      if (!attachResult.success) {
-        // Non-fatal: container may still run, just log the issue
-        console.warn(`Attach stdin warning: ${attachResult.error}`)
+    // Start container (stdin pipe is already ready if code was provided)
+    const startResult = await startContainer(containerId)
+    if (!startResult.success) {
+      // Clean up attach session if it exists
+      attachSession?.close()
+      return {
+        exitCode: -1,
+        stdout: '',
+        stderr: startResult.error ?? 'Failed to start container',
+        durationMs: Math.round(performance.now() - startTime),
+        timedOut: false,
+        containerId,
       }
+    }
 
-      // Wait for container with timeout
-      try {
-        const waitPromise = waitContainer(containerId)
-        const result = await Promise.race([waitPromise, createTimeoutPromise<never>(timeout)])
+    // Phase 2: Write code to stdin and close (after container started)
+    if (code && attachSession) {
+      attachSession.write(code)
+      attachSession.close()
+    }
 
-        if (!result.success) {
-          throw new Error(result.error ?? 'Wait failed')
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message === 'TIMEOUT') {
-          timedOut = true
-          // Graceful stop with SIGTERM
-          await stopContainer(containerId, 2)
+    // Wait for container with timeout
+    try {
+      const waitPromise = waitContainer(containerId)
+      const result = await Promise.race([waitPromise, createTimeoutPromise<never>(timeout)])
 
-          // If still running after grace period, force kill
-          await new Promise((resolve) => setTimeout(resolve, STOP_GRACE_PERIOD_MS))
-          try {
-            await stopContainer(containerId, 0)
-          } catch {
-            // Container may already be stopped
-          }
-        } else {
-          throw error
-        }
+      if (!result.success) {
+        throw new Error(result.error ?? 'Wait failed')
       }
-    } else {
-      // No code to pipe, just start and wait
-      const startResult = await startContainer(containerId)
-      if (!startResult.success) {
-        return {
-          exitCode: -1,
-          stdout: '',
-          stderr: startResult.error ?? 'Failed to start container',
-          durationMs: Math.round(performance.now() - startTime),
-          timedOut: false,
-          containerId,
-        }
-      }
+    } catch (error) {
+      if (error instanceof Error && error.message === 'TIMEOUT') {
+        timedOut = true
+        // Graceful stop with SIGTERM
+        await stopContainer(containerId, 2)
 
-      // Wait for container with timeout
-      try {
-        const waitPromise = waitContainer(containerId)
-        const result = await Promise.race([waitPromise, createTimeoutPromise<never>(timeout)])
-
-        if (!result.success) {
-          throw new Error(result.error ?? 'Wait failed')
+        // If still running after grace period, force kill
+        await new Promise((resolve) => setTimeout(resolve, STOP_GRACE_PERIOD_MS))
+        try {
+          await stopContainer(containerId, 0)
+        } catch {
+          // Container may already be stopped
         }
-      } catch (error) {
-        if (error instanceof Error && error.message === 'TIMEOUT') {
-          timedOut = true
-          await stopContainer(containerId, 2)
-          await new Promise((resolve) => setTimeout(resolve, STOP_GRACE_PERIOD_MS))
-          try {
-            await stopContainer(containerId, 0)
-          } catch {
-            // Container may already be stopped
-          }
-        } else {
-          throw error
-        }
+      } else {
+        throw error
       }
     }
 
