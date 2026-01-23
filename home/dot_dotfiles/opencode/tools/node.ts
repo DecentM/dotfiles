@@ -4,27 +4,27 @@
  * Supports parallel executions with resource isolation.
  */
 
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 
-import { tool } from "@opencode-ai/plugin";
+import { tool } from '@opencode-ai/plugin'
 import {
-	buildImage,
-	formatErrorResult,
-	formatExecutionResult,
-	formatNoCodeError,
-	runContainer,
-} from "../lib/docker";
+  buildImage,
+  formatErrorResult,
+  formatExecutionResult,
+  formatNoCodeError,
+  runContainer,
+} from '../lib/docker'
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const DEFAULT_TIMEOUT_MS = 120_000;
-const DOCKER_CONTEXT = join(homedir(), ".dotfiles/opencode/docker");
-const DOCKERFILE_PATH = "mcp-node.dockerfile";
+const DEFAULT_TIMEOUT_MS = 120_000
+const DOCKER_CONTEXT = join(homedir(), '.dotfiles/opencode/docker')
+const DOCKERFILE_PATH = 'mcp-node.dockerfile'
 
-type Runtime = "node" | "tsx" | "deno";
+type Runtime = 'node' | 'tsx' | 'deno'
 
 // =============================================================================
 // Helpers
@@ -34,22 +34,22 @@ type Runtime = "node" | "tsx" | "deno";
  * Get the command array for the given runtime.
  */
 const getCommand = (runtime: Runtime): string[] => {
-	switch (runtime) {
-		case "node":
-			return ["-"];
-		case "tsx":
-			return ["npx", "tsx", "-"];
-		case "deno":
-			return ["deno", "run", "-"];
-	}
-};
+  switch (runtime) {
+    case 'node':
+      return ['-']
+    case 'tsx':
+      return ['npx', 'tsx', '-']
+    case 'deno':
+      return ['deno', 'run', '-']
+  }
+}
 
 // =============================================================================
 // Main Tool
 // =============================================================================
 
 export default tool({
-	description: `Execute JavaScript/TypeScript code in an isolated sandbox container.
+  description: `Execute JavaScript/TypeScript code in an isolated sandbox container.
 
 Features:
 - Fresh container per execution (parallel-safe)
@@ -58,61 +58,53 @@ Features:
 - Multiple runtimes: Node.js, TypeScript (tsx), or Deno
 
 Returns stdout, stderr, and exit code.`,
-	args: {
-		code: tool.schema
-			.string()
-			.describe("JavaScript or TypeScript code to execute"),
-		runtime: tool.schema
-			.enum(["node", "tsx", "deno"])
-			.optional()
-			.describe(
-				"Runtime to use: 'node' (default), 'tsx' (TypeScript), or 'deno'",
-			),
-		timeout: tool.schema
-			.number()
-			.optional()
-			.describe(`Timeout in milliseconds (default: ${DEFAULT_TIMEOUT_MS})`),
-	},
-	async execute(args) {
-		const { code, runtime = "node", timeout = DEFAULT_TIMEOUT_MS } = args;
+  args: {
+    code: tool.schema.string().describe('JavaScript or TypeScript code to execute'),
+    runtime: tool.schema
+      .enum(['node', 'tsx', 'deno'])
+      .optional()
+      .describe("Runtime to use: 'node' (default), 'tsx' (TypeScript), or 'deno'"),
+    timeout: tool.schema
+      .number()
+      .optional()
+      .describe(`Timeout in milliseconds (default: ${DEFAULT_TIMEOUT_MS})`),
+  },
+  async execute(args) {
+    const { code, runtime = 'node', timeout = DEFAULT_TIMEOUT_MS } = args
 
-		if (!code.trim()) {
-			return formatNoCodeError();
-		}
+    if (!code.trim()) {
+      return formatNoCodeError()
+    }
 
-		// Build the image
-		const buildResult = await buildImage(DOCKER_CONTEXT, {
-			dockerfile: DOCKERFILE_PATH,
-			quiet: true,
-		});
+    // Build the image
+    const buildResult = await buildImage(DOCKER_CONTEXT, {
+      dockerfile: DOCKERFILE_PATH,
+      quiet: true,
+    })
 
-		if (!buildResult.success || !buildResult.data) {
-			return formatErrorResult(
-				buildResult.error ?? "Failed to build image",
-				0,
-				runtime,
-			);
-		}
+    if (!buildResult.success || !buildResult.data) {
+      return formatErrorResult(buildResult.error ?? 'Failed to build image', 0, runtime)
+    }
 
-		// Run container with the docker library
-		const result = await runContainer({
-			image: buildResult.data,
-			code,
-			cmd: getCommand(runtime as Runtime),
-			timeout,
-			memory: "512m",
-			cpus: 1,
-			networkMode: "none",
-		});
+    // Run container with the docker library
+    const result = await runContainer({
+      image: buildResult.data,
+      code,
+      cmd: getCommand(runtime as Runtime),
+      timeout,
+      memory: '512m',
+      cpus: 1,
+      networkMode: 'none',
+    })
 
-		// Format and return result
-		return formatExecutionResult({
-			exitCode: result.exitCode,
-			stdout: result.stdout,
-			stderr: result.stderr,
-			durationMs: result.durationMs,
-			timedOut: result.timedOut,
-			runtime,
-		});
-	},
-});
+    // Format and return result
+    return formatExecutionResult({
+      exitCode: result.exitCode,
+      stdout: result.stdout,
+      stderr: result.stderr,
+      durationMs: result.durationMs,
+      timedOut: result.timedOut,
+      runtime,
+    })
+  },
+})

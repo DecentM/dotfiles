@@ -4,28 +4,24 @@
  */
 
 import {
-	createContainer,
-	getContainerLogsSeparated,
-	removeContainer,
-	startContainer,
-	stopContainer,
-	waitContainer,
-} from "./client";
-import type {
-	ContainerConfig,
-	RunContainerOptions,
-	RunContainerResult,
-} from "./types";
+  createContainer,
+  getContainerLogsSeparated,
+  removeContainer,
+  startContainer,
+  stopContainer,
+  waitContainer,
+} from './client'
+import type { ContainerConfig, RunContainerOptions, RunContainerResult } from './types'
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const DEFAULT_TIMEOUT_MS = 30_000;
-const DEFAULT_MEMORY = "512m";
-const DEFAULT_CPUS = 1;
-const DEFAULT_NETWORK_MODE = "none";
-const STOP_GRACE_PERIOD_MS = 2_000;
+const DEFAULT_TIMEOUT_MS = 30_000
+const DEFAULT_MEMORY = '512m'
+const DEFAULT_CPUS = 1
+const DEFAULT_NETWORK_MODE = 'none'
+const STOP_GRACE_PERIOD_MS = 2_000
 
 // =============================================================================
 // Helpers
@@ -37,54 +33,54 @@ const STOP_GRACE_PERIOD_MS = 2_000;
  * @param memory - Memory limit string
  */
 const parseMemoryToBytes = (memory: string): number => {
-	const match = memory.match(/^(\d+)([kmgKMG]?)$/);
-	if (!match) {
-		return 512 * 1024 * 1024; // Default to 512MB
-	}
+  const match = memory.match(/^(\d+)([kmgKMG]?)$/)
+  if (!match) {
+    return 512 * 1024 * 1024 // Default to 512MB
+  }
 
-	const value = Number.parseInt(match[1], 10);
-	const unit = match[2].toLowerCase();
+  const value = Number.parseInt(match[1], 10)
+  const unit = match[2].toLowerCase()
 
-	switch (unit) {
-		case "k":
-			return value * 1024;
-		case "m":
-			return value * 1024 * 1024;
-		case "g":
-			return value * 1024 * 1024 * 1024;
-		default:
-			return value;
-	}
-};
+  switch (unit) {
+    case 'k':
+      return value * 1024
+    case 'm':
+      return value * 1024 * 1024
+    case 'g':
+      return value * 1024 * 1024 * 1024
+    default:
+      return value
+  }
+}
 
 /**
  * Convert CPU count to NanoCPUs (Docker API format).
  * @param cpus - Number of CPUs
  */
 const cpusToNano = (cpus: number): number => {
-	return cpus * 1_000_000_000;
-};
+  return cpus * 1_000_000_000
+}
 
 /**
  * Generate a unique container name.
  */
 const generateContainerName = (): string => {
-	const timestamp = Date.now();
-	const random = Math.random().toString(36).substring(2, 8);
-	return `opencode-exec-${timestamp}-${random}`;
-};
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 8)
+  return `opencode-exec-${timestamp}-${random}`
+}
 
 /**
  * Create a promise that rejects after a timeout.
  * @param ms - Timeout in milliseconds
  */
 const createTimeoutPromise = <T>(ms: number): Promise<T> => {
-	return new Promise((_, reject) => {
-		setTimeout(() => {
-			reject(new Error("TIMEOUT"));
-		}, ms);
-	});
-};
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error('TIMEOUT'))
+    }, ms)
+  })
+}
 
 // =============================================================================
 // Container Runner
@@ -105,257 +101,240 @@ const createTimeoutPromise = <T>(ms: number): Promise<T> => {
  * @param options - Container run options
  * @returns Result with exitCode, stdout, stderr, durationMs, timedOut
  */
-export const runContainer = async (
-	options: RunContainerOptions,
-): Promise<RunContainerResult> => {
-	const {
-		image,
-		code,
-		cmd,
-		env,
-		workingDir,
-		memory = DEFAULT_MEMORY,
-		cpus = DEFAULT_CPUS,
-		networkMode = DEFAULT_NETWORK_MODE,
-		timeout = DEFAULT_TIMEOUT_MS,
-		autoRemove = true,
-		name,
-	} = options;
+export const runContainer = async (options: RunContainerOptions): Promise<RunContainerResult> => {
+  const {
+    image,
+    code,
+    cmd,
+    env,
+    workingDir,
+    memory = DEFAULT_MEMORY,
+    cpus = DEFAULT_CPUS,
+    networkMode = DEFAULT_NETWORK_MODE,
+    timeout = DEFAULT_TIMEOUT_MS,
+    autoRemove = true,
+    name,
+  } = options
 
-	const startTime = performance.now();
-	const containerName = name ?? generateContainerName();
-	let containerId = "";
-	let timedOut = false;
+  const startTime = performance.now()
+  const containerName = name ?? generateContainerName()
+  let containerId = ''
+  let timedOut = false
 
-	// Build container configuration
-	const config: ContainerConfig = {
-		Image: image,
-		OpenStdin: true,
-		AttachStdin: true,
-		AttachStdout: true,
-		AttachStderr: true,
-		Tty: false,
-		HostConfig: {
-			Memory: parseMemoryToBytes(memory),
-			NanoCpus: cpusToNano(cpus),
-			NetworkMode: networkMode,
-			AutoRemove: false, // We handle removal ourselves for log retrieval
-		},
-	};
+  // Build container configuration
+  const config: ContainerConfig = {
+    Image: image,
+    OpenStdin: true,
+    AttachStdin: true,
+    AttachStdout: true,
+    AttachStderr: true,
+    Tty: false,
+    HostConfig: {
+      Memory: parseMemoryToBytes(memory),
+      NanoCpus: cpusToNano(cpus),
+      NetworkMode: networkMode,
+      AutoRemove: false, // We handle removal ourselves for log retrieval
+    },
+  }
 
-	if (cmd) {
-		config.Cmd = cmd;
-	}
+  if (cmd) {
+    config.Cmd = cmd
+  }
 
-	if (env) {
-		config.Env = env;
-	}
+  if (env) {
+    config.Env = env
+  }
 
-	if (workingDir) {
-		config.WorkingDir = workingDir;
-	}
+  if (workingDir) {
+    config.WorkingDir = workingDir
+  }
 
-	try {
-		// Create container
-		const createResult = await createContainer(config, containerName);
-		if (!createResult.success || !createResult.data) {
-			return {
-				exitCode: -1,
-				stdout: "",
-				stderr: createResult.error ?? "Failed to create container",
-				durationMs: Math.round(performance.now() - startTime),
-				timedOut: false,
-				containerId: "",
-			};
-		}
+  try {
+    // Create container
+    const createResult = await createContainer(config, containerName)
+    if (!createResult.success || !createResult.data) {
+      return {
+        exitCode: -1,
+        stdout: '',
+        stderr: createResult.error ?? 'Failed to create container',
+        durationMs: Math.round(performance.now() - startTime),
+        timedOut: false,
+        containerId: '',
+      }
+    }
 
-		containerId = createResult.data.Id;
+    containerId = createResult.data.Id
 
-		// For code execution, we need to write code to stdin
-		// Docker API attach endpoint allows piping to stdin
-		if (code) {
-			// Use Bun.spawn to attach and write stdin via docker attach
-			// This is more reliable than the raw socket approach for stdin
-			const attachProc = Bun.spawn(
-				["docker", "attach", "--no-stdin=false", containerId],
-				{
-					stdin: "pipe",
-					stdout: "pipe",
-					stderr: "pipe",
-				},
-			);
+    // For code execution, we need to write code to stdin
+    // Docker API attach endpoint allows piping to stdin
+    if (code) {
+      // Use Bun.spawn to attach and write stdin via docker attach
+      // This is more reliable than the raw socket approach for stdin
+      const attachProc = Bun.spawn(['docker', 'attach', '--no-stdin=false', containerId], {
+        stdin: 'pipe',
+        stdout: 'pipe',
+        stderr: 'pipe',
+      })
 
-			// Start container (must be done before/during attach)
-			const startResult = await startContainer(containerId);
-			if (!startResult.success) {
-				attachProc.kill("SIGKILL");
-				return {
-					exitCode: -1,
-					stdout: "",
-					stderr: startResult.error ?? "Failed to start container",
-					durationMs: Math.round(performance.now() - startTime),
-					timedOut: false,
-					containerId,
-				};
-			}
+      // Start container (must be done before/during attach)
+      const startResult = await startContainer(containerId)
+      if (!startResult.success) {
+        attachProc.kill('SIGKILL')
+        return {
+          exitCode: -1,
+          stdout: '',
+          stderr: startResult.error ?? 'Failed to start container',
+          durationMs: Math.round(performance.now() - startTime),
+          timedOut: false,
+          containerId,
+        }
+      }
 
-			// Write code to stdin
-			attachProc.stdin.write(code);
-			attachProc.stdin.end();
+      // Write code to stdin
+      attachProc.stdin.write(code)
+      attachProc.stdin.end()
 
-			// Wait for container with timeout
-			try {
-				const waitPromise = waitContainer(containerId);
-				const result = await Promise.race([
-					waitPromise,
-					createTimeoutPromise<never>(timeout),
-				]);
+      // Wait for container with timeout
+      try {
+        const waitPromise = waitContainer(containerId)
+        const result = await Promise.race([waitPromise, createTimeoutPromise<never>(timeout)])
 
-				if (!result.success) {
-					throw new Error(result.error ?? "Wait failed");
-				}
-			} catch (error) {
-				if (error instanceof Error && error.message === "TIMEOUT") {
-					timedOut = true;
-					// Graceful stop with SIGTERM
-					await stopContainer(containerId, 2);
+        if (!result.success) {
+          throw new Error(result.error ?? 'Wait failed')
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message === 'TIMEOUT') {
+          timedOut = true
+          // Graceful stop with SIGTERM
+          await stopContainer(containerId, 2)
 
-					// If still running after grace period, force kill
-					await new Promise((resolve) =>
-						setTimeout(resolve, STOP_GRACE_PERIOD_MS),
-					);
-					try {
-						await stopContainer(containerId, 0);
-					} catch {
-						// Container may already be stopped
-					}
-				} else {
-					throw error;
-				}
-			}
+          // If still running after grace period, force kill
+          await new Promise((resolve) => setTimeout(resolve, STOP_GRACE_PERIOD_MS))
+          try {
+            await stopContainer(containerId, 0)
+          } catch {
+            // Container may already be stopped
+          }
+        } else {
+          throw error
+        }
+      }
 
-			// Clean up attach process
-			try {
-				attachProc.kill("SIGKILL");
-			} catch {
-				// Process may have already exited
-			}
-		} else {
-			// No code to pipe, just start and wait
-			const startResult = await startContainer(containerId);
-			if (!startResult.success) {
-				return {
-					exitCode: -1,
-					stdout: "",
-					stderr: startResult.error ?? "Failed to start container",
-					durationMs: Math.round(performance.now() - startTime),
-					timedOut: false,
-					containerId,
-				};
-			}
+      // Clean up attach process
+      try {
+        attachProc.kill('SIGKILL')
+      } catch {
+        // Process may have already exited
+      }
+    } else {
+      // No code to pipe, just start and wait
+      const startResult = await startContainer(containerId)
+      if (!startResult.success) {
+        return {
+          exitCode: -1,
+          stdout: '',
+          stderr: startResult.error ?? 'Failed to start container',
+          durationMs: Math.round(performance.now() - startTime),
+          timedOut: false,
+          containerId,
+        }
+      }
 
-			// Wait for container with timeout
-			try {
-				const waitPromise = waitContainer(containerId);
-				const result = await Promise.race([
-					waitPromise,
-					createTimeoutPromise<never>(timeout),
-				]);
+      // Wait for container with timeout
+      try {
+        const waitPromise = waitContainer(containerId)
+        const result = await Promise.race([waitPromise, createTimeoutPromise<never>(timeout)])
 
-				if (!result.success) {
-					throw new Error(result.error ?? "Wait failed");
-				}
-			} catch (error) {
-				if (error instanceof Error && error.message === "TIMEOUT") {
-					timedOut = true;
-					await stopContainer(containerId, 2);
-					await new Promise((resolve) =>
-						setTimeout(resolve, STOP_GRACE_PERIOD_MS),
-					);
-					try {
-						await stopContainer(containerId, 0);
-					} catch {
-						// Container may already be stopped
-					}
-				} else {
-					throw error;
-				}
-			}
-		}
+        if (!result.success) {
+          throw new Error(result.error ?? 'Wait failed')
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message === 'TIMEOUT') {
+          timedOut = true
+          await stopContainer(containerId, 2)
+          await new Promise((resolve) => setTimeout(resolve, STOP_GRACE_PERIOD_MS))
+          try {
+            await stopContainer(containerId, 0)
+          } catch {
+            // Container may already be stopped
+          }
+        } else {
+          throw error
+        }
+      }
+    }
 
-		// Get logs (separated by stream)
-		const logsResult = await getContainerLogsSeparated(containerId, {
-			tail: 10000, // Get substantial output
-		});
+    // Get logs (separated by stream)
+    const logsResult = await getContainerLogsSeparated(containerId, {
+      tail: 10000, // Get substantial output
+    })
 
-		const stdout =
-			logsResult.success && logsResult.data ? logsResult.data.stdout : "";
-		const stderr =
-			logsResult.success && logsResult.data ? logsResult.data.stderr : "";
+    const stdout = logsResult.success && logsResult.data ? logsResult.data.stdout : ''
+    const stderr = logsResult.success && logsResult.data ? logsResult.data.stderr : ''
 
-		// Get exit code by inspecting container
-		const { inspectContainer } = await import("./client");
-		const inspectResult = await inspectContainer(containerId);
-		const exitCode =
-			inspectResult.success && inspectResult.data
-				? inspectResult.data.State.ExitCode
-				: timedOut
-					? -2
-					: -1;
+    // Get exit code by inspecting container
+    const { inspectContainer } = await import('./client')
+    const inspectResult = await inspectContainer(containerId)
+    const exitCode =
+      inspectResult.success && inspectResult.data
+        ? inspectResult.data.State.ExitCode
+        : timedOut
+          ? -2
+          : -1
 
-		const durationMs = Math.round(performance.now() - startTime);
+    const durationMs = Math.round(performance.now() - startTime)
 
-		// Clean up container
-		if (autoRemove && containerId) {
-			await removeContainer(containerId, true, false);
-		}
+    // Clean up container
+    if (autoRemove && containerId) {
+      await removeContainer(containerId, true, false)
+    }
 
-		return {
-			exitCode: timedOut ? -2 : exitCode,
-			stdout,
-			stderr: timedOut
-				? `Execution timed out after ${timeout}ms and was terminated.\n${stderr}`.trim()
-				: stderr,
-			durationMs,
-			timedOut,
-			containerId,
-		};
-	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error);
-		const durationMs = Math.round(performance.now() - startTime);
+    return {
+      exitCode: timedOut ? -2 : exitCode,
+      stdout,
+      stderr: timedOut
+        ? `Execution timed out after ${timeout}ms and was terminated.\n${stderr}`.trim()
+        : stderr,
+      durationMs,
+      timedOut,
+      containerId,
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const durationMs = Math.round(performance.now() - startTime)
 
-		// Attempt cleanup
-		if (containerId && autoRemove) {
-			try {
-				await removeContainer(containerId, true, false);
-			} catch {
-				// Ignore cleanup errors
-			}
-		}
+    // Attempt cleanup
+    if (containerId && autoRemove) {
+      try {
+        await removeContainer(containerId, true, false)
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
 
-		// Check for common Docker errors
-		if (
-			errorMessage.includes("Cannot connect to Docker") ||
-			errorMessage.includes("ENOENT") ||
-			errorMessage.includes("EACCES")
-		) {
-			return {
-				exitCode: -1,
-				stdout: "",
-				stderr: "Docker daemon not running. Start Docker and try again.",
-				durationMs,
-				timedOut: false,
-				containerId,
-			};
-		}
+    // Check for common Docker errors
+    if (
+      errorMessage.includes('Cannot connect to Docker') ||
+      errorMessage.includes('ENOENT') ||
+      errorMessage.includes('EACCES')
+    ) {
+      return {
+        exitCode: -1,
+        stdout: '',
+        stderr: 'Docker daemon not running. Start Docker and try again.',
+        durationMs,
+        timedOut: false,
+        containerId,
+      }
+    }
 
-		return {
-			exitCode: -1,
-			stdout: "",
-			stderr: `Execution failed: ${errorMessage}`,
-			durationMs,
-			timedOut: false,
-			containerId,
-		};
-	}
-};
+    return {
+      exitCode: -1,
+      stdout: '',
+      stderr: `Execution failed: ${errorMessage}`,
+      durationMs,
+      timedOut: false,
+      containerId,
+    }
+  }
+}

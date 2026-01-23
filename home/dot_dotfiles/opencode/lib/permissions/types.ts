@@ -7,7 +7,7 @@
 // Core Types
 // =============================================================================
 
-export type Decision = "allow" | "deny";
+export type Decision = 'allow' | 'deny'
 
 // =============================================================================
 // Constraint Types
@@ -17,8 +17,8 @@ export type Decision = "allow" | "deny";
  * Result of validating a constraint.
  */
 export interface ConstraintResult {
-  valid: boolean;
-  violation?: string; // Human-readable reason for denial
+  valid: boolean
+  violation?: string // Human-readable reason for denial
 }
 
 /**
@@ -26,7 +26,7 @@ export interface ConstraintResult {
  * Tool-specific constraints should extend this.
  */
 export interface BaseConstraintConfig {
-  type: string;
+  type: string
 }
 
 /**
@@ -37,7 +37,7 @@ export interface BaseConstraintConfig {
 export type ConstraintValidator<TConstraint, TContext> = (
   constraint: TConstraint,
   context: TContext
-) => ConstraintResult;
+) => ConstraintResult
 
 // =============================================================================
 // Permission Pattern Types
@@ -48,19 +48,18 @@ export type ConstraintValidator<TConstraint, TContext> = (
  * @template TConstraint - The constraint configuration type
  */
 export interface PermissionPattern<TConstraint> {
-  pattern: string;
-  decision: Decision;
-  reason?: string;
-  constraints?: TConstraint[];
+  pattern: string
+  decision: Decision
+  reason?: string
+  constraints?: TConstraint[]
 }
 
 /**
  * Compiled permission pattern with pre-built regex for performance.
  * @template TConstraint - The constraint configuration type
  */
-export interface CompiledPermissionPattern<TConstraint>
-  extends PermissionPattern<TConstraint> {
-  compiledRegex: RegExp;
+export interface CompiledPermissionPattern<TConstraint> extends PermissionPattern<TConstraint> {
+  compiledRegex: RegExp
 }
 
 /**
@@ -68,9 +67,9 @@ export interface CompiledPermissionPattern<TConstraint>
  * @template TConstraint - The constraint configuration type
  */
 export interface PermissionsConfig<TConstraint> {
-  rules: CompiledPermissionPattern<TConstraint>[];
-  default: Decision;
-  default_reason: string;
+  rules: CompiledPermissionPattern<TConstraint>[]
+  default: Decision
+  default_reason: string
 }
 
 /**
@@ -78,11 +77,11 @@ export interface PermissionsConfig<TConstraint> {
  * @template TConstraint - The constraint configuration type
  */
 export interface MatchResult<TConstraint> {
-  decision: Decision;
-  pattern: string | null;
-  reason?: string;
-  isDefault?: boolean;
-  rule?: PermissionPattern<TConstraint>; // Full rule for constraint checking
+  decision: Decision
+  pattern: string | null
+  reason?: string
+  isDefault?: boolean
+  rule?: PermissionPattern<TConstraint> // Full rule for constraint checking
 }
 
 // =============================================================================
@@ -94,9 +93,9 @@ export interface MatchResult<TConstraint> {
  * @template TConstraint - The constraint configuration type
  */
 export interface YamlRule<TConstraint> {
-  pattern?: string;
-  patterns?: string[];
-  decision: string;
-  reason?: string | null;
-  constraints?: TConstraint[];
+  pattern?: string
+  patterns?: string[]
+  decision: string
+  reason?: string | null
+  constraints?: TConstraint[]
 }

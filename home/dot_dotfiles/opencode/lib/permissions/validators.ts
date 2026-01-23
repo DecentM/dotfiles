@@ -2,10 +2,7 @@
  * Pattern matching and validation utilities for the shared permissions library.
  */
 
-import type {
-  MatchResult,
-  PermissionsConfig,
-} from "./types";
+import type { MatchResult, PermissionsConfig } from './types'
 
 // =============================================================================
 // Pattern Matching
@@ -17,11 +14,9 @@ import type {
  * This is the basic implementation - tools may provide custom implementations.
  */
 export const simplePatternToRegex = (pattern: string): RegExp => {
-  const escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*/g, ".*");
-  return new RegExp(`^${escaped}$`, "i");
-};
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')
+  return new RegExp(`^${escaped}$`, 'i')
+}
 
 /**
  * Create a pattern matcher function.
@@ -35,7 +30,7 @@ export const createPatternMatcher = <TConstraint>(
   getPermissions: () => PermissionsConfig<TConstraint>
 ): ((input: string) => MatchResult<TConstraint>) => {
   return (input: string): MatchResult<TConstraint> => {
-    const config = getPermissions();
+    const config = getPermissions()
 
     for (const perm of config.rules) {
       if (perm.compiledRegex.test(input)) {
@@ -44,7 +39,7 @@ export const createPatternMatcher = <TConstraint>(
           pattern: perm.pattern,
           reason: perm.reason,
           rule: perm,
-        };
+        }
       }
     }
 
@@ -54,9 +49,9 @@ export const createPatternMatcher = <TConstraint>(
       pattern: null,
       reason: config.default_reason,
       isDefault: true,
-    };
-  };
-};
+    }
+  }
+}
 
 // =============================================================================
 // YAML Validation Utilities
@@ -75,53 +70,44 @@ export const createPatternMatcher = <TConstraint>(
 export const validateYamlRule = <TConstraint>(
   rule: unknown,
   index: number,
-  validateConstraints?: (
-    constraints: unknown[],
-    ruleIndex: number
-  ) => string | undefined
+  validateConstraints?: (constraints: unknown[], ruleIndex: number) => string | undefined
 ): string | undefined => {
-  if (typeof rule !== "object" || rule === null) {
-    return `Rule ${index}: Must be an object`;
+  if (typeof rule !== 'object' || rule === null) {
+    return `Rule ${index}: Must be an object`
   }
 
-  const r = rule as Record<string, unknown>;
+  const r = rule as Record<string, unknown>
 
   // Must have pattern or patterns
-  const hasPattern = typeof r.pattern === "string";
-  const hasPatterns =
-    Array.isArray(r.patterns) &&
-    r.patterns.every((p) => typeof p === "string");
+  const hasPattern = typeof r.pattern === 'string'
+  const hasPatterns = Array.isArray(r.patterns) && r.patterns.every((p) => typeof p === 'string')
   if (!hasPattern && !hasPatterns) {
-    return `Rule ${index}: Must have 'pattern' (string) or 'patterns' (string array)`;
+    return `Rule ${index}: Must have 'pattern' (string) or 'patterns' (string array)`
   }
 
   // Must have valid decision
-  if (r.decision !== "allow" && r.decision !== "deny") {
-    return `Rule ${index}: 'decision' must be 'allow' or 'deny'`;
+  if (r.decision !== 'allow' && r.decision !== 'deny') {
+    return `Rule ${index}: 'decision' must be 'allow' or 'deny'`
   }
 
   // Reason is optional but must be string or null
-  if (
-    r.reason !== undefined &&
-    r.reason !== null &&
-    typeof r.reason !== "string"
-  ) {
-    return `Rule ${index}: 'reason' must be a string or null`;
+  if (r.reason !== undefined && r.reason !== null && typeof r.reason !== 'string') {
+    return `Rule ${index}: 'reason' must be a string or null`
   }
 
   // Validate constraints array if provided
   if (r.constraints !== undefined) {
     if (!Array.isArray(r.constraints)) {
-      return `Rule ${index}: 'constraints' must be an array`;
+      return `Rule ${index}: 'constraints' must be an array`
     }
     if (validateConstraints) {
-      const constraintError = validateConstraints(r.constraints, index);
-      if (constraintError) return constraintError;
+      const constraintError = validateConstraints(r.constraints, index)
+      if (constraintError) return constraintError
     }
   }
 
-  return undefined;
-};
+  return undefined
+}
 
 /**
  * Validate the entire YAML config structure.
@@ -132,46 +118,32 @@ export const validateYamlRule = <TConstraint>(
  */
 export const validateYamlConfig = <TConstraint>(
   parsed: unknown,
-  validateConstraints?: (
-    constraints: unknown[],
-    ruleIndex: number
-  ) => string | undefined
+  validateConstraints?: (constraints: unknown[], ruleIndex: number) => string | undefined
 ): string[] => {
-  const errors: string[] = [];
+  const errors: string[] = []
 
-  if (typeof parsed !== "object" || parsed === null) {
-    return ["Config must be an object"];
+  if (typeof parsed !== 'object' || parsed === null) {
+    return ['Config must be an object']
   }
 
-  const config = parsed as Record<string, unknown>;
+  const config = parsed as Record<string, unknown>
 
   if (!Array.isArray(config.rules)) {
-    return ['Config must have a "rules" array'];
+    return ['Config must have a "rules" array']
   }
 
   for (let i = 0; i < config.rules.length; i++) {
-    const err = validateYamlRule<TConstraint>(
-      config.rules[i],
-      i,
-      validateConstraints
-    );
-    if (err) errors.push(err);
+    const err = validateYamlRule<TConstraint>(config.rules[i], i, validateConstraints)
+    if (err) errors.push(err)
   }
 
-  if (
-    config.default !== undefined &&
-    config.default !== "allow" &&
-    config.default !== "deny"
-  ) {
-    errors.push("'default' must be 'allow' or 'deny'");
+  if (config.default !== undefined && config.default !== 'allow' && config.default !== 'deny') {
+    errors.push("'default' must be 'allow' or 'deny'")
   }
 
-  if (
-    config.default_reason !== undefined &&
-    typeof config.default_reason !== "string"
-  ) {
-    errors.push("'default_reason' must be a string");
+  if (config.default_reason !== undefined && typeof config.default_reason !== 'string') {
+    errors.push("'default_reason' must be a string")
   }
 
-  return errors;
-};
+  return errors
+}

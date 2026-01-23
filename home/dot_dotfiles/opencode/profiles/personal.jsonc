@@ -12,29 +12,29 @@
       "model": "openrouter/minimax/minimax-m2.1",
       "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/build.md}",
       "permission": {
-        "homeassistant_*": "allow",
-      },
+        "homeassistant_*": "allow"
+      }
     },
     "plan": {
       "model": "openrouter/minimax/minimax-m1",
       "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/plan.md}",
       "permission": {
         "homeassistant_Get*": "allow",
-        "homeassistant_todo_get_items": "allow",
-      },
+        "homeassistant_todo_get_items": "allow"
+      }
     },
 
     // Built-in subagents
     "explore": {
-      "model": "openrouter/deepseek/deepseek-v3.2",
+      "model": "openrouter/deepseek/deepseek-v3.2"
     },
     "compact": {
-      "model": "openrouter/deepseek/deepseek-v3.2",
+      "model": "openrouter/deepseek/deepseek-v3.2"
     },
 
     // Custom subagents - model and personal-specific MCP permissions
     "coder": {
-      "model": "openrouter/minimax/minimax-m2.1",
+      "model": "openrouter/minimax/minimax-m2.1"
     },
     "reviewer": {
       "model": "openrouter/minimax/minimax-m2.1",
@@ -42,25 +42,25 @@
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
         "grafana_query_*": "allow",
-        "grafana_search_*": "allow",
-      },
+        "grafana_search_*": "allow"
+      }
     },
     "architect": {
       "model": "openrouter/minimax/minimax-m2.1",
       "permission": {
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
-        "grafana_search_*": "allow",
-      },
+        "grafana_search_*": "allow"
+      }
     },
     "devops": {
       "model": "openrouter/minimax/minimax-m2.1",
       "permission": {
-        "grafana_*": "allow",
-      },
+        "grafana_*": "allow"
+      }
     },
     "writer": {
-      "model": "openrouter/deepseek/deepseek-v3.2",
+      "model": "openrouter/deepseek/deepseek-v3.2"
     },
     "researcher": {
       "model": "openrouter/deepseek/deepseek-v3.2",
@@ -70,15 +70,15 @@
         "grafana_query_*": "allow",
         "grafana_fetch_*": "allow",
         "grafana_search_*": "allow",
-        "grafana_find_*": "allow",
-      },
+        "grafana_find_*": "allow"
+      }
     },
     "git": {
-      "model": "openrouter/minimax/minimax-m2.1",
+      "model": "openrouter/minimax/minimax-m2.1"
     },
     "creative": {
-      "model": "openrouter/deepseek/deepseek-v3.2",
-    },
+      "model": "openrouter/deepseek/deepseek-v3.2"
+    }
   },
 
   "mcp": {
@@ -94,9 +94,9 @@
         "--cpus=1",
         "-v",
         "mcp-memory:/app/dist",
-        "mcp/memory",
+        "mcp/memory"
       ],
-      "enabled": true,
+      "enabled": true
     },
 
     "homeassistant": {
@@ -104,14 +104,14 @@
       "url": "https://hass.cluster.arpa/api/mcp",
       "enabled": true,
       "headers": {
-        "Authorization": "Bearer {env:HOMEASSISTANT_TOKEN}",
-      },
+        "Authorization": "Bearer {env:HOMEASSISTANT_TOKEN}"
+      }
     },
 
     "grafana": {
       "type": "remote",
       "url": "https://mcp-grafana.cluster.arpa/sse",
-      "enabled": true,
-    },
-  },
+      "enabled": true
+    }
+  }
 }

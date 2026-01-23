@@ -4,25 +4,25 @@
  */
 
 // Loader
-export type { LoaderOptions } from "./loader";
-export { createPermissionLoader } from "./loader";
+export type { LoaderOptions } from './loader'
+export { createPermissionLoader } from './loader'
 // Core types
 export type {
-	BaseConstraintConfig,
-	CompiledPermissionPattern,
-	ConstraintResult,
-	ConstraintValidator,
-	Decision,
-	MatchResult,
-	PermissionPattern,
-	PermissionsConfig,
-	YamlRule,
-} from "./types";
+  BaseConstraintConfig,
+  CompiledPermissionPattern,
+  ConstraintResult,
+  ConstraintValidator,
+  Decision,
+  MatchResult,
+  PermissionPattern,
+  PermissionsConfig,
+  YamlRule,
+} from './types'
 
 // Validators
 export {
-	createPatternMatcher,
-	simplePatternToRegex,
-	validateYamlConfig,
-	validateYamlRule,
-} from "./validators";
+  createPatternMatcher,
+  simplePatternToRegex,
+  validateYamlConfig,
+  validateYamlRule,
+} from './validators'
