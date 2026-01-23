@@ -22,7 +22,7 @@
 #                     options: flag: "--dry-run"
 
 default: deny
-default_reason: "Command not in allowlist - if you need this command, ask the user to run it or request it be added to permissions"
+default_reason: "Command not in allowlist - if you need this command, the user needs to run it, or request it be added to permissions"
 
 rules:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ rules:
 
   - pattern: "bun remove*"
     decision: deny
-    reason: "Removing packages requires user confirmation - ask the user to run this command"
+    reason: "Removing packages requires user confirmation - the user needs to run this command"
 
   - pattern: "bun*"
     decision: deny
@@ -75,7 +75,7 @@ rules:
   - patterns:
       - "rm*"
     decision: deny
-    reason: "File/directory deletion is not permitted - ask the user to delete manually"
+    reason: "File/directory deletion is not permitted - the user needs to delete manually"
 
   - pattern: "mv*"
     decision: deny
@@ -83,15 +83,15 @@ rules:
 
   - pattern: "chmod*"
     decision: deny
-    reason: "Permission changes are not permitted - ask the user to change permissions manually"
+    reason: "Permission changes are not permitted - the user needs to change permissions manually"
 
   - pattern: "chown*"
     decision: deny
-    reason: "Ownership changes are not permitted - ask the user to change ownership manually"
+    reason: "Ownership changes are not permitted - the user needs to change ownership manually"
 
   - pattern: "sudo*"
     decision: deny
-    reason: "Elevated privileges are not permitted - ask the user to run privileged commands"
+    reason: "Elevated privileges are not permitted - the user needs to run privileged commands"
 
   - pattern: "su*"
     decision: deny
@@ -117,7 +117,7 @@ rules:
   # Shell scripts - need review
   - pattern: "*.sh"
     decision: deny
-    reason: "Shell scripts need user review before execution - describe what the script does and ask the user to run it"
+    reason: "Shell scripts need user review before execution - describe what the script does and the user needs to run it"
 
   - patterns:
       - "bash*"
@@ -128,11 +128,11 @@ rules:
 
   - pattern: "bin/*"
     decision: deny
-    reason: "Scripts in bin/ need user review - describe what the script does and ask the user to run it"
+    reason: "Scripts in bin/ need user review - describe what the script does and the user needs to run it"
 
   - pattern: "./*"
     decision: deny
-    reason: "Relative executables need user review - describe what it does and ask the user to run it"
+    reason: "Relative executables need user review - describe what it does and the user needs to run it"
 
   - pattern: "eval*"
     decision: deny
@@ -169,7 +169,7 @@ rules:
 
   - pattern: "distrobox*"
     decision: deny
-    reason: "Distrobox container management requires user confirmation - ask the user to run this command"
+    reason: "Distrobox container management requires user confirmation - the user needs to run this command"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Infrastructure - kubectl
@@ -182,7 +182,7 @@ rules:
       - "kubectl scale*"
       - "kubectl rollout*"
     decision: deny
-    reason: "Mutating Kubernetes resources requires user confirmation - ask the user to run this command"
+    reason: "Mutating Kubernetes resources requires user confirmation - the user needs to run this command"
 
   - pattern: "kubectl edit*"
     decision: deny
@@ -221,7 +221,7 @@ rules:
       - "helm uninstall*"
       - "helm rollback*"
     decision: deny
-    reason: "Mutating Helm releases requires user confirmation - ask the user to run this command"
+    reason: "Mutating Helm releases requires user confirmation - the user needs to run this command"
 
   - patterns:
       - "helm list*"
@@ -249,7 +249,7 @@ rules:
       - "terraform taint*"
       - "terraform untaint*"
     decision: deny
-    reason: "Mutating Terraform resources requires user confirmation - ask the user to run this command"
+    reason: "Mutating Terraform resources requires user confirmation - the user needs to run this command"
 
   - patterns:
       - "terraform init*"
@@ -450,7 +450,7 @@ rules:
       - "pkill*"
       - "killall*"
     decision: deny
-    reason: "Killing processes requires user confirmation - ask the user to run this command"
+    reason: "Killing processes requires user confirmation - the user needs to run this command"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Logs and debug - read-only
@@ -487,7 +487,7 @@ rules:
       - "systemctl unmask*"
       - "systemctl daemon-reload*"
     decision: deny
-    reason: "Managing services requires user confirmation - ask the user to run this command"
+    reason: "Managing services requires user confirmation - the user needs to run this command"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # File info and checksums - constrained to cwd
@@ -577,7 +577,7 @@ rules:
       - "ip route add*"
       - "ip route del*"
     decision: deny
-    reason: "Network interface/route changes require user confirmation - ask the user to run this command"
+    reason: "Network interface/route changes require user confirmation - the user needs to run this command"
 
   - patterns:
       - "ss*"
@@ -622,7 +622,7 @@ rules:
       - "tar czf*"
       - "tar cjf*"
     decision: deny
-    reason: "Creating archives requires user confirmation - ask the user to run this command"
+    reason: "Creating archives requires user confirmation - the user needs to run this command"
 
   - patterns:
       - "unzip*"
@@ -657,7 +657,7 @@ rules:
       - "bzip2*"
       - "xz*"
     decision: deny
-    reason: "Creating/compressing archives requires user confirmation - ask the user to run this command"
+    reason: "Creating/compressing archives requires user confirmation - the user needs to run this command"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Date, time, math utilities
@@ -770,7 +770,7 @@ rules:
       - "npm update*"
       - "npm publish*"
     decision: deny
-    reason: "Package installation/mutation requires user confirmation - ask the user to run this command"
+    reason: "Package installation/mutation requires user confirmation - the user needs to run this command"
 
   - patterns:
       - "npm info*"
@@ -810,7 +810,7 @@ rules:
       - "yarn upgrade*"
       - "yarn publish*"
     decision: deny
-    reason: "Package installation/mutation requires user confirmation - ask the user to run this command"
+    reason: "Package installation/mutation requires user confirmation - the user needs to run this command"
 
   - patterns:
       - "yarn audit*"
@@ -841,12 +841,13 @@ rules:
   # ─────────────────────────────────────────────────────────────────────────────
   - patterns:
       - "pnpm add*"
-      - "pnpm install*"
-      - "pnpm remove*"
-      - "pnpm update*"
-      - "pnpm publish*"
+      - "pnpm i *"
+      - "pnpm install *"
+      - "pnpm remove *"
+      - "pnpm update *"
+      - "pnpm publish *"
     decision: deny
-    reason: "Package installation/mutation requires user confirmation - ask the user to run this command"
+    reason: "Package installation/mutation requires user confirmation - the user needs to run this command"
 
   - patterns:
       - "pnpm audit*"
@@ -874,6 +875,8 @@ rules:
       - "pnpm pack*"
       - "pnpm help*"
       - "pnpm vitest*"
+      - "pnpm i"
+      - "pnpm install"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -884,7 +887,7 @@ rules:
       - "cargo uninstall*"
       - "cargo publish*"
     decision: deny
-    reason: "Global crate installation/publishing requires user confirmation - ask the user to run this command"
+    reason: "Global crate installation/publishing requires user confirmation - the user needs to run this command"
 
   - patterns:
       - "cargo add*"
@@ -937,39 +940,39 @@ rules:
       - "git push*"
       - "git push"
     decision: deny
-    reason: "Pushing to remote requires user confirmation - ask the user to push when ready"
+    reason: "Pushing to remote requires user confirmation - the user needs to push when ready"
 
   - pattern: "git reset --hard*"
     decision: deny
-    reason: "Hard reset can lose work - ask the user to run this command if they're sure"
+    reason: "Hard reset can lose work - the user needs to run this command if they're sure"
 
   - pattern: "git clean -f*"
     decision: deny
-    reason: "Cleaning untracked files can lose work - ask the user to run this command"
+    reason: "Cleaning untracked files can lose work - the user needs to run this command"
 
   - pattern: "git rebase*"
     decision: deny
-    reason: "Rebasing can rewrite history - ask the user to run this command"
+    reason: "Rebasing can rewrite history - the user needs to run this command"
 
   - patterns:
       - "git force*"
-      - "git*--force*"
-      - "git*-f *"
+      - "git *--force*"
+      - "git *-f *"
     decision: deny
-    reason: "Force operations can lose work - ask the user to run this command"
+    reason: "Force operations can lose work - the user needs to run this command"
 
-  - pattern: "git*"
+  - pattern: "git *"
     decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Chezmoi - dotfiles management
   # ─────────────────────────────────────────────────────────────────────────────
-  - patterns:
-      - "chezmoi apply*"
-      - "chezmoi update*"
-      - "chezmoi init*"
-    decision: deny
-    reason: "Applying/updating dotfiles requires user confirmation - ask the user to run this command"
-
   - pattern: "chezmoi*"
     decision: allow
+
+  - patterns:
+      - "chezmoi apply *"
+      - "chezmoi update *"
+      - "chezmoi init *"
+    decision: deny
+    reason: "Applying/updating dotfiles requires user confirmation - the user needs to run this command"
