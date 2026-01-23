@@ -5,9 +5,7 @@
  * "before" listener to calculate duration.
  */
 
-import { randomUUID } from 'node:crypto'
-
-import { logToolExecution, updateToolExecution } from '../db'
+import { logToolExecution } from '../db'
 import { createResultSummary } from '../lib'
 import type { Hook } from '../types'
 
