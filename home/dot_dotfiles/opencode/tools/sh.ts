@@ -5,7 +5,7 @@ import { tool } from '@opencode-ai/plugin'
 import { matchCommand, validateConstraints } from './sh/index'
 
 export default tool({
-  description: `Execute shell commands`,
+  description: `Execute shell commands (timeout is in milliseconds)`,
   args: {
     command: tool.schema.string().describe('The shell command to execute (use relative paths)'),
     workdir: tool.schema.string().describe('Working directory for command execution'),
