@@ -35,13 +35,6 @@
   "share": "disabled",
   "permission": {
     "*": "deny",
-    "edit": {
-      "*": "allow",
-      ".key": "deny",
-      ".env": "deny",
-      ".env.*": "deny",
-      ".env.example": "allow"
-    },
     "glob": "allow",
     "grep": "allow",
     "list": "allow",

@@ -13,6 +13,11 @@ permission:
     ".env": deny
     ".env.*": deny
     ".env.example": allow
+  edit:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
   webfetch: allow
   websearch: allow
 ---

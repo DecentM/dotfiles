@@ -9,6 +9,11 @@ permission:
     ".env": deny
     ".env.*": deny
     ".env.example": allow
+  edit:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
   github_get*: allow
   github_list*: allow
   github_pull_request_read: allow

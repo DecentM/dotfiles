@@ -9,6 +9,11 @@ permission:
     ".env": deny
     ".env.*": deny
     ".env.example": allow
+  edit:
+    "*": allow
+    ".env": deny
+    ".env.*": deny
+    ".env.example": allow
   lsp: allow
   codesearch: allow
   sh: allow
