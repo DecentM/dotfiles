@@ -1,22 +1,11 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
-export type SessionEventType =
-  | 'created'
-  | 'compacted'
-  | 'deleted'
-  | 'error'
-  | 'idle'
-  | 'event'
-  | 'config'
-  | 'chat_params'
-  | 'chat_headers'
-
-@Entity('session_events')
+@Entity('command_executions')
 @Index(['timestamp'])
 @Index(['sessionId'])
-@Index(['eventType'])
+@Index(['command'])
 @Index(['sessionId', 'timestamp'])
-export class SessionEvent {
+export class CommandExecution {
   @PrimaryGeneratedColumn()
   id!: number
 
@@ -29,8 +18,11 @@ export class SessionEvent {
 
   @Column({ type: 'text' })
   @Index()
-  eventType!: SessionEventType
+  command!: string
 
   @Column({ type: 'text', nullable: true })
-  details!: string | null
+  arguments!: string | null
+
+  @Column({ type: 'text', nullable: true })
+  partsJson!: string | null
 }

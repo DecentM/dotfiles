@@ -1,16 +1,10 @@
-/**
- * Type definitions for the audit-trail plugin.
- */
-
 import type { Hooks, PluginInput } from '@opencode-ai/plugin'
 
 export type PureHooks = Omit<Hooks, 'config' | 'tool' | 'auth'>
 
 export type Hook<T extends keyof PureHooks> = (client: PluginInput['client']) => PureHooks[T]
 
-// =============================================================================
-// Tool Execution Types
-// =============================================================================
+export type ConfigHook = (client: PluginInput['client']) => Hooks['config']
 
 export type ToolDecision = 'started' | 'completed' | 'failed'
 
@@ -40,11 +34,16 @@ export interface ToolExecutionLogRow {
   durationMs: number | null
 }
 
-// =============================================================================
-// Session Event Types
-// =============================================================================
-
-export type SessionEventType = 'created' | 'compacted' | 'deleted' | 'error' | 'idle'
+export type SessionEventType =
+  | 'created'
+  | 'compacted'
+  | 'deleted'
+  | 'error'
+  | 'idle'
+  | 'event'
+  | 'config'
+  | 'chat_params'
+  | 'chat_headers'
 
 export interface SessionLogEntry {
   sessionId: string
@@ -60,10 +59,6 @@ export interface SessionLogRow {
   detailsJson: string | null
 }
 
-// =============================================================================
-// Filter Types
-// =============================================================================
-
 export interface StatsFilter {
   since?: Date
   before?: Date
@@ -78,10 +73,6 @@ export interface LogsFilter {
   toolName?: string
   limit?: number
 }
-
-// =============================================================================
-// Query Result Types
-// =============================================================================
 
 export interface ToolStats {
   total: number

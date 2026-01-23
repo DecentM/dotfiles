@@ -1,3 +1,7 @@
+export { ChatMessage } from './chat-message.entity'
+export { CommandExecution } from './command-execution.entity'
+export type { PermissionStatus } from './permission-event.entity'
+export { PermissionEvent } from './permission-event.entity'
 export type { SessionEventType } from './session-event.entity'
 export { SessionEvent } from './session-event.entity'
 export type { ToolExecutionDecision } from './tool-execution.entity'

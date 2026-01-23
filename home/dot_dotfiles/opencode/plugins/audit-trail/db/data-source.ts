@@ -2,10 +2,14 @@ import 'reflect-metadata'
 
 import { DataSource, type DataSourceOptions } from 'typeorm'
 
+import { ChatMessage } from './entities/chat-message.entity'
+import { CommandExecution } from './entities/command-execution.entity'
+import { PermissionEvent } from './entities/permission-event.entity'
 import { SessionEvent } from './entities/session-event.entity'
 import { ToolExecution } from './entities/tool-execution.entity'
 import { isDatabaseConfigured } from './memory-store'
 import { InitialSchema1737619200000 } from './migrations/1737619200000-InitialSchema'
+import { AddNewEntities1737705600000 } from './migrations/1737705600000-AddNewEntities'
 
 export type DatabaseType = 'mariadb' | 'postgres'
 
@@ -25,8 +29,8 @@ const buildMariadbConfig = (): DataSourceOptions => ({
   username: process.env.AUDIT_DB_USERNAME ?? '',
   password: process.env.AUDIT_DB_PASSWORD ?? '',
   database: process.env.AUDIT_DB_DATABASE ?? 'opencode_audit',
-  entities: [ToolExecution, SessionEvent],
-  migrations: [InitialSchema1737619200000],
+  entities: [ToolExecution, SessionEvent, ChatMessage, PermissionEvent, CommandExecution],
+  migrations: [InitialSchema1737619200000, AddNewEntities1737705600000],
   synchronize: isDevMode,
   logging: false,
   migrationsRun: !isDevMode,
@@ -42,8 +46,8 @@ const buildPostgresConfig = (): DataSourceOptions => ({
   username: process.env.AUDIT_DB_USERNAME ?? '',
   password: process.env.AUDIT_DB_PASSWORD ?? '',
   database: process.env.AUDIT_DB_DATABASE ?? 'opencode_audit',
-  entities: [ToolExecution, SessionEvent],
-  migrations: [InitialSchema1737619200000],
+  entities: [ToolExecution, SessionEvent, ChatMessage, PermissionEvent, CommandExecution],
+  migrations: [InitialSchema1737619200000, AddNewEntities1737705600000],
   synchronize: isDevMode,
   logging: false,
   migrationsRun: !isDevMode,

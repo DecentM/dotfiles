@@ -1,22 +1,13 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
-export type SessionEventType =
-  | 'created'
-  | 'compacted'
-  | 'deleted'
-  | 'error'
-  | 'idle'
-  | 'event'
-  | 'config'
-  | 'chat_params'
-  | 'chat_headers'
+export type PermissionStatus = 'ask' | 'deny' | 'allow'
 
-@Entity('session_events')
+@Entity('permission_events')
 @Index(['timestamp'])
 @Index(['sessionId'])
-@Index(['eventType'])
+@Index(['status'])
 @Index(['sessionId', 'timestamp'])
-export class SessionEvent {
+export class PermissionEvent {
   @PrimaryGeneratedColumn()
   id!: number
 
@@ -28,9 +19,15 @@ export class SessionEvent {
   sessionId!: string
 
   @Column({ type: 'text' })
-  @Index()
-  eventType!: SessionEventType
+  permissionType!: string
 
   @Column({ type: 'text', nullable: true })
-  details!: string | null
+  resource!: string | null
+
+  @Column({ type: 'text' })
+  @Index()
+  status!: PermissionStatus
+
+  @Column({ type: 'text', nullable: true })
+  detailsJson!: string | null
 }

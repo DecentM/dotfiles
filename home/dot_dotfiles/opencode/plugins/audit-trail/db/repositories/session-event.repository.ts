@@ -33,10 +33,6 @@ export interface SessionEventRepositoryExtension {
 
 export type SessionEventRepository = Repository<SessionEvent> & SessionEventRepositoryExtension
 
-/**
- * Get the extended SessionEvent repository.
- * Throws if database is not configured - use getSessionEventStore() instead for automatic fallback.
- */
 export const getSessionEventRepository = async (): Promise<SessionEventRepository> => {
   const dataSource = await getDataSource()
 

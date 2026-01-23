@@ -1,7 +1,7 @@
 import eslint from '@eslint/js'
 import tseslint from 'typescript-eslint'
 
-export default eslint.configs(
+export default tseslint.config(
   // Global ignores MUST come first to prevent scanning these directories
   {
     ignores: ['node_modules/**', 'dist/**', 'docker/**'],

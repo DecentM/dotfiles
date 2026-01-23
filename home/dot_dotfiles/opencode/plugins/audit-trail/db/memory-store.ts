@@ -3,11 +3,20 @@
  * Data is lost on restart - suitable for development/testing.
  */
 
+import type { ChatMessage } from './entities/chat-message.entity'
+import type { CommandExecution } from './entities/command-execution.entity'
+import type { PermissionEvent, PermissionStatus } from './entities/permission-event.entity'
 import type { SessionEvent, SessionEventType } from './entities/session-event.entity'
 import type { ToolExecution } from './entities/tool-execution.entity'
 import type {
+  GetChatMessagesFilters,
+  GetCommandExecutionsFilters,
   GetLogsFilters,
+  GetPermissionEventsFilters,
   GetSessionLogsFilters,
+  LogChatMessageData,
+  LogCommandExecutionData,
+  LogPermissionEventData,
   LogSessionEventData,
   LogToolExecutionData,
   TimelineEntry,
@@ -18,8 +27,14 @@ import type {
 // Storage arrays
 let toolExecutions: ToolExecution[] = []
 let sessionEvents: SessionEvent[] = []
+let chatMessages: ChatMessage[] = []
+let permissionEvents: PermissionEvent[] = []
+let commandExecutions: CommandExecution[] = []
 let nextToolId = 1
 let nextSessionId = 1
+let nextChatMessageId = 1
+let nextPermissionEventId = 1
+let nextCommandExecutionId = 1
 
 // Tool Execution methods (mirror repository interface)
 export const memoryToolExecutionStore = {
@@ -174,6 +189,148 @@ export const memorySessionEventStore = {
   },
 }
 
+// Chat Message methods (mirror repository interface)
+export const memoryChatMessageStore = {
+  logChatMessage: async (data: LogChatMessageData): Promise<ChatMessage | null> => {
+    const entry: ChatMessage = {
+      id: nextChatMessageId++,
+      timestamp: new Date(),
+      sessionId: data.sessionId,
+      messageId: data.messageId ?? null,
+      agent: data.agent ?? null,
+      providerId: data.providerId ?? null,
+      modelId: data.modelId ?? null,
+      variant: data.variant ?? null,
+      messageContent: data.messageContent ?? null,
+      partsJson: data.partsJson ?? null,
+    }
+    chatMessages.push(entry)
+    return entry
+  },
+
+  getChatMessages: async (filters?: GetChatMessagesFilters): Promise<ChatMessage[]> => {
+    let results = [...chatMessages]
+
+    if (filters?.startDate) {
+      results = results.filter((e) => e.timestamp >= filters.startDate!)
+    }
+    if (filters?.endDate) {
+      results = results.filter((e) => e.timestamp <= filters.endDate!)
+    }
+    if (filters?.sessionId) {
+      results = results.filter((e) => e.sessionId === filters.sessionId)
+    }
+
+    results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+
+    if (filters?.limit) {
+      results = results.slice(0, filters.limit)
+    }
+
+    return results
+  },
+
+  clear: () => {
+    chatMessages = []
+    nextChatMessageId = 1
+  },
+}
+
+// Permission Event methods (mirror repository interface)
+export const memoryPermissionEventStore = {
+  logPermissionEvent: async (data: LogPermissionEventData): Promise<PermissionEvent | null> => {
+    const entry: PermissionEvent = {
+      id: nextPermissionEventId++,
+      timestamp: new Date(),
+      sessionId: data.sessionId,
+      permissionType: data.permissionType,
+      resource: data.resource ?? null,
+      status: data.status as PermissionStatus,
+      detailsJson: data.detailsJson ?? null,
+    }
+    permissionEvents.push(entry)
+    return entry
+  },
+
+  getPermissionEvents: async (filters?: GetPermissionEventsFilters): Promise<PermissionEvent[]> => {
+    let results = [...permissionEvents]
+
+    if (filters?.startDate) {
+      results = results.filter((e) => e.timestamp >= filters.startDate!)
+    }
+    if (filters?.endDate) {
+      results = results.filter((e) => e.timestamp <= filters.endDate!)
+    }
+    if (filters?.sessionId) {
+      results = results.filter((e) => e.sessionId === filters.sessionId)
+    }
+    if (filters?.status) {
+      results = results.filter((e) => e.status === filters.status)
+    }
+
+    results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+
+    if (filters?.limit) {
+      results = results.slice(0, filters.limit)
+    }
+
+    return results
+  },
+
+  clear: () => {
+    permissionEvents = []
+    nextPermissionEventId = 1
+  },
+}
+
+// Command Execution methods (mirror repository interface)
+export const memoryCommandExecutionStore = {
+  logCommandExecution: async (data: LogCommandExecutionData): Promise<CommandExecution | null> => {
+    const entry: CommandExecution = {
+      id: nextCommandExecutionId++,
+      timestamp: new Date(),
+      sessionId: data.sessionId,
+      command: data.command,
+      arguments: data.arguments ?? null,
+      partsJson: data.partsJson ?? null,
+    }
+    commandExecutions.push(entry)
+    return entry
+  },
+
+  getCommandExecutions: async (
+    filters?: GetCommandExecutionsFilters
+  ): Promise<CommandExecution[]> => {
+    let results = [...commandExecutions]
+
+    if (filters?.startDate) {
+      results = results.filter((e) => e.timestamp >= filters.startDate!)
+    }
+    if (filters?.endDate) {
+      results = results.filter((e) => e.timestamp <= filters.endDate!)
+    }
+    if (filters?.sessionId) {
+      results = results.filter((e) => e.sessionId === filters.sessionId)
+    }
+    if (filters?.command) {
+      results = results.filter((e) => e.command === filters.command)
+    }
+
+    results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+
+    if (filters?.limit) {
+      results = results.slice(0, filters.limit)
+    }
+
+    return results
+  },
+
+  clear: () => {
+    commandExecutions = []
+    nextCommandExecutionId = 1
+  },
+}
+
 // Store interface types (subset of repository methods needed by tools/listeners)
 export interface ToolExecutionStore {
   logToolExecution(data: LogToolExecutionData): Promise<ToolExecution | null>
@@ -186,6 +343,21 @@ export interface SessionEventStore {
   logSessionEvent(data: LogSessionEventData): Promise<SessionEvent | null>
   getSessionLogs(filters?: GetSessionLogsFilters): Promise<SessionEvent[]>
   getSessionTimeline(sessionId: string): Promise<TimelineEntry[]>
+}
+
+export interface ChatMessageStore {
+  logChatMessage(data: LogChatMessageData): Promise<ChatMessage | null>
+  getChatMessages(filters?: GetChatMessagesFilters): Promise<ChatMessage[]>
+}
+
+export interface PermissionEventStore {
+  logPermissionEvent(data: LogPermissionEventData): Promise<PermissionEvent | null>
+  getPermissionEvents(filters?: GetPermissionEventsFilters): Promise<PermissionEvent[]>
+}
+
+export interface CommandExecutionStore {
+  logCommandExecution(data: LogCommandExecutionData): Promise<CommandExecution | null>
+  getCommandExecutions(filters?: GetCommandExecutionsFilters): Promise<CommandExecution[]>
 }
 
 /**
