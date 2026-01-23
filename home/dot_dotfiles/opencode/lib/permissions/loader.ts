@@ -10,11 +10,7 @@ import type { CompiledPermissionPattern, Decision, PermissionsConfig, YamlRule }
 // Types
 // =============================================================================
 
-/**
- * Options for creating a permission loader.
- * @template TConstraint - The constraint configuration type
- */
-export interface LoaderOptions<TConstraint> {
+export interface LoaderOptions {
   /** Path to the YAML file */
   yamlPath: string
   /** Function to convert glob pattern to regex */
@@ -42,7 +38,7 @@ export interface LoaderOptions<TConstraint> {
  * @returns A function that returns the permissions config
  */
 export const createPermissionLoader = <TConstraint>(
-  options: LoaderOptions<TConstraint>
+  options: LoaderOptions
 ): (() => PermissionsConfig<TConstraint>) => {
   const {
     yamlPath,

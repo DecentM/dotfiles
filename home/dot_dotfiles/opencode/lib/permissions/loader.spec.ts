@@ -25,7 +25,7 @@ interface TestConstraint {
 
 const createTestLoader = (
   yamlPath: string,
-  options?: Partial<LoaderOptions<TestConstraint>>
+  options?: Partial<LoaderOptions>
 ): (() => PermissionsConfig<TestConstraint>) => {
   return createPermissionLoader<TestConstraint>({
     yamlPath,
