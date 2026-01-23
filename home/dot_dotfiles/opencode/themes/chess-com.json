@@ -58,11 +58,11 @@
     "diffHunkHeader": "brand_green",
     "diffHighlightAdded": "board_light",
     "diffHighlightRemoved": "red_light",
-    "diffAddedBg": "#81b64c",
+    "diffAddedBg": "#2d3d28",
     "diffRemovedBg": "#c94f4f",
     "diffContextBg": "bg_primary",
     "diffLineNumber": "fg_muted",
-    "diffAddedLineNumberBg": "#81b64c",
+    "diffAddedLineNumberBg": "#2d3d28",
     "diffRemovedLineNumberBg": "#c94f4f",
 
     "markdownText": "fg_primary",

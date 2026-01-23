@@ -936,11 +936,22 @@ rules:
   # ─────────────────────────────────────────────────────────────────────────────
   # Version control - git
   # ─────────────────────────────────────────────────────────────────────────────
+  - pattern: "git *"
+    decision: allow
+
   - patterns:
       - "git push*"
       - "git push"
     decision: deny
     reason: "Pushing to remote requires user confirmation - the user needs to push when ready"
+
+  - patterns:
+      - "git config *"
+      - "git config"
+      - "git commit"
+      - "git commit *"
+    decision: deny
+    reason: "No unexpected changes to the host system are allowed - the user needs to run this command"
 
   - pattern: "git reset --hard*"
     decision: deny
@@ -960,9 +971,6 @@ rules:
       - "git *-f *"
     decision: deny
     reason: "Force operations can lose work - the user needs to run this command"
-
-  - pattern: "git *"
-    decision: allow
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Chezmoi - dotfiles management
