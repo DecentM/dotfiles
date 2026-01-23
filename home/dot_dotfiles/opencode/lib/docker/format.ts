@@ -60,7 +60,7 @@ export const truncateOutput = (
  * @returns Formatted Markdown string
  */
 export const formatExecutionResult = (result: ExecutionResult): string => {
-  const { exitCode, stdout, stderr, durationMs, timedOut, runtime } = result
+  const { exitCode, stdout, stderr, durationMs, timedOut } = result
 
   // Truncate outputs
   const truncatedStdout = truncateOutput(stdout, 'stdout')
@@ -73,10 +73,6 @@ export const formatExecutionResult = (result: ExecutionResult): string => {
     `**Exit Code:** ${exitCode}`,
     `**Duration:** ${durationMs}ms`,
   ]
-
-  if (runtime) {
-    headerLines.push(`**Runtime:** ${runtime}`)
-  }
 
   if (timedOut) {
     headerLines.push('**TIMED OUT**')
@@ -115,7 +111,6 @@ export const formatErrorResult = (error: string, durationMs: number, runtime?: s
     stderr: error,
     durationMs,
     timedOut: false,
-    runtime,
   })
 }
 

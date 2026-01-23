@@ -38,3 +38,10 @@
 
 ## node, python
 - Isolated containers: no network, 512MB RAM, 1 CPU
+- **NEVER manually create ASCII art, diagrams, graphs, charts, or tables** - LLMs are bad at this
+  - ALWAYS use code with a library (e.g., `figlet`, `asciichart`, `cli-table3`, `ascii-art`, `terminal-kit` for Node; `art`, `asciichartpy`, `tabulate`, `rich` for Python)
+  - If you don't know a suitable package, research one first (npm search, pypi, etc.)
+  - Execute the code and return its output verbatim - do not modify, augment, or "fix" the result
+  - No manual axes, legends, titles, or decorations - let the library handle it or omit them
+  - **Trust the tool output** - it is NOT corrupted. If it looks wrong, that's how it renders. Do not "fix" or redraw it manually.
+  - If the library fails or produces unusable output, say so and move on - do NOT attempt a manual version

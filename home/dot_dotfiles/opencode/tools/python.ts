@@ -22,6 +22,9 @@ import {
 
 const DOCKER_CONTEXT = join(homedir(), '.dotfiles/opencode/docker')
 const DOCKERFILE_PATH = 'tool-python.dockerfile'
+const DEFAULT_PYTHON_VERSION = '3.12'
+const MAX_MEM_MB = 512
+const MAX_CPU = 1
 
 // =============================================================================
 // Main Tool
@@ -35,6 +38,7 @@ Features:
 - Fresh container per execution (parallel-safe)
 - Auto-removes after completion
 - Network isolated, memory/CPU limited
+- Preinstallable packages
 
 Returns stdout, stderr, and exit code.`,
   args: {
@@ -42,9 +46,17 @@ Returns stdout, stderr, and exit code.`,
     timeout: tool.schema
       .number()
       .describe(`Timeout in milliseconds`),
+    packages: tool.schema
+      .array(tool.schema.string())
+      .optional()
+      .describe('List of packages to preinstall during build (add some timeout for each)'),
+    python_version: tool.schema
+      .string()
+      .optional()
+      .describe(`Exact Node version to use (default: ${DEFAULT_PYTHON_VERSION})`)
   },
   async execute(args) {
-    const { code, timeout } = args
+    const { code, timeout, packages = [], python_version = DEFAULT_PYTHON_VERSION } = args
 
     if (!code.trim()) {
       return formatNoCodeError()
@@ -54,6 +66,10 @@ Returns stdout, stderr, and exit code.`,
     const buildResult = await buildImage(DOCKER_CONTEXT, {
       dockerfile: DOCKERFILE_PATH,
       quiet: true,
+      buildArgs: {
+        PYTHON_PACKAGES: packages.join(' '),
+        PYTHON_VERSION: python_version,
+      }
     })
 
     if (!buildResult.success || !buildResult.data) {
@@ -66,8 +82,8 @@ Returns stdout, stderr, and exit code.`,
       code,
       cmd: ['-'],
       timeout,
-      memory: '512m',
-      cpus: 1,
+      memory: `${MAX_MEM_MB}m`,
+      cpus: MAX_CPU,
       networkMode: 'none',
     })
 
@@ -78,7 +94,6 @@ Returns stdout, stderr, and exit code.`,
       stderr: result.stderr,
       durationMs: result.durationMs,
       timedOut: result.timedOut,
-      runtime: 'python',
     })
   },
 })

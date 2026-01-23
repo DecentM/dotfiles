@@ -4,7 +4,9 @@
 # Build: docker build -t opencode/sandbox-python -f mcp-python.dockerfile .
 # Run:   echo "print('hello')" | docker run --rm -i opencode/sandbox-python -
 
-FROM python:3.12-slim-bookworm
+ARG PYTHON_VERSION="3.12"
+
+FROM python:${PYTHON_VERSION}-slim
 
 # Install uv for fast Python package management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
@@ -13,6 +15,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
+
+ARG PYTHON_PACKAGES=""
+
+RUN uv pip install --system ${PYTHON_PACKAGES}}
 
 # Run as non-root user for security
 RUN useradd -m -s /bin/bash sandbox

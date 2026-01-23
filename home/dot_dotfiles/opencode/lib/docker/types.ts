@@ -148,9 +148,6 @@ export interface ExecutionResult {
 
   /** Whether the execution timed out */
   timedOut: boolean
-
-  /** Runtime identifier (e.g., "node", "python", "tsx") */
-  runtime?: string
 }
 
 // =============================================================================

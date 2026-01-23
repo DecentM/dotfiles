@@ -22,26 +22,8 @@ import {
 
 const DOCKER_CONTEXT = join(homedir(), '.dotfiles/opencode/docker')
 const DOCKERFILE_PATH = 'tool-node.dockerfile'
-
-type Runtime = 'node' | 'tsx' | 'deno'
-
-// =============================================================================
-// Helpers
-// =============================================================================
-
-/**
- * Get the command array for the given runtime.
- */
-const getCommand = (runtime: Runtime): string[] => {
-  switch (runtime) {
-    case 'node':
-      return ['-']
-    case 'tsx':
-      return ['npx', 'tsx', '-']
-    case 'deno':
-      return ['deno', 'run', '-']
-  }
-}
+const MAX_MEM_MB = 512
+const MAX_CPU = 1
 
 // =============================================================================
 // Main Tool
@@ -55,21 +37,25 @@ Features:
 - Fresh container per execution (parallel-safe)
 - Auto-removes after completion
 - Network isolated, memory/CPU limited
-- Multiple runtimes: Node.js, TypeScript (tsx), or Deno
+- Preinstallable packages
 
 Returns stdout, stderr, and exit code.`,
   args: {
     code: tool.schema.string().describe('JavaScript or TypeScript code to execute'),
-    runtime: tool.schema
-      .enum(['node', 'tsx', 'deno'])
-      .optional()
-      .describe("Runtime to use: 'node' (default), 'tsx' (TypeScript), or 'deno'"),
     timeout: tool.schema
       .number()
       .describe(`Timeout in milliseconds`),
+    packages: tool.schema
+      .array(tool.schema.string())
+      .optional()
+      .describe('List of packages to preinstall during build (add some timeout for each)'),
+    node_version: tool.schema
+      .string()
+      .optional()
+      .describe(`Exact Node version to use (default: ${process.versions.node})`)
   },
   async execute(args) {
-    const { code, runtime = 'node', timeout } = args
+    const { code, timeout, packages = [], node_version = process.versions.node } = args
 
     if (!code.trim()) {
       return formatNoCodeError()
@@ -79,20 +65,24 @@ Returns stdout, stderr, and exit code.`,
     const buildResult = await buildImage(DOCKER_CONTEXT, {
       dockerfile: DOCKERFILE_PATH,
       quiet: true,
+      buildArgs: {
+        INSTALL_PACKAGES: packages.join(' '),
+        NODE_VERSION: node_version,
+      }
     })
 
     if (!buildResult.success || !buildResult.data) {
-      return formatErrorResult(buildResult.error ?? 'Failed to build image', 0, runtime)
+      return formatErrorResult(buildResult.error ?? 'Failed to build image', 0)
     }
 
     // Run container with the docker library
     const result = await runContainer({
       image: buildResult.data,
       code,
-      cmd: getCommand(runtime as Runtime),
+      cmd: ['-'],
       timeout,
-      memory: '512m',
-      cpus: 1,
+      memory: `${MAX_MEM_MB}m`,
+      cpus: MAX_CPU,
       networkMode: 'none',
     })
 
@@ -103,7 +93,6 @@ Returns stdout, stderr, and exit code.`,
       stderr: result.stderr,
       durationMs: result.durationMs,
       timedOut: result.timedOut,
-      runtime,
     })
   },
 })
