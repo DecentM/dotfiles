@@ -1,21 +1,20 @@
-import type { PluginInput } from "@opencode-ai/plugin";
+import type { PluginInput } from '@opencode-ai/plugin'
 
-export const LogLevel = [
-  'debug',
-  'info',
-  'warn',
-  'error',
-] as const
+export const LogLevel = ['debug', 'info', 'warn', 'error'] as const
 
 export type LogLevel = (typeof LogLevel)[number]
 
 type LogExtra = Record<string, unknown>
 
 export class Logger {
-  constructor(private level: LogLevel, private client: PluginInput['client'], private service: string) { }
+  constructor(
+    private level: LogLevel,
+    private client: PluginInput['client'],
+    private service: string
+  ) {}
 
   private shouldLog(level: LogLevel) {
-    return LogLevel.indexOf(level) >= LogLevel.indexOf(this.level);
+    return LogLevel.indexOf(level) >= LogLevel.indexOf(this.level)
   }
 
   private async log(level: LogLevel, message: string, extra: LogExtra = {}) {
@@ -28,9 +27,9 @@ export class Logger {
           service: this.service,
           message,
           extra,
-        }
+        },
       })
-    } catch { }
+    } catch {}
   }
 
   public debug(message: string, extra?: LogExtra) {

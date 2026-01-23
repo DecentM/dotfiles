@@ -1,4 +1,4 @@
-import { getToolExecutionRepository } from '../db/index'
+import { getToolExecutionStore } from '../db/index'
 import type { Hook } from '../types'
 
 interface ToolExecuteBeforeInput {
@@ -14,9 +14,9 @@ interface ToolExecuteBeforeOutput {
 export const toolExecuteBeforeListener: Hook<'tool.execute.before'> =
   () =>
   async (input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): Promise<void> => {
-    const repo = await getToolExecutionRepository()
+    const store = await getToolExecutionStore()
 
-    await repo.logToolExecution({
+    await store.logToolExecution({
       sessionId: input.sessionID,
       callId: input.callID,
       toolName: input.tool,

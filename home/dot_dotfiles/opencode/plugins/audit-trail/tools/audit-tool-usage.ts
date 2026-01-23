@@ -1,6 +1,6 @@
 import { tool } from '@opencode-ai/plugin'
 
-import { getToolExecutionRepository } from '../db/index'
+import { getToolExecutionStore } from '../db/index'
 import type { ToolUsageEntry } from '../db/repositories/tool-execution.repository'
 import { formatDuration, formatNumber } from '../lib'
 
@@ -33,8 +33,8 @@ export const audit_tool_usage = tool({
   async execute(args) {
     try {
       const limit = args.limit ?? 15
-      const repo = await getToolExecutionRepository()
-      const usage = await repo.getToolUsage(limit)
+      const store = await getToolExecutionStore()
+      const usage = await store.getToolUsage(limit)
       return formatToolUsage(usage, limit)
     } catch (error) {
       return `Error: Failed to get tool usage: ${error instanceof Error ? error.message : String(error)}`

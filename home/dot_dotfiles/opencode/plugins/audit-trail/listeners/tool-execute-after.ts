@@ -1,4 +1,4 @@
-import { getToolExecutionRepository } from '../db/index'
+import { getToolExecutionStore } from '../db/index'
 import { createResultSummary } from '../lib'
 import type { Hook } from '../types'
 
@@ -22,9 +22,9 @@ export const toolExecuteAfterListener: Hook<'tool.execute.after'> =
       (metadata?.exitCode !== undefined && metadata.exitCode !== 0) ||
       metadata?.success === false
 
-    const repo = await getToolExecutionRepository()
+    const store = await getToolExecutionStore()
 
-    await repo.logToolExecution({
+    await store.logToolExecution({
       sessionId: input.sessionID,
       callId: input.callID,
       toolName: input.tool,

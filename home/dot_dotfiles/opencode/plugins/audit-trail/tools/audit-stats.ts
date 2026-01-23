@@ -1,6 +1,6 @@
 import { tool } from '@opencode-ai/plugin'
 
-import { getToolExecutionRepository } from '../db/index'
+import { getToolExecutionStore } from '../db/index'
 import type { ToolStats } from '../db/repositories/tool-execution.repository'
 import { formatDuration, formatNumber } from '../lib'
 
@@ -27,8 +27,8 @@ export const audit_stats = tool({
   args: {},
   async execute() {
     try {
-      const repo = await getToolExecutionRepository()
-      const stats = await repo.getToolStats()
+      const store = await getToolExecutionStore()
+      const stats = await store.getToolStats()
       return formatStats(stats)
     } catch (error) {
       return `Error: Failed to get audit stats: ${error instanceof Error ? error.message : String(error)}`

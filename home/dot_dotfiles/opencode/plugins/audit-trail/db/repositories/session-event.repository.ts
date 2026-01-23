@@ -1,152 +1,152 @@
-import type { Repository } from "typeorm";
+import type { Repository } from 'typeorm'
 
-import { getDataSource } from "../data-source";
-import type { SessionEventType } from "../entities/session-event.entity";
-import { SessionEvent } from "../entities/session-event.entity";
-import { ToolExecution } from "../entities/tool-execution.entity";
+import { getDataSource } from '../data-source'
+import type { SessionEventType } from '../entities/session-event.entity'
+import { SessionEvent } from '../entities/session-event.entity'
+import { ToolExecution } from '../entities/tool-execution.entity'
 
 export interface LogSessionEventData {
-	sessionId: string;
-	eventType: SessionEventType;
-	details?: string;
+  sessionId: string
+  eventType: SessionEventType
+  details?: string
 }
 
 export interface GetSessionLogsFilters {
-	startDate?: Date;
-	endDate?: Date;
-	sessionId?: string;
-	eventType?: SessionEventType;
-	limit?: number;
+  startDate?: Date
+  endDate?: Date
+  sessionId?: string
+  eventType?: SessionEventType
+  limit?: number
 }
 
 export interface TimelineEntry {
-	type: "tool" | "session";
-	timestamp: Date;
-	data: ToolExecution | SessionEvent;
+  type: 'tool' | 'session'
+  timestamp: Date
+  data: ToolExecution | SessionEvent
 }
 
 export interface SessionEventRepositoryExtension {
-	logSessionEvent(data: LogSessionEventData): Promise<SessionEvent | null>;
-	getSessionLogs(filters?: GetSessionLogsFilters): Promise<SessionEvent[]>;
-	getSessionTimeline(sessionId: string): Promise<TimelineEntry[]>;
+  logSessionEvent(data: LogSessionEventData): Promise<SessionEvent | null>
+  getSessionLogs(filters?: GetSessionLogsFilters): Promise<SessionEvent[]>
+  getSessionTimeline(sessionId: string): Promise<TimelineEntry[]>
 }
 
-export type SessionEventRepository = Repository<SessionEvent> &
-	SessionEventRepositoryExtension;
+export type SessionEventRepository = Repository<SessionEvent> & SessionEventRepositoryExtension
 
 /**
  * Get the extended SessionEvent repository.
+ * Throws if database is not configured - use getSessionEventStore() instead for automatic fallback.
  */
-export const getSessionEventRepository =
-	async (): Promise<SessionEventRepository> => {
-		const dataSource = await getDataSource();
-		const baseRepository = dataSource.getRepository(SessionEvent);
+export const getSessionEventRepository = async (): Promise<SessionEventRepository> => {
+  const dataSource = await getDataSource()
 
-		return baseRepository.extend<SessionEventRepositoryExtension>({
-			/**
-			 * Record a session lifecycle event.
-			 */
-			async logSessionEvent(
-				data: LogSessionEventData,
-			): Promise<SessionEvent | null> {
-				try {
-					const event = this.create({
-						sessionId: data.sessionId,
-						eventType: data.eventType,
-						details: data.details ?? null,
-					});
+  if (!dataSource) {
+    throw new Error(
+      'Database is not configured. Use getSessionEventStore() for automatic fallback to memory store.'
+    )
+  }
 
-					return await this.save(event);
-				} catch {
-					return null;
-				}
-			},
+  const baseRepository = dataSource.getRepository(SessionEvent)
 
-			/**
-			 * Export session events with optional filters.
-			 */
-			async getSessionLogs(
-				filters?: GetSessionLogsFilters,
-			): Promise<SessionEvent[]> {
-				try {
-					const qb = this.createQueryBuilder("event");
+  return baseRepository.extend<SessionEventRepositoryExtension>({
+    /**
+     * Record a session lifecycle event.
+     */
+    async logSessionEvent(data: LogSessionEventData): Promise<SessionEvent | null> {
+      try {
+        const event = this.create({
+          sessionId: data.sessionId,
+          eventType: data.eventType,
+          details: data.details ?? null,
+        })
 
-					if (filters?.startDate) {
-						qb.andWhere("event.timestamp >= :startDate", {
-							startDate: filters.startDate,
-						});
-					}
+        return await this.save(event)
+      } catch {
+        return null
+      }
+    },
 
-					if (filters?.endDate) {
-						qb.andWhere("event.timestamp <= :endDate", {
-							endDate: filters.endDate,
-						});
-					}
+    /**
+     * Export session events with optional filters.
+     */
+    async getSessionLogs(filters?: GetSessionLogsFilters): Promise<SessionEvent[]> {
+      try {
+        const qb = this.createQueryBuilder('event')
 
-					if (filters?.sessionId) {
-						qb.andWhere("event.sessionId = :sessionId", {
-							sessionId: filters.sessionId,
-						});
-					}
+        if (filters?.startDate) {
+          qb.andWhere('event.timestamp >= :startDate', {
+            startDate: filters.startDate,
+          })
+        }
 
-					if (filters?.eventType) {
-						qb.andWhere("event.eventType = :eventType", {
-							eventType: filters.eventType,
-						});
-					}
+        if (filters?.endDate) {
+          qb.andWhere('event.timestamp <= :endDate', {
+            endDate: filters.endDate,
+          })
+        }
 
-					qb.orderBy("event.timestamp", "DESC");
+        if (filters?.sessionId) {
+          qb.andWhere('event.sessionId = :sessionId', {
+            sessionId: filters.sessionId,
+          })
+        }
 
-					if (filters?.limit) {
-						qb.limit(filters.limit);
-					}
+        if (filters?.eventType) {
+          qb.andWhere('event.eventType = :eventType', {
+            eventType: filters.eventType,
+          })
+        }
 
-					return await qb.getMany();
-				} catch {
-					return [];
-				}
-			},
+        qb.orderBy('event.timestamp', 'DESC')
 
-			/**
-			 * Get a unified chronological timeline for a session.
-			 */
-			async getSessionTimeline(sessionId: string): Promise<TimelineEntry[]> {
-				try {
-					// Fetch tool executions for the session using existing connection
-					const toolExecutions = await this.manager.connection
-						.getRepository(ToolExecution)
-						.createQueryBuilder("execution")
-						.where("execution.sessionId = :sessionId", { sessionId })
-						.getMany();
+        if (filters?.limit) {
+          qb.limit(filters.limit)
+        }
 
-					// Fetch session events for the session
-					const sessionEvents = await this.createQueryBuilder("event")
-						.where("event.sessionId = :sessionId", { sessionId })
-						.getMany();
+        return await qb.getMany()
+      } catch {
+        return []
+      }
+    },
 
-					// Combine and sort by timestamp
-					const timeline: TimelineEntry[] = [
-						...toolExecutions.map((execution) => ({
-							type: "tool" as const,
-							timestamp: execution.timestamp,
-							data: execution,
-						})),
-						...sessionEvents.map((event) => ({
-							type: "session" as const,
-							timestamp: event.timestamp,
-							data: event,
-						})),
-					];
+    /**
+     * Get a unified chronological timeline for a session.
+     */
+    async getSessionTimeline(sessionId: string): Promise<TimelineEntry[]> {
+      try {
+        // Fetch tool executions for the session using existing connection
+        const toolExecutions = await this.manager.connection
+          .getRepository(ToolExecution)
+          .createQueryBuilder('execution')
+          .where('execution.sessionId = :sessionId', { sessionId })
+          .getMany()
 
-					// Sort chronologically (ascending)
-					timeline.sort(
-						(a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
-					);
+        // Fetch session events for the session
+        const sessionEvents = await this.createQueryBuilder('event')
+          .where('event.sessionId = :sessionId', { sessionId })
+          .getMany()
 
-					return timeline;
-				} catch {
-					return [];
-				}
-			},
-		});
-	};
+        // Combine and sort by timestamp
+        const timeline: TimelineEntry[] = [
+          ...toolExecutions.map((execution) => ({
+            type: 'tool' as const,
+            timestamp: execution.timestamp,
+            data: execution,
+          })),
+          ...sessionEvents.map((event) => ({
+            type: 'session' as const,
+            timestamp: event.timestamp,
+            data: event,
+          })),
+        ]
+
+        // Sort chronologically (ascending)
+        timeline.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+
+        return timeline
+      } catch {
+        return []
+      }
+    },
+  })
+}
