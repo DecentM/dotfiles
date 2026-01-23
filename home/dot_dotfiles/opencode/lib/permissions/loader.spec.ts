@@ -496,7 +496,7 @@ rules:
 
       expect(consoleSpy).toHaveBeenCalled()
       const calls = consoleSpy.mock.calls
-      expect(calls.some((c) => c[0].includes('Invalid permissions YAML'))).toBe(true)
+      expect(calls.some((c: string[]) => c[0].includes('Invalid permissions YAML'))).toBe(true)
     })
 
     test('logs each validation error individually', () => {

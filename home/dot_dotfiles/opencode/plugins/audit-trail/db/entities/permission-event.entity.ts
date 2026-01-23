@@ -1,13 +1,13 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
-export type PermissionStatus = 'ask' | 'deny' | 'allow'
+import type { IPermissionEvent, PermissionStatus } from '../types'
 
 @Entity('permission_events')
 @Index(['timestamp'])
 @Index(['sessionId'])
 @Index(['status'])
 @Index(['sessionId', 'timestamp'])
-export class PermissionEvent {
+export class PermissionEvent implements IPermissionEvent {
   @PrimaryGeneratedColumn()
   id!: number
 

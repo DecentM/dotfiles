@@ -1,37 +1,23 @@
 import type { Repository } from 'typeorm'
 
 import { getDataSource } from '../data-source'
-import type { SessionEventType } from '../entities/session-event.entity'
 import { SessionEvent } from '../entities/session-event.entity'
 import { ToolExecution } from '../entities/tool-execution.entity'
+import type {
+  GetSessionLogsFilters,
+  ISessionEvent,
+  ISessionEventStore,
+  SessionEventInput,
+  TimelineEntry,
+} from '../types'
 
-export interface LogSessionEventData {
-  sessionId: string
-  eventType: SessionEventType
-  details?: string
-}
+// Re-export filter and result types from shared types for backwards compatibility
+export type { GetSessionLogsFilters, TimelineEntry } from '../types'
 
-export interface GetSessionLogsFilters {
-  startDate?: Date
-  endDate?: Date
-  sessionId?: string
-  eventType?: SessionEventType
-  limit?: number
-}
+// For backwards compatibility, alias the new input type
+export type LogSessionEventData = SessionEventInput
 
-export interface TimelineEntry {
-  type: 'tool' | 'session'
-  timestamp: Date
-  data: ToolExecution | SessionEvent
-}
-
-export interface SessionEventRepositoryExtension {
-  logSessionEvent(data: LogSessionEventData): Promise<SessionEvent | null>
-  getSessionLogs(filters?: GetSessionLogsFilters): Promise<SessionEvent[]>
-  getSessionTimeline(sessionId: string): Promise<TimelineEntry[]>
-}
-
-export type SessionEventRepository = Repository<SessionEvent> & SessionEventRepositoryExtension
+export type SessionEventRepository = Repository<SessionEvent> & ISessionEventStore
 
 export const getSessionEventRepository = async (): Promise<SessionEventRepository> => {
   const dataSource = await getDataSource()
@@ -44,11 +30,11 @@ export const getSessionEventRepository = async (): Promise<SessionEventRepositor
 
   const baseRepository = dataSource.getRepository(SessionEvent)
 
-  return baseRepository.extend<SessionEventRepositoryExtension>({
+  return baseRepository.extend<ISessionEventStore>({
     /**
      * Record a session lifecycle event.
      */
-    async logSessionEvent(data: LogSessionEventData): Promise<SessionEvent | null> {
+    async logSessionEvent(data: SessionEventInput): Promise<ISessionEvent | null> {
       try {
         const event = this.create({
           sessionId: data.sessionId,
@@ -65,7 +51,7 @@ export const getSessionEventRepository = async (): Promise<SessionEventRepositor
     /**
      * Export session events with optional filters.
      */
-    async getSessionLogs(filters?: GetSessionLogsFilters): Promise<SessionEvent[]> {
+    async getSessionLogs(filters?: GetSessionLogsFilters): Promise<ISessionEvent[]> {
       try {
         const qb = this.createQueryBuilder('event')
 

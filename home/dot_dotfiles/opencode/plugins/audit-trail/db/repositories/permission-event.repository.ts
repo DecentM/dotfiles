@@ -1,8 +1,8 @@
 import type { Repository } from 'typeorm'
 
 import { getDataSource } from '../data-source'
-import type { PermissionStatus } from '../entities/permission-event.entity'
 import { PermissionEvent } from '../entities/permission-event.entity'
+import type { GetPermissionEventsFilters, PermissionStatus } from '../types'
 
 export interface LogPermissionEventData {
   sessionId: string
@@ -12,13 +12,8 @@ export interface LogPermissionEventData {
   detailsJson?: string
 }
 
-export interface GetPermissionEventsFilters {
-  startDate?: Date
-  endDate?: Date
-  sessionId?: string
-  status?: PermissionStatus
-  limit?: number
-}
+// Re-export filter types from shared types for backwards compatibility
+export type { GetPermissionEventsFilters } from '../types'
 
 export interface PermissionEventRepositoryExtension {
   logPermissionEvent(data: LogPermissionEventData): Promise<PermissionEvent | null>

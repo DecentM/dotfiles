@@ -1,10 +1,12 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
+import type { IChatMessage } from '../types'
+
 @Entity('chat_messages')
 @Index(['timestamp'])
 @Index(['sessionId'])
 @Index(['sessionId', 'timestamp'])
-export class ChatMessage {
+export class ChatMessage implements IChatMessage {
   @PrimaryGeneratedColumn()
   id!: number
 

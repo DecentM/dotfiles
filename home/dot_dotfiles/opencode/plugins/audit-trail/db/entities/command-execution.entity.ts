@@ -1,11 +1,13 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
+import type { ICommandExecution } from '../types'
+
 @Entity('command_executions')
 @Index(['timestamp'])
 @Index(['sessionId'])
 @Index(['command'])
 @Index(['sessionId', 'timestamp'])
-export class CommandExecution {
+export class CommandExecution implements ICommandExecution {
   @PrimaryGeneratedColumn()
   id!: number
 

@@ -1,22 +1,11 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
-export type SessionEventType =
-  | 'created'
-  | 'compacted'
-  | 'deleted'
-  | 'error'
-  | 'idle'
-  | 'event'
-  | 'config'
-  | 'chat_params'
-  | 'chat_headers'
+import type { ISessionEvent, SessionEventType } from '../types'
 
 @Entity('session_events')
 @Index(['timestamp'])
-@Index(['sessionId'])
-@Index(['eventType'])
 @Index(['sessionId', 'timestamp'])
-export class SessionEvent {
+export class SessionEvent implements ISessionEvent {
   @PrimaryGeneratedColumn()
   id!: number
 

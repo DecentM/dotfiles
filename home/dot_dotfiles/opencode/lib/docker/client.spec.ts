@@ -35,6 +35,14 @@ import type { ContainerConfig, ExecConfig } from './types'
 // =============================================================================
 
 /**
+ * Create a mock fetch function with proper typing.
+ * Bun's mock() doesn't include the `preconnect` property that `typeof fetch` expects.
+ */
+const mockFetch = <T extends (...args: Parameters<typeof fetch>) => ReturnType<typeof fetch>>(
+  fn: T
+): typeof fetch => mock(fn) as unknown as typeof fetch
+
+/**
  * Create a mock response object.
  */
 const createMockResponse = (options: {
@@ -268,7 +276,7 @@ describe('dockerFetch', () => {
       let capturedUrl = ''
       let capturedOptions: RequestInit | undefined
 
-      global.fetch = mock(async (url, options) => {
+      global.fetch = mockFetch(async (url, options) => {
         capturedUrl = url as string
         capturedOptions = options
         return createMockResponse({ data: { Id: 'test' } })
@@ -283,7 +291,7 @@ describe('dockerFetch', () => {
     test('makes POST request with body', async () => {
       let capturedBody = ''
 
-      global.fetch = mock(async (_url, options) => {
+      global.fetch = mockFetch(async (_url, options) => {
         capturedBody = options?.body as string
         return createMockResponse({ data: { Id: 'abc123' } })
       })
@@ -296,7 +304,7 @@ describe('dockerFetch', () => {
 
     test('returns success response with data', async () => {
       const responseData = { Id: 'container123', Name: 'test' }
-      global.fetch = mock(async () => createMockResponse({ data: responseData }))
+      global.fetch = mockFetch(async () => createMockResponse({ data: responseData }))
 
       const result = await dockerFetch<typeof responseData>('/test')
 
@@ -306,7 +314,7 @@ describe('dockerFetch', () => {
     })
 
     test('handles 204 no content response', async () => {
-      global.fetch = mock(async () => new Response(null, { status: 204 }))
+      global.fetch = mockFetch(async () => new Response(null, { status: 204 }))
 
       const result = await dockerFetch('/containers/abc/stop')
 
@@ -315,7 +323,7 @@ describe('dockerFetch', () => {
     })
 
     test('handles non-JSON response as text', async () => {
-      global.fetch = mock(
+      global.fetch = mockFetch(
         async () =>
           new Response('OK', {
             status: 200,
@@ -332,7 +340,7 @@ describe('dockerFetch', () => {
 
   describe('error responses', () => {
     test('returns error for non-OK response', async () => {
-      global.fetch = mock(async () =>
+      global.fetch = mockFetch(async () =>
         createMockResponse({
           ok: false,
           status: 404,
@@ -348,7 +356,7 @@ describe('dockerFetch', () => {
     })
 
     test('handles error response without message field', async () => {
-      global.fetch = mock(async () =>
+      global.fetch = mockFetch(async () =>
         createMockResponse({
           ok: false,
           status: 500,
@@ -365,7 +373,7 @@ describe('dockerFetch', () => {
 
   describe('connection errors', () => {
     test('handles ENOENT error (socket not found)', async () => {
-      global.fetch = mock(async () => {
+      global.fetch = mockFetch(async () => {
         throw new Error('ENOENT: no such file or directory')
       })
 
@@ -377,7 +385,7 @@ describe('dockerFetch', () => {
     })
 
     test('handles EACCES error (permission denied)', async () => {
-      global.fetch = mock(async () => {
+      global.fetch = mockFetch(async () => {
         throw new Error('EACCES: permission denied')
       })
 
@@ -388,7 +396,7 @@ describe('dockerFetch', () => {
     })
 
     test('handles generic network error', async () => {
-      global.fetch = mock(async () => {
+      global.fetch = mockFetch(async () => {
         throw new Error('Connection refused')
       })
 
@@ -399,7 +407,7 @@ describe('dockerFetch', () => {
     })
 
     test('handles non-Error thrown', async () => {
-      global.fetch = mock(async () => {
+      global.fetch = mockFetch(async () => {
         throw 'String error'
       })
 
@@ -414,7 +422,7 @@ describe('dockerFetch', () => {
     test('sets Content-Type header to application/json', async () => {
       let capturedHeaders: Record<string, string> = {}
 
-      global.fetch = mock(async (_url, options) => {
+      global.fetch = mockFetch(async (_url, options) => {
         capturedHeaders = (options?.headers as Record<string, string>) ?? {}
         return createMockResponse({ data: {} })
       })
@@ -427,7 +435,7 @@ describe('dockerFetch', () => {
     test('allows custom headers', async () => {
       let capturedHeaders: Record<string, string> = {}
 
-      global.fetch = mock(async (_url, options) => {
+      global.fetch = mockFetch(async (_url, options) => {
         capturedHeaders = (options?.headers as Record<string, string>) ?? {}
         return createMockResponse({ data: {} })
       })
@@ -441,7 +449,7 @@ describe('dockerFetch', () => {
     test('includes unix socket option', async () => {
       let capturedOptions: RequestInit & { unix?: string } = {}
 
-      global.fetch = mock(async (_url, options) => {
+      global.fetch = mockFetch(async (_url, options) => {
         capturedOptions = options as RequestInit & { unix?: string }
         return createMockResponse({ data: {} })
       })
@@ -471,7 +479,7 @@ describe('Container Operations', () => {
   describe('listContainers', () => {
     test('lists running containers by default', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: [] })
       })
@@ -483,7 +491,7 @@ describe('Container Operations', () => {
 
     test('lists all containers when all=true', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: [] })
       })
@@ -498,7 +506,7 @@ describe('Container Operations', () => {
         { Id: 'abc123', Names: ['/container1'] },
         { Id: 'def456', Names: ['/container2'] },
       ]
-      global.fetch = mock(async () => createMockResponse({ data: containers }))
+      global.fetch = mockFetch(async () => createMockResponse({ data: containers }))
 
       const result = await listContainers()
 
@@ -510,7 +518,7 @@ describe('Container Operations', () => {
   describe('inspectContainer', () => {
     test('builds correct URL with container ID', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: { Id: 'abc123' } })
       })
@@ -522,7 +530,7 @@ describe('Container Operations', () => {
 
     test('encodes special characters in container name', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: { Id: 'test' } })
       })
@@ -537,7 +545,7 @@ describe('Container Operations', () => {
         Id: 'abc123',
         State: { Running: true, ExitCode: 0 },
       }
-      global.fetch = mock(async () => createMockResponse({ data: containerDetails }))
+      global.fetch = mockFetch(async () => createMockResponse({ data: containerDetails }))
 
       const result = await inspectContainer('abc123')
 
@@ -551,7 +559,7 @@ describe('Container Operations', () => {
       let capturedMethod = ''
       let capturedBody = ''
 
-      global.fetch = mock(async (_url, options) => {
+      global.fetch = mockFetch(async (_url, options) => {
         capturedMethod = options?.method as string
         capturedBody = options?.body as string
         return createMockResponse({ data: { Id: 'newcontainer' } })
@@ -569,7 +577,7 @@ describe('Container Operations', () => {
 
     test('includes name parameter when provided', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: { Id: 'newcontainer' } })
       })
@@ -581,7 +589,7 @@ describe('Container Operations', () => {
 
     test('omits name parameter when not provided', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: { Id: 'newcontainer' } })
       })
@@ -597,7 +605,7 @@ describe('Container Operations', () => {
       let capturedUrl = ''
       let capturedMethod = ''
 
-      global.fetch = mock(async (url, options) => {
+      global.fetch = mockFetch(async (url, options) => {
         capturedUrl = url as string
         capturedMethod = options?.method as string
         return new Response(null, { status: 204 })
@@ -610,7 +618,7 @@ describe('Container Operations', () => {
     })
 
     test('returns success for 204 response', async () => {
-      global.fetch = mock(async () => new Response(null, { status: 204 }))
+      global.fetch = mockFetch(async () => new Response(null, { status: 204 }))
 
       const result = await startContainer('abc123')
 
@@ -621,7 +629,7 @@ describe('Container Operations', () => {
   describe('stopContainer', () => {
     test('uses default timeout of 10 seconds', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return new Response(null, { status: 204 })
       })
@@ -633,7 +641,7 @@ describe('Container Operations', () => {
 
     test('uses custom timeout', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return new Response(null, { status: 204 })
       })
@@ -647,7 +655,7 @@ describe('Container Operations', () => {
   describe('removeContainer', () => {
     test('uses default options (force=false, volumes=false)', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return new Response(null, { status: 204 })
       })
@@ -660,7 +668,7 @@ describe('Container Operations', () => {
 
     test('includes force=true when specified', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return new Response(null, { status: 204 })
       })
@@ -672,7 +680,7 @@ describe('Container Operations', () => {
 
     test('includes v=true when volumes=true', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return new Response(null, { status: 204 })
       })
@@ -686,7 +694,7 @@ describe('Container Operations', () => {
   describe('waitContainer', () => {
     test("uses default condition 'not-running'", async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: { StatusCode: 0 } })
       })
@@ -698,7 +706,7 @@ describe('Container Operations', () => {
 
     test('uses custom condition', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: { StatusCode: 0 } })
       })
@@ -709,7 +717,7 @@ describe('Container Operations', () => {
     })
 
     test('returns status code on success', async () => {
-      global.fetch = mock(async () => createMockResponse({ data: { StatusCode: 42 } }))
+      global.fetch = mockFetch(async () => createMockResponse({ data: { StatusCode: 42 } }))
 
       const result = await waitContainer('abc123')
 
@@ -721,7 +729,7 @@ describe('Container Operations', () => {
   describe('getContainerLogs', () => {
     test('uses default parameters', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return new Response('logs', {
           status: 200,
@@ -739,7 +747,7 @@ describe('Container Operations', () => {
 
     test('uses custom tail value', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return new Response('logs', {
           status: 200,
@@ -754,7 +762,7 @@ describe('Container Operations', () => {
 
     test('strips Docker log headers from response', async () => {
       const frame = createDockerLogFrame(1, 'Log output')
-      global.fetch = mock(
+      global.fetch = mockFetch(
         async () =>
           new Response(new TextDecoder().decode(frame), {
             status: 200,
@@ -775,7 +783,7 @@ describe('Container Operations', () => {
       const stderr = createDockerLogFrame(2, 'stderr\n')
       const combined = concatUint8Arrays(stdout, stderr)
 
-      global.fetch = mock(
+      global.fetch = mockFetch(
         async () =>
           new Response(new TextDecoder().decode(combined), {
             status: 200,
@@ -791,7 +799,7 @@ describe('Container Operations', () => {
     })
 
     test('returns error when request fails', async () => {
-      global.fetch = mock(async () =>
+      global.fetch = mockFetch(async () =>
         createMockResponse({
           ok: false,
           status: 404,
@@ -827,7 +835,7 @@ describe('Exec Operations', () => {
       let capturedUrl = ''
       let capturedBody = ''
 
-      global.fetch = mock(async (url, options) => {
+      global.fetch = mockFetch(async (url, options) => {
         capturedUrl = url as string
         capturedBody = options?.body as string
         return createMockResponse({ data: { Id: 'exec123' } })
@@ -845,7 +853,7 @@ describe('Exec Operations', () => {
     })
 
     test('returns exec ID on success', async () => {
-      global.fetch = mock(async () => createMockResponse({ data: { Id: 'exec123' } }))
+      global.fetch = mockFetch(async () => createMockResponse({ data: { Id: 'exec123' } }))
 
       const result = await execCreate('container123', { Cmd: ['ls'] })
 
@@ -859,7 +867,7 @@ describe('Exec Operations', () => {
       let capturedUrl = ''
       let capturedBody = ''
 
-      global.fetch = mock(async (url, options) => {
+      global.fetch = mockFetch(async (url, options) => {
         capturedUrl = url as string
         capturedBody = options?.body as string
         return new Response('output', {
@@ -876,7 +884,7 @@ describe('Exec Operations', () => {
 
     test('strips Docker log headers from output', async () => {
       const frame = createDockerLogFrame(1, 'command output')
-      global.fetch = mock(
+      global.fetch = mockFetch(
         async () =>
           new Response(new TextDecoder().decode(frame), {
             status: 200,
@@ -893,7 +901,7 @@ describe('Exec Operations', () => {
 
   describe('execInspect', () => {
     test('returns exec status', async () => {
-      global.fetch = mock(async () =>
+      global.fetch = mockFetch(async () =>
         createMockResponse({
           data: { ExitCode: 0, Running: false, Pid: 12345 },
         })
@@ -926,7 +934,7 @@ describe('Image Operations', () => {
   describe('listImages', () => {
     test('makes GET request to /images/json', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: [] })
       })
@@ -941,7 +949,7 @@ describe('Image Operations', () => {
         { Id: 'sha256:abc', RepoTags: ['alpine:latest'] },
         { Id: 'sha256:def', RepoTags: ['node:20'] },
       ]
-      global.fetch = mock(async () => createMockResponse({ data: images }))
+      global.fetch = mockFetch(async () => createMockResponse({ data: images }))
 
       const result = await listImages()
 
@@ -953,7 +961,7 @@ describe('Image Operations', () => {
   describe('pullImage', () => {
     test('adds latest tag when not specified', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return new Response('{}', { status: 200 })
       })
@@ -965,7 +973,7 @@ describe('Image Operations', () => {
 
     test('uses specified tag when image includes tag', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return new Response('{}', { status: 200 })
       })
@@ -976,7 +984,7 @@ describe('Image Operations', () => {
     })
 
     test('returns success for successful pull', async () => {
-      global.fetch = mock(
+      global.fetch = mockFetch(
         async () => new Response('{"status":"Downloaded newer image"}', { status: 200 })
       )
 
@@ -986,7 +994,7 @@ describe('Image Operations', () => {
     })
 
     test('returns error when pull stream contains error', async () => {
-      global.fetch = mock(
+      global.fetch = mockFetch(
         async () =>
           new Response(
             '{"status":"Pulling"}\n{"error":"manifest unknown","errorDetail":{"message":"manifest unknown"}}',
@@ -1004,7 +1012,7 @@ describe('Image Operations', () => {
   describe('inspectImage', () => {
     test('builds correct URL with image name', async () => {
       let capturedUrl = ''
-      global.fetch = mock(async (url) => {
+      global.fetch = mockFetch(async (url) => {
         capturedUrl = url as string
         return createMockResponse({ data: { Id: 'sha256:abc' } })
       })
@@ -1020,7 +1028,7 @@ describe('Image Operations', () => {
         RepoTags: ['alpine:latest'],
         Size: 5000000,
       }
-      global.fetch = mock(async () => createMockResponse({ data: imageDetails }))
+      global.fetch = mockFetch(async () => createMockResponse({ data: imageDetails }))
 
       const result = await inspectImage('alpine')
 
@@ -1047,7 +1055,7 @@ describe('ping', () => {
 
   test('makes request to /_ping endpoint', async () => {
     let capturedUrl = ''
-    global.fetch = mock(async (url) => {
+    global.fetch = mockFetch(async (url) => {
       capturedUrl = url as string
       return new Response('OK', { status: 200 })
     })
@@ -1058,7 +1066,7 @@ describe('ping', () => {
   })
 
   test('returns success when Docker is responsive', async () => {
-    global.fetch = mock(
+    global.fetch = mockFetch(
       async () =>
         new Response('OK', {
           status: 200,
@@ -1073,7 +1081,7 @@ describe('ping', () => {
   })
 
   test('returns error when Docker is not running', async () => {
-    global.fetch = mock(async () => {
+    global.fetch = mockFetch(async () => {
       throw new Error('ENOENT: no such file or directory')
     })
 

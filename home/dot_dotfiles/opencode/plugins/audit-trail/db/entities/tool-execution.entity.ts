@@ -1,18 +1,14 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
-export type ToolExecutionDecision = 'started' | 'completed' | 'failed'
+import type { IToolExecution, ToolExecutionDecision } from '../types'
 
 @Entity('tool_executions')
-@Index(['timestamp'])
-@Index(['sessionId'])
-@Index(['toolName'])
-@Index(['decision'])
-@Index(['sessionId', 'timestamp'])
-export class ToolExecution {
+export class ToolExecution implements IToolExecution {
   @PrimaryGeneratedColumn()
   id!: number
 
   @CreateDateColumn()
+  @Index()
   timestamp!: Date
 
   @Column({ type: 'text' })

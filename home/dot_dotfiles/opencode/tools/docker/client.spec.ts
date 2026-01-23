@@ -148,7 +148,7 @@ describe('Docker API Response Types', () => {
     })
 
     test('no content response (204)', () => {
-      const response = { success: true }
+      const response: { success: boolean; data?: unknown } = { success: true }
       expect(response.success).toBe(true)
       expect(response.data).toBeUndefined()
     })

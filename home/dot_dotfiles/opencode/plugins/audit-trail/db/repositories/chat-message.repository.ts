@@ -2,6 +2,7 @@ import type { Repository } from 'typeorm'
 
 import { getDataSource } from '../data-source'
 import { ChatMessage } from '../entities/chat-message.entity'
+import type { GetChatMessagesFilters } from '../types'
 
 export interface LogChatMessageData {
   sessionId: string
@@ -14,12 +15,8 @@ export interface LogChatMessageData {
   partsJson?: string
 }
 
-export interface GetChatMessagesFilters {
-  startDate?: Date
-  endDate?: Date
-  sessionId?: string
-  limit?: number
-}
+// Re-export filter types from shared types for backwards compatibility
+export type { GetChatMessagesFilters } from '../types'
 
 export interface ChatMessageRepositoryExtension {
   logChatMessage(data: LogChatMessageData): Promise<ChatMessage | null>

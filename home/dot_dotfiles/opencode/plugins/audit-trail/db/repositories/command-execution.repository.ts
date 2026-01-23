@@ -2,6 +2,7 @@ import type { Repository } from 'typeorm'
 
 import { getDataSource } from '../data-source'
 import { CommandExecution } from '../entities/command-execution.entity'
+import type { GetCommandExecutionsFilters } from '../types'
 
 export interface LogCommandExecutionData {
   sessionId: string
@@ -10,13 +11,8 @@ export interface LogCommandExecutionData {
   partsJson?: string
 }
 
-export interface GetCommandExecutionsFilters {
-  startDate?: Date
-  endDate?: Date
-  sessionId?: string
-  command?: string
-  limit?: number
-}
+// Re-export filter types from shared types for backwards compatibility
+export type { GetCommandExecutionsFilters } from '../types'
 
 export interface CommandExecutionRepositoryExtension {
   logCommandExecution(data: LogCommandExecutionData): Promise<CommandExecution | null>
