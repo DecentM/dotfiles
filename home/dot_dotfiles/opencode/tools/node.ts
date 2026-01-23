@@ -52,10 +52,14 @@ Returns stdout, stderr, and exit code.`,
     node_version: tool.schema
       .string()
       .optional()
-      .describe(`Exact Node version to use (default: ${process.versions.node})`)
+      .describe(`Exact Node version to use (default: ${process.versions.node})`),
+    esm: tool.schema
+      .boolean()
+      .optional()
+      .describe('If false, the sandbox will be set up for commonjs. If true, it will be ESM ("module"). Default: true')
   },
   async execute(args) {
-    const { code, timeout, packages = [], node_version = process.versions.node } = args
+    const { code, timeout, packages = [], node_version = process.versions.node, esm = true } = args
 
     if (!code.trim()) {
       return formatNoCodeError()
@@ -68,6 +72,7 @@ Returns stdout, stderr, and exit code.`,
       buildArgs: {
         INSTALL_PACKAGES: packages.join(' '),
         NODE_VERSION: node_version,
+        PACKAGE_TYPE: esm ? 'module' : 'commonjs'
       }
     })
 

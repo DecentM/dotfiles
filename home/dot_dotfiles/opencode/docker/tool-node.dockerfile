@@ -19,7 +19,9 @@ RUN useradd -m -s /bin/bash sandbox && \
 
 USER sandbox
 
-RUN echo '{"type":"module"}' > package.json
+ARG PACKAGE_TYPE="module"
+
+RUN echo '{"type":"${PACKAGE_TYPE}}"}' > package.json
 
 RUN npm i ${INSTALL_PACKAGES}
 
