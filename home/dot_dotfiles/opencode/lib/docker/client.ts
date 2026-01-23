@@ -39,9 +39,10 @@ export const dockerFetch = async <T>(
     method?: string
     body?: unknown
     headers?: Record<string, string>
+    binary?: boolean
   } = {}
 ): Promise<DockerApiResponse<T>> => {
-  const { method = 'GET', body, headers = {} } = options
+  const { method = 'GET', body, headers = {}, binary = false } = options
 
   const url = `http://localhost/${DOCKER_API_VERSION}${path}`
 
@@ -70,7 +71,11 @@ export const dockerFetch = async <T>(
     const contentType = response.headers.get('content-type')
     let data: T | undefined
 
-    if (contentType?.includes('application/json')) {
+    if (binary) {
+      // Return raw binary data as Uint8Array for multiplexed log streams
+      const buffer = await response.arrayBuffer()
+      data = new Uint8Array(buffer) as unknown as T
+    } else if (contentType?.includes('application/json')) {
       data = (await response.json()) as T
     } else {
       // For non-JSON responses (like logs), return text as data
@@ -342,8 +347,9 @@ export const getContainerLogs = async (
 ): Promise<DockerApiResponse<string>> => {
   const { tail = 100, timestamps = false, stdout = true, stderr = true } = options
 
-  const response = await dockerFetch<string>(
-    `/containers/${encodeURIComponent(id)}/logs?stdout=${stdout}&stderr=${stderr}&tail=${tail}&timestamps=${timestamps}`
+  const response = await dockerFetch<Uint8Array>(
+    `/containers/${encodeURIComponent(id)}/logs?stdout=${stdout}&stderr=${stderr}&tail=${tail}&timestamps=${timestamps}`,
+    { binary: true }
   )
 
   // Docker multiplexes stdout/stderr with a header per frame
@@ -353,7 +359,7 @@ export const getContainerLogs = async (
     return { ...response, data: cleaned }
   }
 
-  return response
+  return { success: response.success, error: response.error, statusCode: response.statusCode }
 }
 
 /**
@@ -367,8 +373,9 @@ export const getContainerLogsSeparated = async (
 ): Promise<DockerApiResponse<{ stdout: string; stderr: string }>> => {
   const { tail = 100, timestamps = false } = options
 
-  const response = await dockerFetch<string>(
-    `/containers/${encodeURIComponent(id)}/logs?stdout=true&stderr=true&tail=${tail}&timestamps=${timestamps}`
+  const response = await dockerFetch<Uint8Array>(
+    `/containers/${encodeURIComponent(id)}/logs?stdout=true&stderr=true&tail=${tail}&timestamps=${timestamps}`,
+    { binary: true }
   )
 
   if (response.success && response.data) {
@@ -386,12 +393,13 @@ export const getContainerLogsSeparated = async (
 /**
  * Strip Docker multiplexed log headers from raw log output.
  * Returns all output combined.
- * @param data - Raw log data with Docker multiplex headers
+ * @param data - Raw log data with Docker multiplex headers (Uint8Array or string)
  */
-export const stripDockerLogHeaders = (data: string): string => {
+export const stripDockerLogHeaders = (data: Uint8Array | string): string => {
   const lines: string[] = []
   let offset = 0
-  const buffer = new TextEncoder().encode(data)
+  // Use Uint8Array directly if provided, avoiding corruption from UTF-8 round-trip
+  const buffer = data instanceof Uint8Array ? data : new TextEncoder().encode(data)
 
   while (offset < buffer.length) {
     if (offset + 8 > buffer.length) {
@@ -426,13 +434,16 @@ export const stripDockerLogHeaders = (data: string): string => {
 /**
  * Parse Docker multiplexed logs into separate stdout/stderr streams.
  * Stream type: 1 = stdout, 2 = stderr
- * @param data - Raw log data with Docker multiplex headers
+ * @param data - Raw log data with Docker multiplex headers (Uint8Array or string)
  */
-export const parseDockerLogsSeparated = (data: string): { stdout: string; stderr: string } => {
+export const parseDockerLogsSeparated = (
+  data: Uint8Array | string
+): { stdout: string; stderr: string } => {
   const stdoutLines: string[] = []
   const stderrLines: string[] = []
   let offset = 0
-  const buffer = new TextEncoder().encode(data)
+  // Use Uint8Array directly if provided, avoiding corruption from UTF-8 round-trip
+  const buffer = data instanceof Uint8Array ? data : new TextEncoder().encode(data)
 
   while (offset < buffer.length) {
     if (offset + 8 > buffer.length) {
@@ -500,9 +511,10 @@ export const execCreate = async (
  * @param execId - Exec instance ID
  */
 export const execStart = async (execId: string): Promise<DockerApiResponse<string>> => {
-  const response = await dockerFetch<string>(`/exec/${encodeURIComponent(execId)}/start`, {
+  const response = await dockerFetch<Uint8Array>(`/exec/${encodeURIComponent(execId)}/start`, {
     method: 'POST',
     body: { Detach: false, Tty: false },
+    binary: true,
   })
 
   // Strip docker log headers from exec output
@@ -511,7 +523,7 @@ export const execStart = async (execId: string): Promise<DockerApiResponse<strin
     return { ...response, data: cleaned }
   }
 
-  return response
+  return { success: response.success, error: response.error, statusCode: response.statusCode }
 }
 
 /**
