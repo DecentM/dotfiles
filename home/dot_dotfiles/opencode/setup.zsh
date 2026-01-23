@@ -9,6 +9,8 @@ if vercmd opencode; then
         export $(cat "$OPENCODE_CONFIG_DIR/.env" | xargs)
     fi
 
+    export AUDIT_DB_PATH="$HOME/.opencode/audit/db.sqlite"
+
     alias pcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR OPENCODE_CONFIG=$OPENCODE_CONFIG_DIR/profiles/personal.jsonc $OPENCODE_PATH"
     alias wcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR OPENCODE_CONFIG=$OPENCODE_CONFIG_DIR/profiles/work.jsonc $OPENCODE_PATH"
 

@@ -1,11 +1,4 @@
-/**
- * Tool execution "after" listener for audit-trail plugin.
- *
- * Logs the completion of tool executions, correlating with the
- * "before" listener to calculate duration.
- */
-
-import { logToolExecution } from '../db'
+import { getToolExecutionRepository } from '../db/index'
 import { createResultSummary } from '../lib'
 import type { Hook } from '../types'
 
@@ -20,25 +13,22 @@ interface ToolExecuteAfterOutput {
   metadata?: Record<string, unknown>
 }
 
-export const toolExecuteAfterListener: Hook<'tool.execute.after'> = () => async (
-  input: ToolExecuteAfterInput,
-  output: ToolExecuteAfterOutput
-) => {
-  // Determine if this was a failure based on explicit metadata checks
-  const metadata = output.metadata as Record<string, unknown> | undefined
-  const isFailure =
-    metadata?.error === true ||
-    (metadata?.exitCode !== undefined && metadata.exitCode !== 0) ||
-    metadata?.success === false
+export const toolExecuteAfterListener: Hook<'tool.execute.after'> =
+  () => async (input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput) => {
+    // Determine if this was a failure based on explicit metadata checks
+    const metadata = output.metadata as Record<string, unknown> | undefined
+    const isFailure =
+      metadata?.error === true ||
+      (metadata?.exitCode !== undefined && metadata.exitCode !== 0) ||
+      metadata?.success === false
 
-  const time = Date.now()
+    const repo = await getToolExecutionRepository()
 
-  await logToolExecution({
-    sessionId: input.sessionID,
-    callId: input.callID,
-    toolName: input.tool,
-    output: createResultSummary(output.output ?? ''),
-    state: isFailure ? 'failed' : 'completed',
-    timestamp: time,
-  })
-}
+    await repo.logToolExecution({
+      sessionId: input.sessionID,
+      callId: input.callID,
+      toolName: input.tool,
+      resultSummary: createResultSummary(output.output ?? ''),
+      decision: isFailure ? 'failed' : 'completed',
+    })
+  }

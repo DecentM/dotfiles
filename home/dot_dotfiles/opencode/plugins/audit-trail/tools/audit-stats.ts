@@ -1,35 +1,37 @@
-import { tool } from "@opencode-ai/plugin";
-import { getToolStats } from "../db";
-import { parseOptionalDate } from "../lib";
+import { tool } from '@opencode-ai/plugin'
+
+import { getToolExecutionRepository } from '../db/index'
+import type { ToolStats } from '../db/repositories/tool-execution.repository'
+import { formatDuration, formatNumber } from '../lib'
+
+const formatStats = (stats: ToolStats): string => {
+  const { totalExecutions, completedCount, failedCount, avgDurationMs } = stats
+
+  if (totalExecutions === 0) {
+    return '## Audit Statistics\n\nNo executions recorded yet.'
+  }
+
+  return `## Audit Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total Executions | ${formatNumber(totalExecutions)} |
+| Completed | ${formatNumber(completedCount)} |
+| Failed | ${formatNumber(failedCount)} |
+| Avg Duration | ${formatDuration(avgDurationMs)} |`
+}
 
 export const audit_stats = tool({
-	description:
-		"Get overall tool execution statistics from the audit trail. Optional params: since (ISO timestamp), before (ISO timestamp), session_id",
-	args: {
-		since: tool.schema
-			.string()
-			.optional()
-			.describe("ISO timestamp to filter from"),
-		before: tool.schema
-			.string()
-			.optional()
-			.describe("ISO timestamp to filter until"),
-		session_id: tool.schema
-			.string()
-			.optional()
-			.describe("Filter by session ID"),
-	},
-	async execute(args) {
-		try {
-			const filter = {
-				since: parseOptionalDate(args.since),
-				before: parseOptionalDate(args.before),
-				sessionId: args.session_id,
-			};
-			const stats = getToolStats(filter);
-			return JSON.stringify(stats, null, 2);
-		} catch (error) {
-			return `Error: Failed to get audit stats: ${error instanceof Error ? error.message : String(error)}`;
-		}
-	},
-});
+  description:
+    'Get overall tool execution statistics from the audit trail (total, completed, failed, average duration).',
+  args: {},
+  async execute() {
+    try {
+      const repo = await getToolExecutionRepository()
+      const stats = await repo.getToolStats()
+      return formatStats(stats)
+    } catch (error) {
+      return `Error: Failed to get audit stats: ${error instanceof Error ? error.message : String(error)}`
+    }
+  },
+})
