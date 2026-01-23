@@ -4,6 +4,7 @@
  */
 
 import {
+  attachAndWriteStdin,
   createContainer,
   getContainerLogsSeparated,
   removeContainer,
@@ -166,20 +167,11 @@ export const runContainer = async (options: RunContainerOptions): Promise<RunCon
     containerId = createResult.data.Id
 
     // For code execution, we need to write code to stdin
-    // Docker API attach endpoint allows piping to stdin
+    // Use Docker socket API to attach and pipe stdin
     if (code) {
-      // Use Bun.spawn to attach and write stdin via docker attach
-      // This is more reliable than the raw socket approach for stdin
-      const attachProc = Bun.spawn(['docker', 'attach', '--no-stdin=false', containerId], {
-        stdin: 'pipe',
-        stdout: 'pipe',
-        stderr: 'pipe',
-      })
-
-      // Start container (must be done before/during attach)
+      // Start container first
       const startResult = await startContainer(containerId)
       if (!startResult.success) {
-        attachProc.kill('SIGKILL')
         return {
           exitCode: -1,
           stdout: '',
@@ -190,9 +182,12 @@ export const runContainer = async (options: RunContainerOptions): Promise<RunCon
         }
       }
 
-      // Write code to stdin
-      attachProc.stdin.write(code)
-      attachProc.stdin.end()
+      // Attach and write code to stdin via Docker socket API
+      const attachResult = await attachAndWriteStdin(containerId, code)
+      if (!attachResult.success) {
+        // Non-fatal: container may still run, just log the issue
+        console.warn(`Attach stdin warning: ${attachResult.error}`)
+      }
 
       // Wait for container with timeout
       try {
@@ -218,13 +213,6 @@ export const runContainer = async (options: RunContainerOptions): Promise<RunCon
         } else {
           throw error
         }
-      }
-
-      // Clean up attach process
-      try {
-        attachProc.kill('SIGKILL')
-      } catch {
-        // Process may have already exited
       }
     } else {
       // No code to pipe, just start and wait

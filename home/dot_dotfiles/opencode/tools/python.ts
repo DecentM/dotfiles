@@ -20,9 +20,8 @@ import {
 // Constants
 // =============================================================================
 
-const DEFAULT_TIMEOUT_MS = 120_000
 const DOCKER_CONTEXT = join(homedir(), '.dotfiles/opencode/docker')
-const DOCKERFILE_PATH = 'mcp-python.dockerfile'
+const DOCKERFILE_PATH = 'tool-python.dockerfile'
 
 // =============================================================================
 // Main Tool
@@ -32,6 +31,7 @@ export default tool({
   description: `Execute Python code in an isolated sandbox container.
 
 Features:
+- Builds container on first use
 - Fresh container per execution (parallel-safe)
 - Auto-removes after completion
 - Network isolated, memory/CPU limited
@@ -41,11 +41,10 @@ Returns stdout, stderr, and exit code.`,
     code: tool.schema.string().describe('Python code to execute'),
     timeout: tool.schema
       .number()
-      .optional()
-      .describe(`Timeout in milliseconds (default: ${DEFAULT_TIMEOUT_MS})`),
+      .describe(`Timeout in milliseconds`),
   },
   async execute(args) {
-    const { code, timeout = DEFAULT_TIMEOUT_MS } = args
+    const { code, timeout } = args
 
     if (!code.trim()) {
       return formatNoCodeError()

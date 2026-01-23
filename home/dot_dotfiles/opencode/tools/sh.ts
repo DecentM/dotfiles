@@ -113,7 +113,7 @@ export default tool({
       // Truncate if too long
       const MAX_OUTPUT = 50 * 1024 // 50KB
       if (output.length > MAX_OUTPUT) {
-        output = output.substring(0, MAX_OUTPUT) + `\n...[truncated, ${output.length} bytes total]`
+        output = `${output.substring(0, MAX_OUTPUT)}\n...[truncated, ${output.length} bytes total]`
       }
 
       if (exitCode !== 0) {

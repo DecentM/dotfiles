@@ -20,9 +20,8 @@ import {
 // Constants
 // =============================================================================
 
-const DEFAULT_TIMEOUT_MS = 120_000
 const DOCKER_CONTEXT = join(homedir(), '.dotfiles/opencode/docker')
-const DOCKERFILE_PATH = 'mcp-node.dockerfile'
+const DOCKERFILE_PATH = 'tool-node.dockerfile'
 
 type Runtime = 'node' | 'tsx' | 'deno'
 
@@ -52,6 +51,7 @@ export default tool({
   description: `Execute JavaScript/TypeScript code in an isolated sandbox container.
 
 Features:
+- Builds container on first use
 - Fresh container per execution (parallel-safe)
 - Auto-removes after completion
 - Network isolated, memory/CPU limited
@@ -66,11 +66,10 @@ Returns stdout, stderr, and exit code.`,
       .describe("Runtime to use: 'node' (default), 'tsx' (TypeScript), or 'deno'"),
     timeout: tool.schema
       .number()
-      .optional()
-      .describe(`Timeout in milliseconds (default: ${DEFAULT_TIMEOUT_MS})`),
+      .describe(`Timeout in milliseconds`),
   },
   async execute(args) {
-    const { code, runtime = 'node', timeout = DEFAULT_TIMEOUT_MS } = args
+    const { code, runtime = 'node', timeout } = args
 
     if (!code.trim()) {
       return formatNoCodeError()

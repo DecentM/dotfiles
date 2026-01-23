@@ -197,6 +197,109 @@ export const waitContainer = async (
 }
 
 /**
+ * Attach to a container and write data to stdin via raw Unix socket.
+ * Uses Docker's attach API with stream mode to pipe stdin data.
+ *
+ * @param containerId - Container ID or name
+ * @param stdinData - Data to write to container's stdin
+ * @returns DockerApiResponse indicating success/failure
+ */
+export const attachAndWriteStdin = async (
+  containerId: string,
+  stdinData: string
+): Promise<DockerApiResponse<void>> => {
+  return new Promise((resolve) => {
+    const encoder = new TextEncoder()
+    const stdinBytes = encoder.encode(stdinData)
+    let responseReceived = false
+    let headerBuffer = ''
+
+    const socket = Bun.connect({
+      unix: DOCKER_SOCKET,
+      socket: {
+        open(socket) {
+          // Build HTTP request for attach endpoint
+          // stdin=1 to attach stdin, stream=1 for streaming mode
+          // stdout=0, stderr=0 since we'll use logs API for output
+          const path = `/${DOCKER_API_VERSION}/containers/${encodeURIComponent(containerId)}/attach?stdin=1&stream=1&stdout=0&stderr=0`
+          const request = [
+            `POST ${path} HTTP/1.1`,
+            'Host: localhost',
+            'Content-Type: application/vnd.docker.raw-stream',
+            'Connection: Upgrade',
+            'Upgrade: tcp',
+            '',
+            '',
+          ].join('\r\n')
+
+          socket.write(request)
+        },
+
+        data(socket, data) {
+          // Parse HTTP response headers
+          const text = typeof data === 'string' ? data : new TextDecoder().decode(data)
+          headerBuffer += text
+
+          // Check if we've received the full headers
+          if (!responseReceived && headerBuffer.includes('\r\n\r\n')) {
+            responseReceived = true
+
+            // Check for successful upgrade or OK response
+            const statusLine = headerBuffer.split('\r\n')[0]
+            const statusMatch = statusLine.match(/HTTP\/\d\.\d (\d+)/)
+            const statusCode = statusMatch ? Number.parseInt(statusMatch[1], 10) : 0
+
+            if (statusCode === 101 || statusCode === 200) {
+              // Connection upgraded, now write stdin data
+              socket.write(stdinBytes)
+              // Close write side after sending data
+              socket.end()
+            } else {
+              socket.end()
+              resolve({
+                success: false,
+                error: `Attach failed: ${statusLine}`,
+                statusCode,
+              })
+            }
+          }
+        },
+
+        close() {
+          if (responseReceived) {
+            resolve({ success: true })
+          } else {
+            resolve({ success: false, error: 'Connection closed before response' })
+          }
+        },
+
+        error(socket, error) {
+          resolve({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        },
+
+        connectError(socket, error) {
+          resolve({
+            success: false,
+            error: `Cannot connect to Docker socket: ${error instanceof Error ? error.message : String(error)}`,
+          })
+        },
+      },
+    })
+
+    // Handle connection promise rejection
+    socket.catch((error: unknown) => {
+      resolve({
+        success: false,
+        error: `Socket connection failed: ${error instanceof Error ? error.message : String(error)}`,
+      })
+    })
+  })
+}
+
+/**
  * Get container logs.
  * @param id - Container ID or name
  * @param options - Log options
