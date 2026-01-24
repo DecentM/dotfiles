@@ -5,6 +5,10 @@ FROM mcr.microsoft.com/playwright/mcp:latest
 # Copy the stealth init script
 COPY mcp-playwright/stealth-init.js /app/stealth-init.js
 
+WORKDIR /app/screenshots
+RUN chown -R node:node /app/screenshots
+WORKDIR /app
+
 # Override entrypoint to include the init script
 # Original: node cli.js --headless --browser chromium --no-sandbox
 ENTRYPOINT ["node", "cli.js", "--headless", "--browser", "chromium", "--no-sandbox", "--init-script", "/app/stealth-init.js"]

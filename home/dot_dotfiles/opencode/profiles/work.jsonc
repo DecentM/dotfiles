@@ -117,23 +117,6 @@
   },
 
   "mcp": {
-    "memory": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "--rm",
-        "-i",
-        "--network=none",
-        "--memory=512m",
-        "--cpus=1",
-        "-v",
-        "mcp-memory-work:/app/dist",
-        "mcp/memory"
-      ],
-      "enabled": true
-    },
-
     "jira": {
       "type": "remote",
       "url": "https://mcp.atlassian.com/v1/mcp",
