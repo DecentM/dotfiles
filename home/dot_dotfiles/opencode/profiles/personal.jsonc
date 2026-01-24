@@ -11,14 +11,14 @@
   "agent": {
     // Primary agents - homeassistant access for home automation
     "build": {
-      "model": "openrouter/qwen/qwen3-coder:free",
+      "model": "openrouter/anthropic/claude-haiku-4.5",
       "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/build.md}",
       "permission": {
         "homeassistant_*": "allow"
       }
     },
     "plan": {
-      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+      "model": "openrouter/anthropic/claude-haiku-4.5",
       "prompt": "{file:~/.dotfiles/opencode/rules/coordinator.md} {file:~/.dotfiles/opencode/agents/plan.md}",
       "permission": {
         "homeassistant_Get*": "allow",
@@ -28,7 +28,7 @@
 
     // Built-in subagents
     "explore": {
-      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free"
+      "model": "openrouter/moonshotai/kimi-k2-thinking"
     },
     "compact": {
       "model": "openrouter/minimax/minimax-m2.1"
@@ -36,10 +36,10 @@
 
     // Custom subagents - model and personal-specific MCP permissions
     "coder": {
-      "model": "openrouter/qwen/qwen3-coder:free"
+      "model": "openrouter/qwen/qwen3-coder:exacto"
     },
     "reviewer": {
-      "model": "openrouter/qwen/qwen3-coder:free",
+      "model": "openrouter/qwen/qwen3-coder:exacto",
       "permission": {
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
@@ -48,7 +48,7 @@
       }
     },
     "architect": {
-      "model": "openrouter/qwen/qwen3-coder:free",
+      "model": "openrouter/qwen/qwen3-coder:exacto",
       "permission": {
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
@@ -56,16 +56,16 @@
       }
     },
     "devops": {
-      "model": "openrouter/qwen/qwen3-coder:free",
+      "model": "openrouter/qwen/qwen3-coder:exacto",
       "permission": {
         "grafana_*": "allow"
       }
     },
     "writer": {
-      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free"
+      "model": "openrouter/moonshotai/kimi-k2-thinking"
     },
     "researcher": {
-      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+      "model": "openrouter/moonshotai/kimi-k2-thinking",
       "permission": {
         "grafana_get_*": "allow",
         "grafana_list_*": "allow",
@@ -76,10 +76,10 @@
       }
     },
     "git": {
-      "model": "openrouter/qwen/qwen3-coder:free"
+      "model": "openrouter/openai/gpt-5.1-codex-mini"
     },
     "creative": {
-      "model": "openrouter/meta-llama/llama-3.3-70b-instruct:free"
+      "model": "openrouter/moonshotai/kimi-k2-thinking"
     }
   },
 

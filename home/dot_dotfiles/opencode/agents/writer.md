@@ -4,9 +4,8 @@ mode: subagent
 temperature: 0.4
 permission:
   task:
-    researcher: allow
-    explore: allow
-    reviewer: allow
+    "*": allow
+    writer: deny
   # Base tools
   read:
     "*": allow
