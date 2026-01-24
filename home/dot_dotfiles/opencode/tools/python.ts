@@ -43,9 +43,7 @@ Features:
 Returns stdout, stderr, and exit code.`,
   args: {
     code: tool.schema.string().describe('Python code to execute'),
-    timeout: tool.schema
-      .number()
-      .describe(`Timeout in milliseconds`),
+    timeout: tool.schema.number().describe(`Timeout in milliseconds`),
     packages: tool.schema
       .array(tool.schema.string())
       .optional()
@@ -53,7 +51,7 @@ Returns stdout, stderr, and exit code.`,
     python_version: tool.schema
       .string()
       .optional()
-      .describe(`Exact Node version to use (default: ${DEFAULT_PYTHON_VERSION})`)
+      .describe(`Exact Node version to use (default: ${DEFAULT_PYTHON_VERSION})`),
   },
   async execute(args) {
     const { code, timeout, packages = [], python_version = DEFAULT_PYTHON_VERSION } = args
@@ -69,7 +67,7 @@ Returns stdout, stderr, and exit code.`,
       buildArgs: {
         PYTHON_PACKAGES: packages.join(' '),
         PYTHON_VERSION: python_version,
-      }
+      },
     })
 
     if (!buildResult.success || !buildResult.data) {

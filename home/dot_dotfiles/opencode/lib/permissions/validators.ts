@@ -2,7 +2,7 @@
  * Pattern matching and validation utilities for the shared permissions library.
  */
 
-import type { MatchResult, PermissionsConfig } from './types'
+import type { MatchResult, MatchResultWithTrace, PermissionsConfig, TraceEntry } from './types'
 
 // =============================================================================
 // Pattern Matching
@@ -49,6 +49,56 @@ export const createPatternMatcher = <TConstraint>(
       pattern: null,
       reason: config.default_reason,
       isDefault: true,
+    }
+  }
+}
+
+/**
+ * Create a pattern matcher function with full trace output.
+ * Records every pattern checked in a trace array for debugging.
+ *
+ * @template TConstraint - The constraint configuration type
+ * @param getPermissions - Function that returns the permissions config
+ * @returns A function that matches an input and returns trace of all patterns checked
+ */
+export const createPatternMatcherWithTrace = <TConstraint>(
+  getPermissions: () => PermissionsConfig<TConstraint>
+): ((input: string) => MatchResultWithTrace<TConstraint>) => {
+  return (input: string): MatchResultWithTrace<TConstraint> => {
+    const config = getPermissions()
+    const trace: TraceEntry<TConstraint>[] = []
+
+    for (let i = 0; i < config.rules.length; i++) {
+      const perm = config.rules[i]
+      const matched = perm.compiledRegex.test(input)
+
+      trace.push({
+        index: i,
+        pattern: perm.pattern,
+        compiledRegex: perm.compiledRegex,
+        decision: perm.decision,
+        reason: perm.reason,
+        matched,
+      })
+
+      if (matched) {
+        return {
+          decision: perm.decision,
+          pattern: perm.pattern,
+          reason: perm.reason,
+          rule: perm,
+          trace,
+        }
+      }
+    }
+
+    // Default: use config default (typically deny) if no pattern matches
+    return {
+      decision: config.default,
+      pattern: null,
+      reason: config.default_reason,
+      isDefault: true,
+      trace,
     }
   }
 }

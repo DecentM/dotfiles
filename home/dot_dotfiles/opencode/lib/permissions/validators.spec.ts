@@ -1,20 +1,12 @@
-/**
- * Tests for the shared permissions validators module.
- * Tests pattern matching and YAML validation utilities.
- */
-
-import { describe, test, expect } from 'bun:test'
-import {
-  simplePatternToRegex,
-  createPatternMatcher,
-  validateYamlRule,
-  validateYamlConfig,
-} from './validators'
+import { describe, expect, test } from 'bun:test'
 import type { PermissionsConfig } from './types'
-
-// =============================================================================
-// simplePatternToRegex
-// =============================================================================
+import {
+  createPatternMatcher,
+  createPatternMatcherWithTrace,
+  simplePatternToRegex,
+  validateYamlConfig,
+  validateYamlRule,
+} from './validators'
 
 describe('simplePatternToRegex', () => {
   describe('exact matching', () => {
@@ -378,6 +370,324 @@ describe('createPatternMatcher', () => {
 })
 
 // =============================================================================
+// createPatternMatcherWithTrace
+// =============================================================================
+
+describe('createPatternMatcherWithTrace', () => {
+  describe('trace contains all patterns checked up to match point', () => {
+    test('trace includes patterns checked before match', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          {
+            pattern: 'ls*',
+            decision: 'allow',
+            reason: 'List files',
+            compiledRegex: /^ls.*$/i,
+          },
+          {
+            pattern: 'cat*',
+            decision: 'allow',
+            reason: 'Read files',
+            compiledRegex: /^cat.*$/i,
+          },
+          {
+            pattern: 'echo*',
+            decision: 'allow',
+            reason: 'Echo command',
+            compiledRegex: /^echo.*$/i,
+          },
+        ],
+        default: 'deny',
+        default_reason: 'Not allowed',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('cat file.txt')
+
+      // Should have trace entries for ls* (not matched) and cat* (matched)
+      expect(result.trace.length).toBe(2)
+      expect(result.trace[0].pattern).toBe('ls*')
+      expect(result.trace[1].pattern).toBe('cat*')
+    })
+
+    test('trace includes only first pattern when it matches', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          {
+            pattern: 'echo*',
+            decision: 'allow',
+            reason: 'Echo command',
+            compiledRegex: /^echo.*$/i,
+          },
+          {
+            pattern: '*',
+            decision: 'deny',
+            reason: 'Catch all',
+            compiledRegex: /^.*$/i,
+          },
+        ],
+        default: 'deny',
+        default_reason: 'Default deny',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('echo hello')
+
+      expect(result.trace.length).toBe(1)
+      expect(result.trace[0].pattern).toBe('echo*')
+    })
+  })
+
+  describe('trace entry structure', () => {
+    test('trace entries have correct structure with all fields', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          {
+            pattern: 'rm*',
+            decision: 'deny',
+            reason: 'No delete',
+            compiledRegex: /^rm.*$/i,
+          },
+          {
+            pattern: 'echo*',
+            decision: 'allow',
+            reason: 'Echo allowed',
+            compiledRegex: /^echo.*$/i,
+          },
+        ],
+        default: 'deny',
+        default_reason: 'Not allowed',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('echo test')
+
+      // First entry (rm* - not matched)
+      expect(result.trace[0]).toEqual({
+        index: 0,
+        pattern: 'rm*',
+        compiledRegex: /^rm.*$/i,
+        decision: 'deny',
+        reason: 'No delete',
+        matched: false,
+      })
+
+      // Second entry (echo* - matched)
+      expect(result.trace[1]).toEqual({
+        index: 1,
+        pattern: 'echo*',
+        compiledRegex: /^echo.*$/i,
+        decision: 'allow',
+        reason: 'Echo allowed',
+        matched: true,
+      })
+    })
+
+    test('trace entry includes index matching array position', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          { pattern: 'a*', decision: 'deny', compiledRegex: /^a.*$/i },
+          { pattern: 'b*', decision: 'deny', compiledRegex: /^b.*$/i },
+          { pattern: 'c*', decision: 'deny', compiledRegex: /^c.*$/i },
+          { pattern: 'd*', decision: 'allow', compiledRegex: /^d.*$/i },
+        ],
+        default: 'deny',
+        default_reason: 'Default',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('d test')
+
+      expect(result.trace.map((t) => t.index)).toEqual([0, 1, 2, 3])
+    })
+
+    test('trace entry reason is undefined when rule has no reason', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          {
+            pattern: 'test*',
+            decision: 'allow',
+            compiledRegex: /^test.*$/i,
+          },
+        ],
+        default: 'deny',
+        default_reason: 'Default',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('test')
+
+      expect(result.trace[0].reason).toBeUndefined()
+    })
+  })
+
+  describe('matched field', () => {
+    test('only matched pattern has matched: true', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          { pattern: 'foo*', decision: 'deny', compiledRegex: /^foo.*$/i },
+          { pattern: 'bar*', decision: 'deny', compiledRegex: /^bar.*$/i },
+          { pattern: 'baz*', decision: 'allow', compiledRegex: /^baz.*$/i },
+        ],
+        default: 'deny',
+        default_reason: 'Default',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('baz test')
+
+      const matchedEntries = result.trace.filter((t) => t.matched)
+      expect(matchedEntries.length).toBe(1)
+      expect(matchedEntries[0].pattern).toBe('baz*')
+    })
+
+    test('all entries have matched: false when no pattern matches', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          { pattern: 'foo*', decision: 'deny', compiledRegex: /^foo.*$/i },
+          { pattern: 'bar*', decision: 'deny', compiledRegex: /^bar.*$/i },
+        ],
+        default: 'deny',
+        default_reason: 'Default',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('unknown command')
+
+      expect(result.trace.every((t) => t.matched === false)).toBe(true)
+    })
+  })
+
+  describe('no match behavior', () => {
+    test('trace contains all patterns when no match found', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          { pattern: 'ls*', decision: 'allow', compiledRegex: /^ls.*$/i },
+          { pattern: 'cat*', decision: 'allow', compiledRegex: /^cat.*$/i },
+          { pattern: 'echo*', decision: 'allow', compiledRegex: /^echo.*$/i },
+        ],
+        default: 'deny',
+        default_reason: 'Command not allowed',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('rm -rf /')
+
+      expect(result.trace.length).toBe(3)
+      expect(result.trace.map((t) => t.pattern)).toEqual(['ls*', 'cat*', 'echo*'])
+    })
+
+    test('result has isDefault: true when no pattern matches', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          {
+            pattern: 'specific*',
+            decision: 'allow',
+            compiledRegex: /^specific.*$/i,
+          },
+        ],
+        default: 'deny',
+        default_reason: 'Not in allowlist',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('something else')
+
+      expect(result.isDefault).toBe(true)
+      expect(result.decision).toBe('deny')
+      expect(result.reason).toBe('Not in allowlist')
+      expect(result.pattern).toBeNull()
+    })
+
+    test('empty rules array results in empty trace and default', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [],
+        default: 'deny',
+        default_reason: 'No rules defined',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('any command')
+
+      expect(result.trace).toEqual([])
+      expect(result.isDefault).toBe(true)
+    })
+  })
+
+  describe('trace stops at first match', () => {
+    test('patterns after match are not included in trace', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          { pattern: 'echo*', decision: 'allow', compiledRegex: /^echo.*$/i },
+          {
+            pattern: 'echo hello',
+            decision: 'deny',
+            compiledRegex: /^echo hello$/i,
+          },
+          { pattern: '*', decision: 'deny', compiledRegex: /^.*$/i },
+        ],
+        default: 'deny',
+        default_reason: 'Default',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('echo hello')
+
+      // Should match first pattern and stop - no subsequent patterns in trace
+      expect(result.trace.length).toBe(1)
+      expect(result.trace[0].pattern).toBe('echo*')
+      expect(result.decision).toBe('allow')
+    })
+
+    test('catch-all pattern stops trace immediately when first', () => {
+      const config: PermissionsConfig<void> = {
+        rules: [
+          { pattern: '*', decision: 'allow', compiledRegex: /^.*$/i },
+          { pattern: 'rm*', decision: 'deny', compiledRegex: /^rm.*$/i },
+        ],
+        default: 'deny',
+        default_reason: 'Default',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('rm -rf /')
+
+      expect(result.trace.length).toBe(1)
+      expect(result.trace[0].pattern).toBe('*')
+      expect(result.decision).toBe('allow')
+    })
+  })
+
+  describe('constraint pass-through', () => {
+    test('includes rule with constraints in result', () => {
+      interface TestConstraint {
+        type: string
+      }
+
+      const config: PermissionsConfig<TestConstraint> = {
+        rules: [
+          {
+            pattern: 'cat*',
+            decision: 'allow',
+            constraints: [{ type: 'cwd_only' }],
+            compiledRegex: /^cat.*$/i,
+          },
+        ],
+        default: 'deny',
+        default_reason: 'Not allowed',
+      }
+
+      const matcher = createPatternMatcherWithTrace(() => config)
+      const result = matcher('cat file.txt')
+
+      expect(result.rule).toBeDefined()
+      expect(result.rule?.constraints).toEqual([{ type: 'cwd_only' }])
+      expect(result.trace.length).toBe(1)
+    })
+  })
+})
+
+// =============================================================================
 // validateYamlRule
 // =============================================================================
 
@@ -463,7 +773,10 @@ describe('validateYamlRule', () => {
     })
 
     test('rejects rule with patterns containing non-strings', () => {
-      const rule = { patterns: ['valid', 123, 'also-valid'], decision: 'allow' }
+      const rule = {
+        patterns: ['valid', 123, 'also-valid'],
+        decision: 'allow',
+      }
       const error = validateYamlRule(rule, 0)
       expect(error).toContain("Must have 'pattern'")
     })
@@ -498,7 +811,11 @@ describe('validateYamlRule', () => {
     })
 
     test('rejects rule with object reason', () => {
-      const rule = { pattern: 'echo*', decision: 'allow', reason: { msg: 'test' } }
+      const rule = {
+        pattern: 'echo*',
+        decision: 'allow',
+        reason: { msg: 'test' },
+      }
       const error = validateYamlRule(rule, 0)
       expect(error).toContain("'reason' must be a string or null")
     })
@@ -506,13 +823,21 @@ describe('validateYamlRule', () => {
 
   describe('invalid rules - invalid constraints', () => {
     test('rejects rule with non-array constraints', () => {
-      const rule = { pattern: 'echo*', decision: 'allow', constraints: 'not-array' }
+      const rule = {
+        pattern: 'echo*',
+        decision: 'allow',
+        constraints: 'not-array',
+      }
       const error = validateYamlRule(rule, 0)
       expect(error).toContain("'constraints' must be an array")
     })
 
     test('rejects rule with object constraints', () => {
-      const rule = { pattern: 'echo*', decision: 'allow', constraints: { type: 'cwd_only' } }
+      const rule = {
+        pattern: 'echo*',
+        decision: 'allow',
+        constraints: { type: 'cwd_only' },
+      }
       const error = validateYamlRule(rule, 0)
       expect(error).toContain("'constraints' must be an array")
     })
@@ -740,7 +1065,7 @@ describe('validateYamlConfig', () => {
       }
 
       const validateConstraints = (
-        constraints: unknown[],
+        _constraints: unknown[],
         ruleIndex: number
       ): string | undefined => {
         return `Rule ${ruleIndex}: Invalid constraint`

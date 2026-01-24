@@ -33,9 +33,14 @@ describe('matchCommand', () => {
     const cdNoArgs = matchCommand('cd')
     expect(cdNoArgs.decision).toBe('deny')
 
-    // "cd ." should be allowed (cd * pattern)
+    // "cd ." should also be denied (cd * pattern is deny - use workdir instead)
     const cdDot = matchCommand('cd .')
-    expect(cdDot.decision).toBe('allow')
+    expect(cdDot.decision).toBe('deny')
+
+    // Verify a pattern where ordering matters:
+    // "ls -la" should be allowed (ls * pattern)
+    const lsLa = matchCommand('ls -la')
+    expect(lsLa.decision).toBe('allow')
   })
 
   test('includes rule for constraint checking', () => {

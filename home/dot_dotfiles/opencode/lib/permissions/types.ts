@@ -85,6 +85,32 @@ export interface MatchResult<TConstraint> {
 }
 
 // =============================================================================
+// Tracing Types
+// =============================================================================
+
+/**
+ * A single entry in the pattern matching trace.
+ * Records the result of testing one pattern against the input.
+ * @template _TConstraint - The constraint configuration type (unused but kept for API consistency)
+ */
+export interface TraceEntry<_TConstraint> {
+  index: number
+  pattern: string
+  compiledRegex: RegExp
+  decision: Decision
+  reason?: string
+  matched: boolean
+}
+
+/**
+ * Match result extended with full trace of all patterns checked.
+ * @template TConstraint - The constraint configuration type
+ */
+export interface MatchResultWithTrace<TConstraint> extends MatchResult<TConstraint> {
+  trace: TraceEntry<TConstraint>[]
+}
+
+// =============================================================================
 // YAML Types
 // =============================================================================
 

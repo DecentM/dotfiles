@@ -14,14 +14,17 @@ export type {
   ConstraintValidator,
   Decision,
   MatchResult,
+  MatchResultWithTrace,
   PermissionPattern,
   PermissionsConfig,
+  TraceEntry,
   YamlRule,
 } from './types'
 
 // Validators
 export {
   createPatternMatcher,
+  createPatternMatcherWithTrace,
   simplePatternToRegex,
   validateYamlConfig,
   validateYamlRule,

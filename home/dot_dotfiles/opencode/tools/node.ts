@@ -42,9 +42,7 @@ Features:
 Returns stdout, stderr, and exit code.`,
   args: {
     code: tool.schema.string().describe('JavaScript or TypeScript code to execute'),
-    timeout: tool.schema
-      .number()
-      .describe(`Timeout in milliseconds`),
+    timeout: tool.schema.number().describe(`Timeout in milliseconds`),
     packages: tool.schema
       .array(tool.schema.string())
       .optional()
@@ -56,7 +54,9 @@ Returns stdout, stderr, and exit code.`,
     esm: tool.schema
       .boolean()
       .optional()
-      .describe('If false, the sandbox will be set up for commonjs. If true, it will be ESM ("module"). Default: true')
+      .describe(
+        'If false, the sandbox will be set up for commonjs. If true, it will be ESM ("module"). Default: true'
+      ),
   },
   async execute(args) {
     const { code, timeout, packages = [], node_version = process.versions.node, esm = true } = args
@@ -72,8 +72,8 @@ Returns stdout, stderr, and exit code.`,
       buildArgs: {
         INSTALL_PACKAGES: packages.join(' '),
         NODE_VERSION: node_version,
-        PACKAGE_TYPE: esm ? 'module' : 'commonjs'
-      }
+        PACKAGE_TYPE: esm ? 'module' : 'commonjs',
+      },
     })
 
     if (!buildResult.success || !buildResult.data) {
