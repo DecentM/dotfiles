@@ -18,23 +18,143 @@
   console.error('[mcp-playwright] Applying stealth evasions');
 
   // ==========================================================================
-  // 1. navigator.webdriver - Most important evasion
+  // 1. navigator.webdriver - Most important evasion (bulletproof approach)
+  // ==========================================================================
+  // Detection scripts check:
+  //   - navigator.webdriver === true (basic)
+  //   - 'webdriver' in navigator (advanced - checks property existence)
+  //   - Object.keys(navigator).includes('webdriver') (enumeration)
+  //
+  // Solution: Delete the property entirely and use a Proxy to intercept access.
+  // This makes the property truly non-existent like in a real browser.
   // ==========================================================================
   try {
-    // Delete the webdriver property
-    delete Object.getPrototypeOf(navigator).webdriver;
+    // Step 1: Delete from Navigator.prototype (where it's usually defined)
+    // Need to make it configurable first if it isn't
+    const protoDescriptor = Object.getOwnPropertyDescriptor(Navigator.prototype, 'webdriver');
+    if (protoDescriptor) {
+      Object.defineProperty(Navigator.prototype, 'webdriver', {
+        get: protoDescriptor.get,
+        set: protoDescriptor.set,
+        configurable: true,
+        enumerable: false,
+      });
+      delete Navigator.prototype.webdriver;
+    }
 
-    // Redefine it as undefined (some sites check with 'in' operator)
-    Object.defineProperty(navigator, 'webdriver', {
-      get: () => undefined,
-      configurable: true,
+    // Step 2: Delete from navigator instance (in case it's defined there too)
+    const instanceDescriptor = Object.getOwnPropertyDescriptor(navigator, 'webdriver');
+    if (instanceDescriptor) {
+      Object.defineProperty(navigator, 'webdriver', {
+        value: instanceDescriptor.value,
+        configurable: true,
+        enumerable: false,
+        writable: true,
+      });
+      delete navigator.webdriver;
+    }
+
+    // Step 3: Proxy the navigator object to intercept 'webdriver' property access
+    // This ensures 'webdriver' in navigator returns false and access returns undefined
+    const navigatorProxy = new Proxy(navigator, {
+      has: (target, prop) => {
+        if (prop === 'webdriver') {
+          return false;
+        }
+        return prop in target;
+      },
+      get: (target, prop, receiver) => {
+        if (prop === 'webdriver') {
+          return undefined;
+        }
+        const value = Reflect.get(target, prop, receiver);
+        // Bind functions to the original navigator to preserve 'this' context
+        if (typeof value === 'function') {
+          return value.bind(target);
+        }
+        return value;
+      },
+      getOwnPropertyDescriptor: (target, prop) => {
+        if (prop === 'webdriver') {
+          return undefined;
+        }
+        return Reflect.getOwnPropertyDescriptor(target, prop);
+      },
+      ownKeys: (target) => {
+        return Reflect.ownKeys(target).filter((key) => key !== 'webdriver');
+      },
     });
+
+    // Step 4: Replace window.navigator with our proxy
+    // We need to be careful here - navigator is a getter on window
+    Object.defineProperty(window, 'navigator', {
+      get: () => navigatorProxy,
+      configurable: true,
+      enumerable: true,
+    });
+
+    // Verify the mask worked
+    const inCheck = 'webdriver' in navigator;
+    const valueCheck = navigator.webdriver;
+    const keysCheck = Object.keys(Object.getPrototypeOf(navigator)).includes('webdriver');
+
+    if (inCheck || valueCheck !== undefined || keysCheck) {
+      console.error('[mcp-playwright] Warning: webdriver masking incomplete:', {
+        inNavigator: inCheck,
+        value: valueCheck,
+        inKeys: keysCheck,
+      });
+    }
   } catch (e) {
     console.error('[mcp-playwright] Failed to mask navigator.webdriver:', e.message);
   }
 
   // ==========================================================================
-  // 2. Chrome runtime - Make it look like a real Chrome browser
+  // 2. User Agent - Remove "HeadlessChrome" indicator
+  // ==========================================================================
+  try {
+    const originalUA = navigator.userAgent;
+    // Replace HeadlessChrome with Chrome to look like a normal browser
+    const cleanedUA = originalUA.replace(/HeadlessChrome/g, 'Chrome');
+
+    Object.defineProperty(Navigator.prototype, 'userAgent', {
+      get: () => cleanedUA,
+      configurable: true,
+      enumerable: true,
+    });
+
+    // Also set on navigator instance
+    Object.defineProperty(navigator, 'userAgent', {
+      get: () => cleanedUA,
+      configurable: true,
+      enumerable: true,
+    });
+
+    // Also fix appVersion which may contain Headless
+    const originalAppVersion = navigator.appVersion;
+    const cleanedAppVersion = originalAppVersion.replace(/HeadlessChrome/g, 'Chrome');
+
+    Object.defineProperty(Navigator.prototype, 'appVersion', {
+      get: () => cleanedAppVersion,
+      configurable: true,
+      enumerable: true,
+    });
+
+    Object.defineProperty(navigator, 'appVersion', {
+      get: () => cleanedAppVersion,
+      configurable: true,
+      enumerable: true,
+    });
+
+    if (cleanedUA !== originalUA) {
+      console.error('[mcp-playwright] Cleaned HeadlessChrome from User Agent');
+    }
+  } catch (e) {
+    console.error('[mcp-playwright] Failed to clean User Agent:', e.message);
+  }
+
+  // ==========================================================================
+  // 3. Chrome runtime - Make it look like a real Chrome browser
   // ==========================================================================
   try {
     window.chrome = {
@@ -80,7 +200,7 @@
   }
 
   // ==========================================================================
-  // 3. Permissions API - Mask automation indicators
+  // 4. Permissions API - Mask automation indicators
   // ==========================================================================
   try {
     const originalQuery = window.navigator.permissions.query;
@@ -96,7 +216,7 @@
   }
 
   // ==========================================================================
-  // 4. Plugins and MimeTypes - Emulate real browser plugins
+  // 5. Plugins and MimeTypes - Emulate real browser plugins
   // ==========================================================================
   try {
     const mockPlugins = [
@@ -184,7 +304,7 @@
   }
 
   // ==========================================================================
-  // 5. Languages - Ensure consistency
+  // 6. Languages - Ensure consistency
   // ==========================================================================
   try {
     Object.defineProperty(navigator, 'languages', {
@@ -196,7 +316,7 @@
   }
 
   // ==========================================================================
-  // 6. WebGL Vendor and Renderer - Spoof to common values
+  // 7. WebGL Vendor and Renderer - Spoof to common values
   // ==========================================================================
   try {
     const getParameterProxyHandler = {
@@ -230,7 +350,7 @@
   }
 
   // ==========================================================================
-  // 7. Hardware Concurrency - Common value
+  // 8. Hardware Concurrency - Common value
   // ==========================================================================
   try {
     Object.defineProperty(navigator, 'hardwareConcurrency', {
@@ -242,19 +362,33 @@
   }
 
   // ==========================================================================
-  // 8. Device Memory - Common value (4GB)
+  // 9. Device Memory - Common value (8GB) - bulletproof approach
   // ==========================================================================
   try {
-    Object.defineProperty(navigator, 'deviceMemory', {
+    // Define on prototype first
+    Object.defineProperty(Navigator.prototype, 'deviceMemory', {
       get: () => 8,
+      configurable: true,
       enumerable: true,
     });
+
+    // Also define on navigator instance
+    Object.defineProperty(navigator, 'deviceMemory', {
+      get: () => 8,
+      configurable: true,
+      enumerable: true,
+    });
+
+    // Verify it worked
+    if (navigator.deviceMemory !== 8) {
+      console.error('[mcp-playwright] Warning: deviceMemory masking may not have worked, value:', navigator.deviceMemory);
+    }
   } catch (e) {
     console.error('[mcp-playwright] Failed to set deviceMemory:', e.message);
   }
 
   // ==========================================================================
-  // 9. Connection type - Looks like broadband
+  // 10. Connection type - Looks like broadband
   // ==========================================================================
   try {
     if (navigator.connection) {
@@ -267,7 +401,7 @@
   }
 
   // ==========================================================================
-  // 10. Iframe contentWindow - Prevent detection via iframe checks
+  // 11. Iframe contentWindow - Prevent detection via iframe checks
   // ==========================================================================
   try {
     // Some detection scripts check if contentWindow.chrome exists in iframes
@@ -294,7 +428,7 @@
   }
 
   // ==========================================================================
-  // 11. toString() spoofing - Make native functions look native
+  // 12. toString() spoofing - Make native functions look native
   // ==========================================================================
   try {
     const nativeToString = Function.prototype.toString;
@@ -319,7 +453,7 @@
   }
 
   // ==========================================================================
-  // 12. Brave Browser detection - Not Brave
+  // 13. Brave Browser detection - Not Brave
   // ==========================================================================
   try {
     Object.defineProperty(navigator, 'brave', {

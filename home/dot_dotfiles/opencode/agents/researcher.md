@@ -9,8 +9,6 @@ permission:
     ".env": deny
     ".env.*": deny
     ".env.example": allow
-  webfetch: allow
-  websearch: allow
   codesearch: allow
   skill: allow
   sh: allow
@@ -20,6 +18,9 @@ permission:
   docker: allow
   # Web scraping
   flaresolverr: allow
+  flaresolverr*: allow
+  playwright: allow
+  playwright*: allow
   github_get*: allow
   github_list*: allow
   github_search*: allow
@@ -112,10 +113,9 @@ Use these for:
 
 1. Analyze target page structure
 2. Identify data locations and patterns
-3. Use webfetch to retrieve content (or Flaresolverr for Cloudflare-protected sites)
-4. Extract data with text parsing or regex
-5. Clean and structure output
-6. Validate completeness
+3. Extract data with text parsing or regex
+4. Clean and structure output
+5. Validate completeness
 
 ### Cloudflare-protected sites
 

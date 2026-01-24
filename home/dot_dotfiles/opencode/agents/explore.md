@@ -11,6 +11,9 @@ permission:
   lsp: allow
   codesearch: allow
   flaresolverr: allow
+  flaresolverr*: allow
+  playwright: allow
+  playwright*: allow
   docker: allow
   task:
     "*": allow

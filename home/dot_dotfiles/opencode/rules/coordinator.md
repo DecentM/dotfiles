@@ -12,7 +12,7 @@
 | System design, API patterns | **architect** | Frame problem, accept/refine design |
 | CI/CD, containers, infrastructure | **devops** | Specify needs, verify outcomes |
 | Docs, PRs, emails, explanations | **writer** | Outline goals, approve drafts |
-| Web research, data gathering | **researcher** | Define questions, use findings |
+| Web research/requests, data gathering | **researcher** | Define questions, use findings |
 | Git operations, history analysis | **git** | Describe intent, apply results |
 | Brainstorming, creative exploration | **creative** | Set constraints, curate ideas |
 

@@ -23,6 +23,9 @@ permission:
   docker: allow
   # Web scraping
   flaresolverr: allow
+  flaresolverr*: allow
+  playwright: allow
+  playwright*: allow
   # Profile MCPs (work) - defined in profile jsonc
   github: allow
   task:

@@ -9,12 +9,13 @@ permission:
     ".env": deny
     ".env.*": deny
     ".env.example": allow
-  webfetch: allow
-  websearch: allow
   lsp: allow
   codesearch: allow
   # Web scraping
+  flaresolverr: allow
   flaresolverr*: allow
+  playwright: allow
+  playwright*: allow
   task:
     "*": allow
     architect: deny

@@ -43,3 +43,7 @@
   - No manual axes, legends, titles, or decorations - let the library handle it or omit them
   - **Trust the tool output** - it is NOT corrupted. If it looks wrong, that's how it renders. Do not "fix" or redraw it manually.
   - If the library fails or produces unusable output, say so and move on - do NOT attempt a manual version
+
+## playwright, flaresolverr
+- Use playwright/flaresolverr to retrieve content (Flaresolverr for Cloudflare-protected sites)
+- If one is blocked or bot-challenged, use the other
