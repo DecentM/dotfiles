@@ -174,20 +174,5 @@
       "url": "https://mcp.figma.com/mcp",
       "enabled": false
     },
-
-    "playwright": {
-      "type": "local",
-      "command": [
-        "docker",
-        "run",
-        "--rm",
-        "-i",
-        "--init",
-        "--memory=2048m",
-        "--cpus=2",
-        "mcr.microsoft.com/playwright/mcp",
-      ],
-      "enabled": true,
-    },
   }
 }

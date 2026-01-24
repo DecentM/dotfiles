@@ -1,0 +1,10 @@
+{
+  "name": "mcp-playwright",
+  "version": "1.0.0",
+  "description": "Custom Playwright MCP with stealth support",
+  "type": "module",
+  "dependencies": {
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
