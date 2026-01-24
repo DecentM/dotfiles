@@ -67,7 +67,10 @@
         if (prop === 'webdriver') {
           return undefined;
         }
-        const value = Reflect.get(target, prop, receiver);
+        // CRITICAL: Use 'target' instead of 'receiver' for Reflect.get
+        // Native browser API getters require the real object as 'this', not the proxy.
+        // Using 'receiver' (the proxy) causes "Illegal invocation" errors.
+        const value = Reflect.get(target, prop, target);
         // Bind functions to the original navigator to preserve 'this' context
         if (typeof value === 'function') {
           return value.bind(target);
@@ -107,6 +110,168 @@
     }
   } catch (e) {
     console.error('[mcp-playwright] Failed to mask navigator.webdriver:', e.message);
+  }
+
+  // ==========================================================================
+  // 1.5. WebDriver Advanced - Remove ChromeDriver/Selenium specific properties
+  // ==========================================================================
+  // Detection scripts check for various automation-injected properties:
+  //   - document.$cdc_ (ChromeDriver < 77)
+  //   - document.$wdc_ (older WebDriver)
+  //   - window.cdc_adoQpoasnfa76pfcZLmcfl_ (ChromeDriver 77+)
+  //   - Various __selenium, __webdriver, __driver prefixed properties
+  //   - window.callPhantom, window._phantom (PhantomJS)
+  //   - window.domAutomation, window.domAutomationController
+  // ==========================================================================
+  try {
+    // List of known automation properties to remove from document
+    const documentAutomationProps = [
+      '$cdc_asdjflasutopfhvcZLmcfl_',
+      '$cdc_',
+      '$wdc_',
+      '__selenium_evaluate',
+      '__selenium_unwrapped',
+      '__webdriver_evaluate',
+      '__driver_evaluate',
+      '__webdriver_unwrapped',
+      '__driver_unwrapped',
+      '__fxdriver_evaluate',
+      '__fxdriver_unwrapped',
+      '__webdriver_script_fn',
+    ];
+
+    // List of known automation properties to remove from window
+    const windowAutomationProps = [
+      'callPhantom',
+      '_phantom',
+      'phantom',
+      '__phantomas',
+      'domAutomation',
+      'domAutomationController',
+      '_Selenium_IDE_Recorder',
+      '_selenium',
+      'calledSelenium',
+      '__nightmare',
+      'awesomium',
+      '__webdriver_script_fn',
+      '__webdriver_script_func',
+      'webdriver',
+      '__$webdriverAsyncExecutor',
+      '__lastWatirAlert',
+      '__lastWatirConfirm',
+      '__lastWatirPrompt',
+    ];
+
+    // Remove document automation properties
+    for (const prop of documentAutomationProps) {
+      if (prop in document) {
+        try {
+          delete document[prop];
+        } catch (e) {
+          // If delete fails, try to make it undefined
+          try {
+            Object.defineProperty(document, prop, {
+              value: undefined,
+              configurable: true,
+              writable: true,
+            });
+          } catch (e2) {
+            // Ignore if we can't modify it
+          }
+        }
+      }
+    }
+
+    // Remove window automation properties
+    for (const prop of windowAutomationProps) {
+      if (prop in window) {
+        try {
+          delete window[prop];
+        } catch (e) {
+          try {
+            Object.defineProperty(window, prop, {
+              value: undefined,
+              configurable: true,
+              writable: true,
+            });
+          } catch (e2) {
+            // Ignore if we can't modify it
+          }
+        }
+      }
+    }
+
+    // ChromeDriver 77+ uses dynamic property names like cdc_adoQpoasnfa76pfcZLmcfl_
+    // We need to find and remove any property starting with cdc_ on window or document
+    const cdcPattern = /^cdc_/;
+    const wdcPattern = /^\$?wdc_/;
+    const cdcPrefixPattern = /^[$_]*cdc_/;
+
+    // Check window for cdc_ prefixed properties
+    for (const prop of Object.getOwnPropertyNames(window)) {
+      if (cdcPattern.test(prop) || wdcPattern.test(prop) || cdcPrefixPattern.test(prop)) {
+        try {
+          delete window[prop];
+        } catch (e) {
+          try {
+            Object.defineProperty(window, prop, { value: undefined, configurable: true, writable: true });
+          } catch (e2) {
+            // Ignore
+          }
+        }
+      }
+    }
+
+    // Check document for cdc_ prefixed properties
+    for (const prop of Object.getOwnPropertyNames(document)) {
+      if (cdcPattern.test(prop) || wdcPattern.test(prop) || cdcPrefixPattern.test(prop)) {
+        try {
+          delete document[prop];
+        } catch (e) {
+          try {
+            Object.defineProperty(document, prop, { value: undefined, configurable: true, writable: true });
+          } catch (e2) {
+            // Ignore
+          }
+        }
+      }
+    }
+
+    // Intercept future property additions that match automation patterns
+    // This catches late-injected properties
+    const automationPatterns = [cdcPattern, wdcPattern, /^__selenium/, /^__webdriver/, /^__driver/];
+
+    const createPropertyTrap = (target) => {
+      return new Proxy(target, {
+        set(obj, prop, value) {
+          if (typeof prop === 'string') {
+            for (const pattern of automationPatterns) {
+              if (pattern.test(prop)) {
+                // Silently ignore automation property assignments
+                return true;
+              }
+            }
+          }
+          return Reflect.set(obj, prop, value);
+        },
+        defineProperty(obj, prop, descriptor) {
+          if (typeof prop === 'string') {
+            for (const pattern of automationPatterns) {
+              if (pattern.test(prop)) {
+                // Silently ignore automation property definitions
+                return true;
+              }
+            }
+          }
+          return Reflect.defineProperty(obj, prop, descriptor);
+        },
+      });
+    };
+
+    // Note: We can't easily replace window/document with proxies without breaking things,
+    // but the initial cleanup should catch most cases
+  } catch (e) {
+    console.error('[mcp-playwright] Failed to remove automation properties:', e.message);
   }
 
   // ==========================================================================
@@ -156,44 +321,236 @@
   // ==========================================================================
   // 3. Chrome runtime - Make it look like a real Chrome browser
   // ==========================================================================
+  // Based on puppeteer-extra-plugin-stealth chrome.runtime evasion
+  // This creates a realistic window.chrome object with proper methods
+  // ==========================================================================
   try {
-    window.chrome = {
-      runtime: {
-        // PNaCl is no longer supported, but some detection scripts check for it
-        PnaclEncoder: class {},
-        // Provide empty sendMessage to look like a real extension environment
-        sendMessage: () => {},
-        connect: () => ({
-          onMessage: { addListener: () => {} },
-          postMessage: () => {},
-          disconnect: () => {},
-        }),
-        onMessage: {
-          addListener: () => {},
-          removeListener: () => {},
-        },
-        onConnect: {
-          addListener: () => {},
-          removeListener: () => {},
-        },
+    // Static data from real Chrome (from puppeteer-extra-plugin-stealth)
+    const STATIC_DATA = {
+      OnInstalledReason: {
+        CHROME_UPDATE: 'chrome_update',
+        INSTALL: 'install',
+        SHARED_MODULE_UPDATE: 'shared_module_update',
+        UPDATE: 'update',
       },
-      // csi is used by some detection scripts
-      csi: () => ({}),
-      loadTimes: () => ({
-        commitLoadTime: Date.now() / 1000 - Math.random() * 2,
+      OnRestartRequiredReason: {
+        APP_UPDATE: 'app_update',
+        OS_UPDATE: 'os_update',
+        PERIODIC: 'periodic',
+      },
+      PlatformArch: {
+        ARM: 'arm',
+        ARM64: 'arm64',
+        MIPS: 'mips',
+        MIPS64: 'mips64',
+        X86_32: 'x86-32',
+        X86_64: 'x86-64',
+      },
+      PlatformNaclArch: {
+        ARM: 'arm',
+        MIPS: 'mips',
+        MIPS64: 'mips64',
+        X86_32: 'x86-32',
+        X86_64: 'x86-64',
+      },
+      PlatformOs: {
+        ANDROID: 'android',
+        CROS: 'cros',
+        LINUX: 'linux',
+        MAC: 'mac',
+        OPENBSD: 'openbsd',
+        WIN: 'win',
+      },
+      RequestUpdateCheckStatus: {
+        NO_UPDATE: 'no_update',
+        THROTTLED: 'throttled',
+        UPDATE_AVAILABLE: 'update_available',
+      },
+    };
+
+    // Valid Extension IDs are 32 characters in length and use the letter `a` to `p`
+    const isValidExtensionID = (str) => str.length === 32 && str.toLowerCase().match(/^[a-p]+$/);
+
+    const makeCustomRuntimeErrors = (preamble, method, extensionId) => ({
+      NoMatchingSignature: new TypeError(`${preamble}No matching signature.`),
+      MustSpecifyExtensionID: new TypeError(
+        `${preamble}${method} called from a webpage must specify an Extension ID (string) for its first argument.`
+      ),
+      InvalidExtensionID: new TypeError(`${preamble}Invalid extension id: '${extensionId}'`),
+    });
+
+    // Create chrome object if it doesn't exist (with exact property descriptor from real Chrome)
+    if (!window.chrome) {
+      Object.defineProperty(window, 'chrome', {
+        writable: true,
+        enumerable: true,
+        configurable: false,
+        value: {},
+      });
+    }
+
+    // Mock chrome.app (required for some detection scripts)
+    window.chrome.app = {
+      isInstalled: false,
+      InstallState: {
+        DISABLED: 'disabled',
+        INSTALLED: 'installed',
+        NOT_INSTALLED: 'not_installed',
+      },
+      RunningState: {
+        CANNOT_RUN: 'cannot_run',
+        READY_TO_RUN: 'ready_to_run',
+        RUNNING: 'running',
+      },
+      getDetails: function getDetails() {
+        return null;
+      },
+      getIsInstalled: function getIsInstalled() {
+        return false;
+      },
+      runningState: function runningState() {
+        return 'cannot_run';
+      },
+    };
+
+    // Mock chrome.runtime with proper error handling like real Chrome
+    window.chrome.runtime = {
+      ...STATIC_DATA,
+      // chrome.runtime.id is extension related and returns undefined in Chrome
+      get id() {
+        return undefined;
+      },
+      // These require more sophisticated mocks with proper error handling
+      connect: null,
+      sendMessage: null,
+    };
+
+    // Create sendMessage with proper proxy handler for realistic error behavior
+    const sendMessageHandler = {
+      apply: function (target, ctx, args) {
+        const [extensionId, options, responseCallback] = args || [];
+        const errorPreamble =
+          'Error in invocation of runtime.sendMessage(optional string extensionId, any message, optional object options, optional function responseCallback): ';
+        const Errors = makeCustomRuntimeErrors(errorPreamble, 'chrome.runtime.sendMessage()', extensionId);
+
+        const noArguments = args.length === 0;
+        const tooManyArguments = args.length > 4;
+        const incorrectOptions = options && typeof options !== 'object';
+        const incorrectResponseCallback = responseCallback && typeof responseCallback !== 'function';
+
+        if (noArguments || tooManyArguments || incorrectOptions || incorrectResponseCallback) {
+          throw Errors.NoMatchingSignature;
+        }
+        if (args.length < 2) {
+          throw Errors.MustSpecifyExtensionID;
+        }
+        if (typeof extensionId !== 'string') {
+          throw Errors.NoMatchingSignature;
+        }
+        if (!isValidExtensionID(extensionId)) {
+          throw Errors.InvalidExtensionID;
+        }
+        return undefined;
+      },
+    };
+
+    const sendMessageFunc = function sendMessage() {};
+    window.chrome.runtime.sendMessage = new Proxy(sendMessageFunc, sendMessageHandler);
+
+    // Create connect with proper proxy handler for realistic error behavior
+    const connectHandler = {
+      apply: function (target, ctx, args) {
+        const [extensionId, connectInfo] = args || [];
+        const errorPreamble =
+          'Error in invocation of runtime.connect(optional string extensionId, optional object connectInfo): ';
+        const Errors = makeCustomRuntimeErrors(errorPreamble, 'chrome.runtime.connect()', extensionId);
+
+        const noArguments = args.length === 0;
+        const emptyStringArgument = args.length === 1 && extensionId === '';
+        if (noArguments || emptyStringArgument) {
+          throw Errors.MustSpecifyExtensionID;
+        }
+
+        const tooManyArguments = args.length > 2;
+        const incorrectConnectInfoType = connectInfo && typeof connectInfo !== 'object';
+        if (tooManyArguments || incorrectConnectInfoType) {
+          throw Errors.NoMatchingSignature;
+        }
+
+        const extensionIdIsString = typeof extensionId === 'string';
+        if (extensionIdIsString && extensionId === '') {
+          throw Errors.MustSpecifyExtensionID;
+        }
+        if (extensionIdIsString && !isValidExtensionID(extensionId)) {
+          throw Errors.InvalidExtensionID;
+        }
+
+        // Handle connectInfo as first param edge case
+        if (typeof extensionId === 'object') {
+          if (args.length > 1) {
+            throw Errors.NoMatchingSignature;
+          }
+          if (Object.keys(extensionId).length === 0) {
+            throw Errors.MustSpecifyExtensionID;
+          }
+          for (const [k, v] of Object.entries(extensionId)) {
+            const isExpected = ['name', 'includeTlsChannelId'].includes(k);
+            if (!isExpected) {
+              throw new TypeError(`${errorPreamble}Unexpected property: '${k}'.`);
+            }
+            if (k === 'name' && typeof v !== 'string') {
+              throw new TypeError(`${errorPreamble}Error at property '${k}': Invalid type: expected string, found ${typeof v}.`);
+            }
+            if (k === 'includeTlsChannelId' && typeof v !== 'boolean') {
+              throw new TypeError(`${errorPreamble}Error at property '${k}': Invalid type: expected boolean, found ${typeof v}.`);
+            }
+          }
+        }
+
+        // Return a mock Port object
+        return {
+          name: '',
+          sender: undefined,
+          onDisconnect: { addListener: function () {}, removeListener: function () {} },
+          onMessage: { addListener: function () {}, removeListener: function () {} },
+          postMessage: function () {},
+          disconnect: function () {},
+        };
+      },
+    };
+
+    const connectFunc = function connect() {};
+    window.chrome.runtime.connect = new Proxy(connectFunc, connectHandler);
+
+    // chrome.csi - returns timing information
+    window.chrome.csi = function csi() {
+      return {
+        onloadT: Date.now(),
+        pageT: performance.now(),
+        startE: Date.now() - performance.now(),
+        tran: 15, // Navigation type
+      };
+    };
+
+    // chrome.loadTimes - deprecated but still checked
+    window.chrome.loadTimes = function loadTimes() {
+      const navTiming = performance.timing;
+      const now = Date.now() / 1000;
+      return {
+        commitLoadTime: navTiming.responseStart / 1000 || now - Math.random() * 2,
         connectionInfo: 'h2',
-        finishDocumentLoadTime: Date.now() / 1000 - Math.random(),
-        finishLoadTime: Date.now() / 1000 - Math.random() * 0.5,
+        finishDocumentLoadTime: navTiming.domContentLoadedEventEnd / 1000 || now - Math.random() * 0.5,
+        finishLoadTime: navTiming.loadEventEnd / 1000 || now - Math.random() * 0.2,
         firstPaintAfterLoadTime: 0,
-        firstPaintTime: Date.now() / 1000 - Math.random() * 0.5,
+        firstPaintTime: navTiming.responseEnd / 1000 || now - Math.random() * 0.5,
         navigationType: 'Other',
         npnNegotiatedProtocol: 'h2',
-        requestTime: Date.now() / 1000 - Math.random() * 3,
-        startLoadTime: Date.now() / 1000 - Math.random() * 2.5,
+        requestTime: navTiming.requestStart / 1000 || now - Math.random() * 3,
+        startLoadTime: navTiming.navigationStart / 1000 || now - Math.random() * 2.5,
         wasAlternateProtocolAvailable: false,
         wasFetchedViaSpdy: true,
         wasNpnNegotiated: true,
-      }),
+      };
     };
   } catch (e) {
     console.error('[mcp-playwright] Failed to mock chrome runtime:', e.message);
@@ -203,14 +560,31 @@
   // 4. Permissions API - Mask automation indicators
   // ==========================================================================
   try {
-    const originalQuery = window.navigator.permissions.query;
-    window.navigator.permissions.query = function (parameters) {
-      // Return 'prompt' for notifications instead of 'denied' (automation giveaway)
-      if (parameters.name === 'notifications') {
-        return Promise.resolve({ state: 'prompt', onchange: null });
-      }
-      return originalQuery.call(this, parameters);
-    };
+    // Store references to the original permissions object and query method
+    // We need to use the real navigator (not proxy) to avoid "Illegal invocation"
+    const realPermissions = Navigator.prototype.__lookupGetter__('permissions')
+      ? Navigator.prototype.__lookupGetter__('permissions').call(navigator)
+      : navigator.permissions;
+
+    if (realPermissions && realPermissions.query) {
+      const originalQuery = realPermissions.query.bind(realPermissions);
+
+      // Create a new query function that masks notification permission
+      const maskedQuery = function (parameters) {
+        // Return 'prompt' for notifications instead of 'denied' (automation giveaway)
+        if (parameters && parameters.name === 'notifications') {
+          return Promise.resolve({ state: 'prompt', onchange: null });
+        }
+        return originalQuery(parameters);
+      };
+
+      // Override the query method on the permissions object
+      Object.defineProperty(realPermissions, 'query', {
+        value: maskedQuery,
+        writable: true,
+        configurable: true,
+      });
+    }
   } catch (e) {
     console.error('[mcp-playwright] Failed to mask permissions:', e.message);
   }
@@ -391,10 +765,15 @@
   // 10. Connection type - Looks like broadband
   // ==========================================================================
   try {
-    if (navigator.connection) {
-      Object.defineProperty(navigator.connection, 'rtt', { get: () => 50, enumerable: true });
-      Object.defineProperty(navigator.connection, 'downlink', { get: () => 10, enumerable: true });
-      Object.defineProperty(navigator.connection, 'effectiveType', { get: () => '4g', enumerable: true });
+    // Get the real connection object to avoid "Illegal invocation"
+    // navigator.connection is a getter that requires proper 'this' context
+    const connectionGetter = Navigator.prototype.__lookupGetter__('connection');
+    const realConnection = connectionGetter ? connectionGetter.call(navigator) : navigator.connection;
+
+    if (realConnection) {
+      Object.defineProperty(realConnection, 'rtt', { get: () => 50, enumerable: true, configurable: true });
+      Object.defineProperty(realConnection, 'downlink', { get: () => 10, enumerable: true, configurable: true });
+      Object.defineProperty(realConnection, 'effectiveType', { get: () => '4g', enumerable: true, configurable: true });
     }
   } catch (e) {
     console.error('[mcp-playwright] Failed to set connection:', e.message);
@@ -445,8 +824,15 @@
     spoofedFunctions.add(customToString);
 
     // Mark our spoofed functions
-    if (navigator.permissions?.query) {
-      spoofedFunctions.add(navigator.permissions.query);
+    // Access permissions.query through the real navigator to avoid proxy issues
+    try {
+      const permissionsGetter = Navigator.prototype.__lookupGetter__('permissions');
+      const realPermissions = permissionsGetter ? permissionsGetter.call(navigator) : null;
+      if (realPermissions && realPermissions.query) {
+        spoofedFunctions.add(realPermissions.query);
+      }
+    } catch (e) {
+      // Permissions may not be available, ignore
     }
   } catch (e) {
     console.error('[mcp-playwright] Failed to spoof Function.toString:', e.message);
