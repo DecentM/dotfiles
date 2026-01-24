@@ -27,13 +27,11 @@
 ## sh (shell commands)
 - **Use `sh` to run commands
 - sh enforces an allowlist of permitted commands with audit logging
-- All command executions are logged to SQLite for security auditing
-- Denied commands return clear error messages with the matched pattern
-- Audit tools available: `sh_stats`, `sh_export_logs`, `sh_hierarchy`
+- All command executions are logged for auditing
 
 ## memory, sequentialthinking, time
 - On fresh/continuation: check memory and use sequentialthinking
-- Timestamp all memory you insert, prune >2 weeks old (unless permanent)
+- Timestamp all memory you insert, prune >2 weeks old (unless marked permanent)
 - Bank learnings frequently - persists across sessions
 
 ## node, python
