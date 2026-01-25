@@ -95,7 +95,6 @@
       "command": [
         "bash",
         "-c",
-        // Bundled container: Flaresolverr + Chromium + MCP server (~900MB, needs more resources)
         "docker run --rm -i --init --shm-size=2g --memory=2g --cpus=2 $(docker build -q -f ~/.dotfiles/opencode/docker/mcp-flaresolverr.dockerfile ~/.dotfiles/opencode/docker)"
       ],
       "enabled": true
