@@ -1,0 +1,344 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package audittrail;
+
+enum ToolExecutionDecision {
+  TOOL_EXECUTION_DECISION_UNSPECIFIED = 0;
+  TOOL_EXECUTION_DECISION_STARTED = 1;
+  TOOL_EXECUTION_DECISION_COMPLETED = 2;
+  TOOL_EXECUTION_DECISION_FAILED = 3;
+}
+
+enum SessionEventType {
+  SESSION_EVENT_TYPE_UNSPECIFIED = 0;
+  SESSION_EVENT_TYPE_CREATED = 1;
+  SESSION_EVENT_TYPE_COMPACTED = 2;
+  SESSION_EVENT_TYPE_DELETED = 3;
+  SESSION_EVENT_TYPE_ERROR = 4;
+  SESSION_EVENT_TYPE_IDLE = 5;
+  SESSION_EVENT_TYPE_EVENT = 6;
+  SESSION_EVENT_TYPE_CONFIG = 7;
+  SESSION_EVENT_TYPE_CHAT_PARAMS = 8;
+  SESSION_EVENT_TYPE_CHAT_HEADERS = 9;
+}
+
+enum PermissionStatus {
+  PERMISSION_STATUS_UNSPECIFIED = 0;
+  PERMISSION_STATUS_ASK = 1;
+  PERMISSION_STATUS_DENY = 2;
+  PERMISSION_STATUS_ALLOW = 3;
+}
+
+message ToolExecution {
+  int64 id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string session_id = 3;
+  string message_id = 4;
+  string call_id = 5;
+  string tool_name = 6;
+  string agent_id = 7;
+  string arguments = 8;
+  ToolExecutionDecision decision = 9;
+  string result_summary = 10;
+  int32 duration_ms = 11;
+}
+
+message SessionEvent {
+  int64 id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string session_id = 3;
+  SessionEventType event_type = 4;
+  string details = 5;
+}
+
+message PermissionEvent {
+  int64 id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string session_id = 3;
+  string permission_type = 4;
+  string resource = 5;
+  PermissionStatus status = 6;
+  string details_json = 7;
+}
+
+message CommandExecution {
+  int64 id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string session_id = 3;
+  string command = 4;
+  string arguments = 5;
+  string parts_json = 6;
+}
+
+message ChatMessage {
+  int64 id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string session_id = 3;
+  string message_id = 4;
+  string agent = 5;
+  string provider_id = 6;
+  string model_id = 7;
+  string variant = 8;
+  string message_content = 9;
+  string parts_json = 10;
+}
+
+message Pagination {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message Query {
+  string field_name = 1;
+  string operator = 2;
+  string value = 3;
+}
+
+message CreateToolExecutionRequest {
+  ToolExecution tool_execution = 1;
+}
+
+message CreateToolExecutionResponse {
+  ToolExecution tool_execution = 1;
+}
+
+message GetToolExecutionRequest {
+  int64 id = 1;
+}
+
+message GetToolExecutionResponse {
+  ToolExecution tool_execution = 1;
+}
+
+message UpdateToolExecutionRequest {
+  ToolExecution tool_execution = 1;
+}
+
+message UpdateToolExecutionResponse {
+  ToolExecution tool_execution = 1;
+}
+
+message DeleteToolExecutionRequest {
+  int64 id = 1;
+}
+
+message DeleteToolExecutionResponse {
+  bool success = 1;
+}
+
+message ListToolExecutionsRequest {
+  Pagination pagination = 1;
+  repeated Query filters = 2;
+}
+
+message ListToolExecutionsResponse {
+  repeated ToolExecution tool_executions = 1;
+  string next_page_token = 2;
+}
+
+message CreateSessionEventRequest {
+  SessionEvent session_event = 1;
+}
+
+message CreateSessionEventResponse {
+  SessionEvent session_event = 1;
+}
+
+message GetSessionEventRequest {
+  int64 id = 1;
+}
+
+message GetSessionEventResponse {
+  SessionEvent session_event = 1;
+}
+
+message UpdateSessionEventRequest {
+  SessionEvent session_event = 1;
+}
+
+message UpdateSessionEventResponse {
+  SessionEvent session_event = 1;
+}
+
+message DeleteSessionEventRequest {
+  int64 id = 1;
+}
+
+message DeleteSessionEventResponse {
+  bool success = 1;
+}
+
+message ListSessionEventsRequest {
+  Pagination pagination = 1;
+  repeated Query filters = 2;
+}
+
+message ListSessionEventsResponse {
+  repeated SessionEvent session_events = 1;
+  string next_page_token = 2;
+}
+
+message CreatePermissionEventRequest {
+  PermissionEvent permission_event = 1;
+}
+
+message CreatePermissionEventResponse {
+  PermissionEvent permission_event = 1;
+}
+
+message GetPermissionEventRequest {
+  int64 id = 1;
+}
+
+message GetPermissionEventResponse {
+  PermissionEvent permission_event = 1;
+}
+
+message UpdatePermissionEventRequest {
+  PermissionEvent permission_event = 1;
+}
+
+message UpdatePermissionEventResponse {
+  PermissionEvent permission_event = 1;
+}
+
+message DeletePermissionEventRequest {
+  int64 id = 1;
+}
+
+message DeletePermissionEventResponse {
+  bool success = 1;
+}
+
+message ListPermissionEventsRequest {
+  Pagination pagination = 1;
+  repeated Query filters = 2;
+}
+
+message ListPermissionEventsResponse {
+  repeated PermissionEvent permission_events = 1;
+  string next_page_token = 2;
+}
+
+message CreateCommandExecutionRequest {
+  CommandExecution command_execution = 1;
+}
+
+message CreateCommandExecutionResponse {
+  CommandExecution command_execution = 1;
+}
+
+message GetCommandExecutionRequest {
+  int64 id = 1;
+}
+
+message GetCommandExecutionResponse {
+  CommandExecution command_execution = 1;
+}
+
+message UpdateCommandExecutionRequest {
+  CommandExecution command_execution = 1;
+}
+
+message UpdateCommandExecutionResponse {
+  CommandExecution command_execution = 1;
+}
+
+message DeleteCommandExecutionRequest {
+  int64 id = 1;
+}
+
+message DeleteCommandExecutionResponse {
+  bool success = 1;
+}
+
+message ListCommandExecutionsRequest {
+  Pagination pagination = 1;
+  repeated Query filters = 2;
+}
+
+message ListCommandExecutionsResponse {
+  repeated CommandExecution command_executions = 1;
+  string next_page_token = 2;
+}
+
+message CreateChatMessageRequest {
+  ChatMessage chat_message = 1;
+}
+
+message CreateChatMessageResponse {
+  ChatMessage chat_message = 1;
+}
+
+message GetChatMessageRequest {
+  int64 id = 1;
+}
+
+message GetChatMessageResponse {
+  ChatMessage chat_message = 1;
+}
+
+message UpdateChatMessageRequest {
+  ChatMessage chat_message = 1;
+}
+
+message UpdateChatMessageResponse {
+  ChatMessage chat_message = 1;
+}
+
+message DeleteChatMessageRequest {
+  int64 id = 1;
+}
+
+message DeleteChatMessageResponse {
+  bool success = 1;
+}
+
+message ListChatMessagesRequest {
+  Pagination pagination = 1;
+  repeated Query filters = 2;
+}
+
+message ListChatMessagesResponse {
+  repeated ChatMessage chat_messages = 1;
+  string next_page_token = 2;
+}
+
+service AuditTrailService {
+  // ToolExecution operations
+  rpc CreateToolExecution(CreateToolExecutionRequest) returns (CreateToolExecutionResponse);
+  rpc GetToolExecution(GetToolExecutionRequest) returns (GetToolExecutionResponse);
+  rpc UpdateToolExecution(UpdateToolExecutionRequest) returns (UpdateToolExecutionResponse);
+  rpc DeleteToolExecution(DeleteToolExecutionRequest) returns (DeleteToolExecutionResponse);
+  rpc ListToolExecutions(ListToolExecutionsRequest) returns (ListToolExecutionsResponse);
+
+  // SessionEvent operations
+  rpc CreateSessionEvent(CreateSessionEventRequest) returns (CreateSessionEventResponse);
+  rpc GetSessionEvent(GetSessionEventRequest) returns (GetSessionEventResponse);
+  rpc UpdateSessionEvent(UpdateSessionEventRequest) returns (UpdateSessionEventResponse);
+  rpc DeleteSessionEvent(DeleteSessionEventRequest) returns (DeleteSessionEventResponse);
+  rpc ListSessionEvents(ListSessionEventsRequest) returns (ListSessionEventsResponse);
+
+  // PermissionEvent operations
+  rpc CreatePermissionEvent(CreatePermissionEventRequest) returns (CreatePermissionEventResponse);
+  rpc GetPermissionEvent(GetPermissionEventRequest) returns (GetPermissionEventResponse);
+  rpc UpdatePermissionEvent(UpdatePermissionEventRequest) returns (UpdatePermissionEventResponse);
+  rpc DeletePermissionEvent(DeletePermissionEventRequest) returns (DeletePermissionEventResponse);
+  rpc ListPermissionEvents(ListPermissionEventsRequest) returns (ListPermissionEventsResponse);
+
+  // CommandExecution operations
+  rpc CreateCommandExecution(CreateCommandExecutionRequest) returns (CreateCommandExecutionResponse);
+  rpc GetCommandExecution(GetCommandExecutionRequest) returns (GetCommandExecutionResponse);
+  rpc UpdateCommandExecution(UpdateCommandExecutionRequest) returns (UpdateCommandExecutionResponse);
+  rpc DeleteCommandExecution(DeleteCommandExecutionRequest) returns (DeleteCommandExecutionResponse);
+  rpc ListCommandExecutions(ListCommandExecutionsRequest) returns (ListCommandExecutionsResponse);
+
+  // ChatMessage operations
+  rpc CreateChatMessage(CreateChatMessageRequest) returns (CreateChatMessageResponse);
+  rpc GetChatMessage(GetChatMessageRequest) returns (GetChatMessageResponse);
+  rpc UpdateChatMessage(UpdateChatMessageRequest) returns (UpdateChatMessageResponse);
+  rpc DeleteChatMessage(DeleteChatMessageRequest) returns (DeleteChatMessageResponse);
+  rpc ListChatMessages(ListChatMessagesRequest) returns (ListChatMessagesResponse);
+}
