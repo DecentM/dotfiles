@@ -36,6 +36,7 @@
 
 ## node, python
 - Isolated containers: no network, 512MB RAM, 1 CPU
+- No access to local filesystem, paste in data you want to work with
 - **NEVER manually create ASCII art, diagrams, graphs, charts, or tables** - LLMs are bad at this
   - ALWAYS use code with a library (e.g., `figlet`, `asciichart`, `cli-table3`, `ascii-art`, `terminal-kit` for Node; `art`, `asciichartpy`, `tabulate`, `rich` for Python)
   - If you don't know a suitable package, research one first (npm search, pypi, etc.)
