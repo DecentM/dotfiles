@@ -25,6 +25,11 @@ default: deny
 default_reason: "Command not in allowlist - if you need this command, the user needs to run it, or request it be added to permissions"
 
 rules:
+  - patterns:
+      - "gns *"
+      - "gns"
+    decision: allow
+
   # ─────────────────────────────────────────────────────────────────────────────
   # Directory navigation - constrained to cwd
   # ─────────────────────────────────────────────────────────────────────────────
