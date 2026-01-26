@@ -10,5 +10,5 @@ if vercmd opencode; then
     fi
 
     alias pcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR OPENCODE_CONFIG=$OPENCODE_CONFIG_DIR/profiles/personal.jsonc $OPENCODE_PATH"
-    alias wcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR OPENCODE_CONFIG=$OPENCODE_CONFIG_DIR/profiles/work.jsonc $OPENCODE_PATH"
+    alias wcode="$HOME/code/chesscom/opencode/bin/opencode.sh"
 fi
