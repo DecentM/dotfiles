@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["./plugins/audit-trail"],
+  "plugin": [],
   "autoupdate": false,
   "snapshot": true,
   "logLevel": "WARN",

@@ -97,6 +97,10 @@
   // Model selection and profile-specific permission overrides
   // Agent behavior is defined in agents/*.md files
   "agent": {
+    "gns": {
+      "disable": true
+    },
+
     // Primary agents - homeassistant access for home automation
     "build": {
       "model": "ollama-local/qwen2.5-coder:7b",

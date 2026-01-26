@@ -27,6 +27,9 @@
     },
 
     // Custom subagents - model and work-specific MCP permissions
+    "gns": {
+      "model": "github-copilot/claude-sonnet-4",
+    },
     "coder": {
       "model": "github-copilot/claude-opus-4.5"
     },

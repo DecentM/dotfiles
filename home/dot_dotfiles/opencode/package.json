@@ -12,11 +12,11 @@
     "perms:debug": "bun bin/perms-debug.ts"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "1.1.32",
-    "reflect-metadata": "^0.2.2",
-    "typeorm": "^0.3.20",
+    "@opencode-ai/plugin": "1.1.30",
     "mysql2": "^3.11.0",
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20"
   },
   "devDependencies": {
     "@types/bun": "^1.2.6",

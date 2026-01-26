@@ -29,10 +29,9 @@
 - sh enforces an allowlist of permitted commands with audit logging
 - All command executions are logged for auditing
 
-## memory, sequentialthinking, time
-- On fresh/continuation: check memory and use sequentialthinking
-- Timestamp all memory you insert, prune >2 weeks old (unless marked permanent)
-- Bank learnings frequently - persists across sessions
+## sequentialthinking, time
+- On fresh/continuation: use sequentialthinking
+- Use time to get and manipulate time. do NOT directly work with time
 
 ## node, python
 - Isolated containers: no network, 512MB RAM, 1 CPU
@@ -46,5 +45,5 @@
   - If the library fails or produces unusable output, say so and move on - do NOT attempt a manual version
 
 ## playwright, flaresolverr
-- Use playwright/flaresolverr to retrieve content (Flaresolverr for Cloudflare-protected sites)
+- Use playwright/flaresolverr to retrieve content (Flaresolverr to fetch html, Playwright to interact with websites)
 - If one is blocked or bot-challenged, use the other

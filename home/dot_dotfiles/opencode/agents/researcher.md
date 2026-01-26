@@ -12,10 +12,6 @@ permission:
   codesearch: allow
   skill: allow
   sh: allow
-  # Sandbox access
-  node: allow
-  python: allow
-  docker: allow
   # Web scraping
   flaresolverr: allow
   flaresolverr*: allow
