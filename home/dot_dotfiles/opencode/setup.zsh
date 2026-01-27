@@ -9,6 +9,5 @@ if vercmd opencode; then
         export $(cat "$OPENCODE_CONFIG_DIR/.env" | xargs)
     fi
 
-    alias pcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR OPENCODE_CONFIG=$OPENCODE_CONFIG_DIR/profiles/personal.jsonc $OPENCODE_PATH"
-    alias wcode="$HOME/code/chesscom/opencode/bin/opencode.sh"
+    alias pcode="OPENCODE_CONFIG_DIR=$OPENCODE_CONFIG_DIR $OPENCODE_PATH"
 fi

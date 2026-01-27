@@ -33,6 +33,11 @@
 - On fresh/continuation: use sequentialthinking
 - Use time to get and manipulate time. do NOT directly work with time
 
+## memory
+- On fresh/continuation: check memory
+- Timestamp all memory you insert, prune >2 weeks old (unless marked permanent)
+- Bank learnings frequently - persists across sessions
+
 ## node, python
 - Isolated containers: no network, 512MB RAM, 1 CPU
 - No access to local filesystem, paste in data you want to work with

@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ARG PYTHON_PACKAGES=""
 
-RUN uv pip install --system ${PYTHON_PACKAGES}}
+RUN uv pip install --system ${PYTHON_PACKAGES}
 
 # Run as non-root user for security
 RUN useradd -m -s /bin/bash sandbox

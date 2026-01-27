@@ -5,8 +5,8 @@
   "snapshot": true,
   "logLevel": "WARN",
   "default_agent": "build",
-  // "theme": "catppuccin",
-  "keybinds": {},
+  "share": "manual",
+  "theme": "ariake-dark",
   "tui": {
     "scroll_speed": 3,
     "scroll_acceleration": {
@@ -14,13 +14,97 @@
     },
     "diff_style": "auto"
   },
-  // "agent": {},
-
+  // "provider": {
+  //   "ollama-local": {
+  //     "api": "openai-compatible",
+  //     "id": "ollama-local",
+  //     "name": "Ollama (Local)",
+  //     "options": {
+  //       "baseURL": "http://localhost:11434/v1",
+  //       "timeout": 600000
+  //     },
+  //     "models": {
+  //       "qwen2.5-coder:7b": {
+  //         "id": "qwen2.5-coder:7b",
+  //         "name": "Qwen 2.5 Coder 7B",
+  //         "family": "qwen",
+  //         "release_date": "2024-09-19",
+  //         "attachment": false,
+  //         "reasoning": false,
+  //         "temperature": true,
+  //         "tool_call": true,
+  //         "limit": {
+  //           "context": 32768,
+  //           "output": 8192
+  //         },
+  //         "modalities": {
+  //           "input": ["text"],
+  //           "output": ["text"]
+  //         },
+  //         "cost": {
+  //           "input": 0,
+  //           "output": 0,
+  //           "cache_read": 0,
+  //           "cache_write": 0
+  //         }
+  //       },
+  //       "llama3.2:3b": {
+  //         "id": "llama3.2:3b",
+  //         "name": "Llama 3.2 3B",
+  //         "family": "llama",
+  //         "release_date": "2024-09-25",
+  //         "attachment": false,
+  //         "reasoning": false,
+  //         "temperature": true,
+  //         "tool_call": false,
+  //         "limit": {
+  //           "context": 131072,
+  //           "output": 8192
+  //         },
+  //         "modalities": {
+  //           "input": ["text"],
+  //           "output": ["text"]
+  //         },
+  //         "cost": {
+  //           "input": 0,
+  //           "output": 0,
+  //           "cache_read": 0,
+  //           "cache_write": 0
+  //         }
+  //       },
+  //       "deepseek-coder-v2:16b": {
+  //         "id": "deepseek-coder-v2:16b",
+  //         "name": "DeepSeek Coder V2 16B",
+  //         "family": "deepseek",
+  //         "release_date": "2024-06-17",
+  //         "attachment": false,
+  //         "reasoning": false,
+  //         "temperature": true,
+  //         "tool_call": true,
+  //         "limit": {
+  //           "context": 16384,
+  //           "output": 4096
+  //         },
+  //         "modalities": {
+  //           "input": ["text"],
+  //           "output": ["text"]
+  //         },
+  //         "cost": {
+  //           "input": 0,
+  //           "output": 0,
+  //           "cache_read": 0,
+  //           "cache_write": 0
+  //         }
+  //       }
+  //     }
+  //   }
+  // },
+  // "keybinds": {},
   // "username": "your-name",
   // "model": "anthropic/claude-sonnet-4-20250514",
   // "small_model": "anthropic/claude-haiku",
   // "disabled_providers": [],
-  // "enabled_providers": [],
+  "enabled_providers": ["openrouter"],
   // "server": {
   //   "port": 8080,
   //   "hostname": "localhost",
@@ -32,7 +116,6 @@
     "ignore": ["node_modules/**", "dist/**", ".git/**"]
   },
 
-  "share": "disabled",
   "permission": {
     "*": "deny",
     "glob": "allow",
@@ -49,7 +132,79 @@
     // Custom tools
     "audit*": "allow"
   },
-  "instructions": ["~/.dotfiles/opencode/rules/all.md", "AGENTS.md", ".cursor/rules/*.{md,mdx}"],
+  "instructions": [
+    "{env:OPENCODE_CONFIG_DIR}/rules/all.md",
+    "{env:PWD}/AGENTS.md",
+    "{env:PWD}/.cursor/rules/*.{md,mdx}"],
+  "agent": {
+    "general": {
+      "disable": true
+    },
+    "summary": {
+      "disable": true
+    },
+    "title": {
+      "model": "openrouter/minimax-m1"
+    },
+    "writer":  {
+      "disable": true
+    },
+    "build": {
+      "prompt": "{file:rules/coordinator.md} {file:agents/build.md}",
+      "permission": {
+        "homeassistant_*": "allow"
+      }
+    },
+    "plan": {
+      "prompt": "{file:rules/coordinator.md} {file:agents/plan.md}",
+      "permission": {
+        "homeassistant_Get*": "allow",
+        "homeassistant_todo_get_items": "allow"
+      }
+    },
+
+    // Built-in subagents
+    "explore": {
+    },
+    "compaction": {
+    },
+
+    // Custom subagents - model and personal-specific MCP permissions
+    "coder": {
+    },
+    "reviewer": {
+      "permission": {
+        "grafana_get_*": "allow",
+        "grafana_list_*": "allow",
+        "grafana_query_*": "allow",
+        "grafana_search_*": "allow"
+      }
+    },
+    "architect": {
+      "permission": {
+        "grafana_get_*": "allow",
+        "grafana_list_*": "allow",
+        "grafana_search_*": "allow"
+      }
+    },
+    "devops": {
+      "permission": {
+        "grafana_*": "allow"
+      }
+    },
+    "researcher": {
+      "permission": {
+        "grafana_get_*": "allow",
+        "grafana_list_*": "allow",
+        "grafana_query_*": "allow",
+        "grafana_fetch_*": "allow",
+        "grafana_search_*": "allow",
+        "grafana_find_*": "allow"
+      }
+    },
+    "git": {
+    },
+  },
   "mcp": {
     "sequentialthinking": {
       "type": "local",
@@ -107,6 +262,38 @@
         "-c",
         "docker run --rm -i --init --shm-size=2g --memory=2g --cpus=2 $(docker build -q -f ~/.dotfiles/opencode/docker/mcp-playwright.dockerfile ~/.dotfiles/opencode/docker)"
       ],
+      "enabled": true
+    },
+
+    "memory": {
+      "type": "local",
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "--network=none",
+        "--memory=512m",
+        "--cpus=1",
+        "-v",
+        "mcp-memory:/app/dist",
+        "mcp/memory"
+      ],
+      "enabled": true
+    },
+
+    "homeassistant": {
+      "type": "remote",
+      "url": "https://hass.cluster.arpa/api/mcp",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:HOMEASSISTANT_TOKEN}"
+      }
+    },
+
+    "grafana": {
+      "type": "remote",
+      "url": "https://mcp-grafana.cluster.arpa/sse",
       "enabled": true
     }
   }

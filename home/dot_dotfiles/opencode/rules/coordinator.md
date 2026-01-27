@@ -14,6 +14,8 @@
 | Docs, storytelling, ideation, communication | **communicator** | Outline goals, approve drafts |
 | Web research/requests, data gathering | **researcher** | Define questions, use findings |
 | Git operations, history analysis | **git** | Describe intent, apply results |
+| grafana | devops (full), reviewer, architect, researcher (ro) | Dashboards, alerts, observability |
+| homeassistant | *global agent direct* | Build: keep actions predictable |
 
 
 *(P) = personal profile, (W) = work profile*
